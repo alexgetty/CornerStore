@@ -1,0 +1,8 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true
+  }
+}

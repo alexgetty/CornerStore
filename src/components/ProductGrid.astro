@@ -1,0 +1,44 @@
+---
+import ProductCard from "./ProductCard.astro";
+
+interface Product {
+  name: string;
+  description: string | null;
+  image: string | null;
+  price: string;
+  paymentLink: string;
+}
+
+interface Props {
+  products: Product[];
+}
+
+const { products } = Astro.props;
+---
+
+{
+  products.length > 0 ? (
+    <div class="grid">
+      {products.map((product) => (
+        <ProductCard product={product} />
+      ))}
+    </div>
+  ) : (
+    <p class="empty">No products available.</p>
+  )
+}
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .empty {
+    text-align: center;
+    color: #777;
+    padding: 3rem 1rem;
+    font-size: 1.1rem;
+  }
+</style>

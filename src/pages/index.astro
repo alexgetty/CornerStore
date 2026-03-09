@@ -1,0 +1,44 @@
+---
+import Base from "../layouts/Base.astro";
+import ProductGrid from "../components/ProductGrid.astro";
+import { getProducts } from "../lib/stripe";
+
+const products = await getProducts();
+---
+
+<Base title="Corner Store">
+  <header class="header">
+    <div class="container">
+      <h1>Corner Store</h1>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <ProductGrid products={products} />
+    </div>
+  </main>
+</Base>
+
+<style>
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .header {
+    padding: 2rem 0;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fff;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .main {
+    padding: 2.5rem 0 4rem;
+  }
+</style>
