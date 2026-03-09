@@ -4,6 +4,7 @@ export interface Product {
   name: string;
   description: string | null;
   image: string | null;
+  imageAlt: string;
   price: string;
   paymentLink: string;
 }
@@ -58,10 +59,13 @@ export async function getProducts(): Promise<Product[]> {
       continue;
     }
 
+    const metadataAlt = product.metadata?.image_alt;
+
     products.push({
       name: product.name,
       description: product.description ?? null,
       image: product.images.length > 0 ? product.images[0]! : null,
+      imageAlt: metadataAlt ? metadataAlt : product.name,
       price: formatPrice(product.default_price.unit_amount),
       paymentLink,
     });

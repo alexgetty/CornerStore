@@ -39,6 +39,7 @@ function makeProduct(overrides: Record<string, unknown> = {}) {
     name: 'Test Product',
     description: 'A test product',
     images: ['https://example.com/img.jpg'],
+    metadata: {},
     default_price: {
       id: 'price_123',
       unit_amount: 1999,
@@ -115,6 +116,7 @@ describe('getProducts', () => {
         name: 'Test Product',
         description: 'A test product',
         image: 'https://example.com/img.jpg',
+        imageAlt: 'Test Product',
         price: '$19.99',
         paymentLink: 'https://buy.stripe.com/test_abc',
       },
@@ -210,6 +212,49 @@ describe('getProducts', () => {
     const products = await getProducts();
 
     expect(products[0]!.description).toBeNull();
+  });
+
+  // --- imageAlt ---
+
+  it('uses metadata.image_alt for imageAlt when present', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await setupDefaultMocks();
+    mocks.productsListMock.mockReturnValue(
+      makeAsyncIterable([
+        makeProduct({ metadata: { image_alt: 'A hand-poured soy candle in amber glass' } }),
+      ])
+    );
+
+    const { getProducts } = await import('../../src/lib/stripe.js');
+    const products = await getProducts();
+
+    expect(products[0]!.imageAlt).toBe('A hand-poured soy candle in amber glass');
+  });
+
+  it('falls back to product name when metadata.image_alt is missing', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await setupDefaultMocks();
+    mocks.productsListMock.mockReturnValue(
+      makeAsyncIterable([makeProduct({ metadata: {} })])
+    );
+
+    const { getProducts } = await import('../../src/lib/stripe.js');
+    const products = await getProducts();
+
+    expect(products[0]!.imageAlt).toBe('Test Product');
+  });
+
+  it('falls back to product name when metadata.image_alt is empty string', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await setupDefaultMocks();
+    mocks.productsListMock.mockReturnValue(
+      makeAsyncIterable([makeProduct({ metadata: { image_alt: '' } })])
+    );
+
+    const { getProducts } = await import('../../src/lib/stripe.js');
+    const products = await getProducts();
+
+    expect(products[0]!.imageAlt).toBe('Test Product');
   });
 
   // --- Payment link matching ---
