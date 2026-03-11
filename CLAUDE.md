@@ -122,6 +122,16 @@ If you find a flaky test: treat it as a critical bug, identify the race conditio
 - **Never skip tests.** A skipped test is a lie about coverage.
 - **Never write implementation without a failing test.**
 
+## Documentation
+
+Code and docs stay in sync. Any change to behavior requires updating the corresponding documentation in the same unit of work. Tests, implementation, and docs ship together — never separately.
+
+- If a function's behavior changes, its SETUP.md reference gets updated in the same commit.
+- If an error message changes, the troubleshooting section gets updated in the same commit.
+- If a feature is added or removed, the relevant docs reflect it before the work is considered done.
+
+Stale docs are bugs.
+
 ## Green / Red Team
 
 Two adversarial modes for rigorous development.

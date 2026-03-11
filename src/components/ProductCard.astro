@@ -1,39 +1,35 @@
 ---
-interface Product {
-  name: string;
-  description: string | null;
-  image: string | null;
-  imageAlt: string;
-  price: string;
-  paymentLink: string;
-}
+import type { CatalogListing } from "../lib/stripe";
+import { formatPrice, rawPriceToDecimal } from "../lib/stripe";
 
 interface Props {
-  product: Product;
+  listing: CatalogListing;
 }
 
-const { product } = Astro.props;
-const rawPrice = product.price.replace('$', '');
+const { listing } = Astro.props;
+const hasPrice = listing.price !== null && listing.rawPrice !== null && listing.currency !== null;
 ---
 
 <article class="product-card" itemscope itemtype="https://schema.org/Product">
   <figure>
     {
-      product.image ? (
-        <img src={product.image} alt={product.imageAlt} itemprop="image" />
+      listing.image ? (
+        <img src={listing.image} alt={listing.imageAlt} itemprop="image" />
       ) : (
-        <div class="placeholder" aria-label={product.imageAlt} />
+        <div class="placeholder" aria-label={listing.imageAlt} />
       )
     }
   </figure>
   <div>
-    <h2 itemprop="name">{product.name}</h2>
-    {product.description && <p itemprop="description">{product.description}</p>}
-    <p itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-      <data value={rawPrice} itemprop="price" aria-label={"Price: " + product.price}>{product.price}</data>
-      <meta itemprop="priceCurrency" content="USD" />
-    </p>
-    <a href={product.paymentLink} rel="noopener" aria-label={`Buy ${product.name} on Stripe`} itemprop="url">Buy {product.name}</a>
+    <h2 itemprop="name">{listing.name}</h2>
+    {listing.description && <p itemprop="description">{listing.description}</p>}
+    {hasPrice && (
+      <p itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+        <data value={String(rawPriceToDecimal(listing.rawPrice!, listing.currency!))} itemprop="price" aria-label={"Price: " + listing.price}>{listing.price}</data>
+        <meta itemprop="priceCurrency" content={listing.currency!.toUpperCase()} />
+      </p>
+    )}
+    <a href={listing.paymentLink} aria-label={`Buy ${listing.name} on Stripe`} itemprop="url">Buy {listing.name}</a>
   </div>
 </article>
 

@@ -1,9 +1,9 @@
 ---
 import Base from "../layouts/Base.astro";
 import ProductGrid from "../components/ProductGrid.astro";
-import { getProducts } from "../lib/stripe";
+import { getCatalog } from "../lib/stripe";
 
-const products = await getProducts();
+const listings = await getCatalog();
 ---
 
 <Base title="Corner Store">
@@ -14,7 +14,7 @@ const products = await getProducts();
   </header>
   <main class="main">
     <div class="container">
-      <ProductGrid products={products} />
+      <ProductGrid listings={listings} />
     </div>
   </main>
 </Base>
