@@ -1,9 +1,9 @@
 ---
 import ProductCard from "./ProductCard.astro";
-import type { CatalogListing } from "../lib/stripe";
+import type { Listing } from "../lib/storefront";
 
 interface Props {
-  listings: CatalogListing[];
+  listings: Listing[];
 }
 
 const { listings } = Astro.props;

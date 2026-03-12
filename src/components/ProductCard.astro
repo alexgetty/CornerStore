@@ -1,9 +1,9 @@
 ---
-import type { CatalogListing } from "../lib/stripe";
-import { listingHasPrice, rawPriceToDecimal } from "../lib/stripe";
+import type { Listing } from "../lib/storefront";
+import { listingHasPrice, rawPriceToDecimal } from "../lib/storefront";
 
 interface Props {
-  listing: CatalogListing;
+  listing: Listing;
 }
 
 const { listing } = Astro.props;

@@ -4,5 +4,6 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true
-  }
+  },
+  "exclude": ["dist", "coverage"]
 }

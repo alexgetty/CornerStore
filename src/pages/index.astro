@@ -1,9 +1,9 @@
 ---
 import Base from "../layouts/Base.astro";
 import ProductGrid from "../components/ProductGrid.astro";
-import { getCatalog } from "../lib/stripe";
+import { getListings } from "../lib/storefront";
 
-const listings = await getCatalog();
+const listings = await getListings();
 ---
 
 <Base title="Corner Store">
