@@ -582,6 +582,28 @@ describe('getCatalog', () => {
     }
   });
 
+  it('passes through error with non-string type property unwrapped', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const err = new Error('weird error') as Error & { type: number };
+    err.type = 42;
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeThrowingAsyncIterable(err)
+    );
+
+    const { getCatalog, StripeSetupError } = await import(
+      '../../src/lib/stripe.js'
+    );
+
+    try {
+      await getCatalog();
+      expect.unreachable('should have thrown');
+    } catch (caught: unknown) {
+      expect(caught).not.toBeInstanceOf(StripeSetupError);
+      expect(caught).toBe(err);
+    }
+  });
+
   it('passes through non-Stripe errors from payment link fetch unwrapped', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
@@ -724,6 +746,32 @@ describe('getCatalog', () => {
     expect(allLogCalls).toContain('buy.stripe.com/bad');
     expect(allLogCalls).toContain('no valid line items');
 
+  });
+
+  it('warns when line items exceed pagination limit', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([makePaymentLink()])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [makeLineItem()],
+      has_more: true,
+    });
+
+    const { getCatalog } = await import('../../src/lib/stripe.js');
+    const listings = await getCatalog();
+
+    // Listing still created from the returned items
+    expect(listings).toHaveLength(1);
+    expect(listings[0]!.name).toBe('Test Product');
+
+    // Warning logged about exceeding 100 items
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('buy.stripe.com/test_abc');
+    expect(allLogCalls).toContain('more than 100 line items');
   });
 
   // --- Empty validation ---
@@ -986,6 +1034,34 @@ describe('getCatalog', () => {
 
   });
 
+  it('returns null image when no products in bundle have images', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_test', url: 'https://buy.stripe.com/test' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [
+        makeLineItem({
+          price: { id: 'price_a', unit_amount: 1000, currency: 'usd', product: { name: 'Alpha', description: null, images: [], metadata: {} } },
+        }),
+        makeLineItem({
+          price: { id: 'price_b', unit_amount: 500, currency: 'usd', product: { name: 'Beta', description: null, images: [], metadata: {} } },
+        }),
+      ],
+    });
+
+    const { getCatalog } = await import('../../src/lib/stripe.js');
+    const listings = await getCatalog();
+
+    expect(listings[0]!.image).toBeNull();
+
+  });
+
   it('uses auto-generated title as imageAlt for bundles', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
@@ -1110,16 +1186,16 @@ describe('getCatalog', () => {
     const listings = await getCatalog();
 
     const names = listings.map((l) => l.name);
-    // Alphabetical by URL: /xxxx gets -a, /yyyy gets -b
-    expect(names).toContain('Bundle a3f9-a');
-    expect(names).toContain('Bundle a3f9-b');
+    // Alphabetical by URL: /xxxx gets -1, /yyyy gets -2
+    expect(names).toContain('Bundle a3f9-1');
+    expect(names).toContain('Bundle a3f9-2');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('display name collision');
 
   });
 
-  it('assigns deterministic -a/-b suffixes for colliding display names', async () => {
+  it('assigns deterministic numeric suffixes for colliding display names', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -1153,12 +1229,38 @@ describe('getCatalog', () => {
     const listings = await getCatalog();
 
     const names = listings.map((l) => l.name);
-    // Alphabetical by link URL: /aaa gets -a, /bbb gets -b
-    expect(names).toContain('Bundle a3f9-a');
-    expect(names).toContain('Bundle a3f9-b');
+    // Alphabetical by link URL: /aaa gets -1, /bbb gets -2
+    expect(names).toContain('Bundle a3f9-1');
+    expect(names).toContain('Bundle a3f9-2');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('display name collision');
+
+  });
+
+  it('uses numeric suffix when more than 26 bundles share a display name', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const links = Array.from({ length: 27 }, (_, i) =>
+      makePaymentLink({ id: `plink_${String(i).padStart(4, '0')}a3f9`, url: `https://buy.stripe.com/${String(i).padStart(4, '0')}` })
+    );
+    mocks.paymentLinksListMock.mockReturnValue(makeAsyncIterable(links));
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [
+        makeLineItem({ price: { id: 'price_a', unit_amount: 100, currency: 'usd', product: { name: 'A', description: null, images: [], metadata: {} } } }),
+        makeLineItem({ price: { id: 'price_b', unit_amount: 200, currency: 'usd', product: { name: 'B', description: null, images: [], metadata: {} } } }),
+      ],
+    });
+
+    const { getCatalog } = await import('../../src/lib/stripe.js');
+    const listings = await getCatalog();
+
+    const names = listings.map((l) => l.name);
+    expect(names).toContain('Bundle a3f9-1');
+    expect(names).toContain('Bundle a3f9-26');
+    expect(names).toContain('Bundle a3f9-27');
 
   });
 
@@ -1428,6 +1530,44 @@ describe('getCatalog', () => {
 
   });
 
+  it('uses config image_alt even when title is not provided', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('alt-only', true)]);
+      }
+      return Promise.resolve(['bundle.md']);
+    }) as typeof readdirMock);
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/bundle\nimage_alt: A lovely bundle photo\n---\n'
+    );
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_qrs7', url: 'https://buy.stripe.com/bundle' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [
+        makeLineItem({ price: { id: 'price_a', unit_amount: 1000, currency: 'usd', product: { name: 'Alpha', description: null, images: [], metadata: {} } } }),
+        makeLineItem({ price: { id: 'price_b', unit_amount: 500, currency: 'usd', product: { name: 'Beta', description: null, images: [], metadata: {} } } }),
+      ],
+    });
+
+    const { getCatalog } = await import('../../src/lib/stripe.js');
+    const listings = await getCatalog();
+
+    // Name should be auto-generated (no title in config)
+    expect(listings[0]!.name).toBe('Bundle qrs7');
+    // imageAlt should come from config, not the auto-generated name
+    expect(listings[0]!.imageAlt).toBe('A lovely bundle photo');
+
+  });
+
   it('warns about orphaned configs with no matching active link', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
@@ -1532,6 +1672,12 @@ describe('StripeSetupError', () => {
     const original = new Error('original');
     const err = new StripeSetupError('wrapped', '#section', original);
     expect(err.cause).toBe(original);
+  });
+
+  it('has undefined cause when not provided', async () => {
+    const { StripeSetupError } = await import('../../src/lib/stripe.js');
+    const err = new StripeSetupError('no cause', '#section');
+    expect(err.cause).toBeUndefined();
   });
 });
 
@@ -1810,6 +1956,26 @@ describe('loadBundleConfigs', () => {
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('config.md');
     expect(allLogCalls).toContain('missing required "link"');
+  });
+
+  it('warns and skips when link field is not a string', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('numeric-link', true)]);
+      }
+      return Promise.resolve(['bundle.md']);
+    }) as typeof readdirMock);
+    readFileMock.mockResolvedValue('---\nlink: 42\ntitle: Bad Link\n---\n');
+
+    const { loadBundleConfigs } = await import('../../src/lib/stripe.js');
+    const result = await loadBundleConfigs();
+
+    expect(result.size).toBe(0);
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('bundle.md');
+    expect(allLogCalls).toContain('"link"');
   });
 
   it('returns partial config when only some fields specified', async () => {
@@ -2118,5 +2284,56 @@ describe('rawPriceToDecimal', () => {
   it('returns 0 for zero amount', async () => {
     const { rawPriceToDecimal } = await import('../../src/lib/stripe.js');
     expect(rawPriceToDecimal(0, 'usd')).toBe(0);
+  });
+});
+
+describe('listingHasPrice', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('returns true for SingleListing', async () => {
+    const { listingHasPrice } = await import('../../src/lib/stripe.js');
+    expect(listingHasPrice({
+      kind: 'single',
+      name: 'Test',
+      description: null,
+      image: null,
+      imageAlt: 'Test',
+      price: '$19.99',
+      rawPrice: 1999,
+      currency: 'usd',
+      paymentLink: 'https://buy.stripe.com/test',
+    })).toBe(true);
+  });
+
+  it('returns true for BundleListing with price', async () => {
+    const { listingHasPrice } = await import('../../src/lib/stripe.js');
+    expect(listingHasPrice({
+      kind: 'bundle',
+      name: 'Bundle',
+      description: null,
+      image: null,
+      imageAlt: 'Bundle',
+      price: '$15.00',
+      rawPrice: 1500,
+      currency: 'usd',
+      paymentLink: 'https://buy.stripe.com/test',
+    })).toBe(true);
+  });
+
+  it('returns false for BundleListing with null price fields', async () => {
+    const { listingHasPrice } = await import('../../src/lib/stripe.js');
+    expect(listingHasPrice({
+      kind: 'bundle',
+      name: 'Bundle',
+      description: null,
+      image: null,
+      imageAlt: 'Bundle',
+      price: null,
+      rawPrice: null,
+      currency: null,
+      paymentLink: 'https://buy.stripe.com/test',
+    })).toBe(false);
   });
 });

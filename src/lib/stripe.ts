@@ -122,6 +122,10 @@ function getCurrencyDecimalPlaces(currency: string): number {
     .resolvedOptions().maximumFractionDigits;
 }
 
+export function listingHasPrice(listing: CatalogListing): boolean {
+  return listing.price !== null && listing.rawPrice !== null && listing.currency !== null;
+}
+
 export function rawPriceToDecimal(rawPrice: number, currency: string): number {
   const decimals = getCurrencyDecimalPlaces(currency);
   return rawPrice / (10 ** decimals);
@@ -189,7 +193,7 @@ export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
       continue;
     }
 
-    if (!data.link) {
+    if (!data.link || typeof data.link !== 'string') {
       console.log(`[Storefront] Warning: bundles/${dir.name}/${mdFile}: missing required "link" field — skipped`);
       continue;
     }
@@ -321,6 +325,13 @@ export async function getCatalog(): Promise<CatalogListing[]> {
       continue;
     }
 
+    if (lineItemsResponse.has_more) {
+      warnings.push({
+        linkUrl: link.url,
+        reason: 'more than 100 line items — only the first 100 are shown',
+      });
+    }
+
     const productDataItems: StripeProductData[] = [];
     for (const item of lineItemsResponse.data) {
       const data = extractProductData(item);
@@ -431,14 +442,12 @@ export async function getCatalog(): Promise<CatalogListing[]> {
   for (const pending of bundlePendingNames) {
     if (pending.config?.title) {
       pending.listing.name = pending.config.title;
-      pending.listing.imageAlt = pending.config.image_alt ?? pending.config.title;
     } else {
       let displayName: string;
       const group = suffixGroups.get(pending.suffix);
       if (group) {
         const index = group.indexOf(pending);
-        const letter = String.fromCharCode(97 + index); // a, b, c, ...
-        displayName = `Bundle ${pending.suffix}-${letter}`;
+        displayName = `Bundle ${pending.suffix}-${index + 1}`;
         warnings.push({
           linkUrl: pending.listing.paymentLink,
           reason: `display name collision — disambiguated to "${displayName}"`,
@@ -447,8 +456,8 @@ export async function getCatalog(): Promise<CatalogListing[]> {
         displayName = `Bundle ${pending.suffix}`;
       }
       pending.listing.name = displayName;
-      pending.listing.imageAlt = displayName;
     }
+    pending.listing.imageAlt = pending.config?.image_alt ?? pending.listing.name;
     bundleListings.push(pending.listing);
   }
 

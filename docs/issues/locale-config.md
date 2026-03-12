@@ -1,12 +1,14 @@
-# Add locale config for currency formatting
+# Make currency formatting locale configurable
 
-## Problem
+## Current state
 
-`formatPrice` uses `new Intl.NumberFormat(undefined, ...)` which inherits the build machine's locale. A French machine building a USD store produces `19,99 $US` instead of `$19.99`. Formatting should be explicit, not environment-dependent.
+`formatPrice` and `getCurrencyDecimalPlaces` hardcode `'en-US'` as the locale. This makes output deterministic regardless of build machine — a French machine building a USD store still produces `$19.99`.
 
-## Immediate fix (V1)
+This is correct for V1 but not configurable. A non-US seller formatting EUR prices would see `€19.99` (US format) instead of `19,99 €` (EU format).
 
-Add a `locale` property to site-wide config (when config exists). Default to `en-US`.
+## Future: configurable locale
+
+When site-wide config lands, add `locale` as a supported property:
 
 ```typescript
 new Intl.NumberFormat(config.locale ?? 'en-US', {
@@ -15,10 +17,6 @@ new Intl.NumberFormat(config.locale ?? 'en-US', {
 })
 ```
 
-This makes output deterministic regardless of build machine. USD sellers get `$19.99` everywhere.
-
 ## Dependency
 
 Blocked on site-wide config file existing. The setup-experience plan notes "Store-wide options belong in a local config file." This is one of those options.
-
-If config lands before this is addressed, add `locale` as a supported property. If this needs to ship before config, hardcode `'en-US'` as the default with a TODO.

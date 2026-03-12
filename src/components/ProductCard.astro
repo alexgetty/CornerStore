@@ -1,13 +1,13 @@
 ---
 import type { CatalogListing } from "../lib/stripe";
-import { formatPrice, rawPriceToDecimal } from "../lib/stripe";
+import { listingHasPrice, rawPriceToDecimal } from "../lib/stripe";
 
 interface Props {
   listing: CatalogListing;
 }
 
 const { listing } = Astro.props;
-const hasPrice = listing.price !== null && listing.rawPrice !== null && listing.currency !== null;
+const hasPrice = listingHasPrice(listing);
 ---
 
 <article class="product-card" itemscope itemtype="https://schema.org/Product">
