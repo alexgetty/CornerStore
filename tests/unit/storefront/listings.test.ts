@@ -469,10 +469,10 @@ describe('getListings', () => {
         );
 
         const { getListings } = await import(
-          '../../../src/lib/storefront/listings.js'
+          '../../../src/lib/storefront/index.js'
         );
         const { StripeSetupError } = await import(
-          '../../../src/lib/stripe/errors.js'
+          '../../../src/lib/stripe/index.js'
         );
 
         try {

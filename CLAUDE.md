@@ -21,6 +21,14 @@ These are non-negotiable. They don't change with scope, timeline, or priorities.
 - **Open source is distribution, not charity.** Every self-hosted storefront is a billboard and proof of concept. The code being open is the growth strategy.
 - **Compete on experience, not lock-in.** If someone forks the code and serves makers well, that's a win.
 
+## Distribution
+
+**Primary:** NPM package with a CLI init command (`cornerstore init`) that scaffolds the user's project — bundle directory, theme template, config. This is the documented, supported path. All guides, onboarding, and educational resources target this model.
+
+**Secondary:** The repo is open source. Anyone can clone or fork it. This is allowed but not actively supported with documentation or onboarding resources. Tinkerers can figure it out.
+
+Every barrel export is a public API contract — treat exports deliberately. See `docs/todo/export-audit.md`.
+
 ## Architecture Principles
 
 - Static site + Stripe Checkout for single-product transactions (no backend needed)
