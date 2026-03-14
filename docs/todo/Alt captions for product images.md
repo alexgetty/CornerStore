@@ -1,0 +1,3 @@
+Right now, we are falling back to the product name for alt image text. Not ideal. Stripe has metadata fields, and we can add an image alt tag for that and pull that. Then, as a backup, fall back to the title. The other option, instead of a fallback to title, would be to fallback to an empty alt so it's just considered decorative, but I feel like for a storefront you really do need a description of your image. 
+
+For the hosted version, we will have alt tag management in the app. 

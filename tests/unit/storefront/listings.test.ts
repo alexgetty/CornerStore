@@ -143,7 +143,7 @@ describe('getListings', () => {
         name: 'Test Product',
         description: 'A test product',
         image: 'https://example.com/img.jpg',
-        imageAlt: 'Test Product',
+        imageAlt: '',
         price: '$19.99',
         rawPrice: 1999,
         currency: 'usd',
@@ -203,7 +203,7 @@ describe('getListings', () => {
     );
   });
 
-  it('falls back to product name when metadata.image_alt is missing', async () => {
+  it('uses empty imageAlt when metadata.image_alt is missing', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     await setupDefaultMocks();
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -213,10 +213,10 @@ describe('getListings', () => {
     );
     const listings = await getListings();
 
-    expect(listings[0]!.imageAlt).toBe('Test Product');
+    expect(listings[0]!.imageAlt).toBe('');
   });
 
-  it('falls back to product name when metadata.image_alt is empty string', async () => {
+  it('uses empty imageAlt when metadata.image_alt is empty string', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     mocks.paymentLinksListMock.mockReturnValue(
@@ -246,7 +246,7 @@ describe('getListings', () => {
     );
     const listings = await getListings();
 
-    expect(listings[0]!.imageAlt).toBe('Test Product');
+    expect(listings[0]!.imageAlt).toBe('');
   });
 
   it('returns null image when product has no images', async () => {
@@ -719,7 +719,7 @@ describe('getListings', () => {
 
   // --- Empty validation ---
 
-  it('throws #no-cards when all links are skipped', async () => {
+  it('throws #no-listings when all links are skipped', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -742,7 +742,7 @@ describe('getListings', () => {
     } catch (err: unknown) {
       expect(err).toBeInstanceOf(StripeSetupError);
       const setupErr = err as InstanceType<typeof StripeSetupError>;
-      expect(setupErr.guidance).toBe('#no-cards');
+      expect(setupErr.guidance).toBe('#no-listings');
     }
   });
 
@@ -761,7 +761,7 @@ describe('getListings', () => {
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('[Storefront] Build complete:');
     expect(allLogCalls).toContain('Payment links found: 1');
-    expect(allLogCalls).toContain('Single-product cards: 1');
+    expect(allLogCalls).toContain('Single-product listings: 1');
   });
 
   it('logs warnings before build summary', async () => {
@@ -1019,7 +1019,7 @@ describe('getListings', () => {
     expect(listings[0]!.image).toBeNull();
   });
 
-  it('uses auto-generated title as imageAlt for bundles', async () => {
+  it('uses empty imageAlt when bundle has no image_alt config', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -1045,7 +1045,7 @@ describe('getListings', () => {
     );
     const listings = await getListings();
 
-    expect(listings[0]!.imageAlt).toBe('Bundle x1y2');
+    expect(listings[0]!.imageAlt).toBe('');
   });
 
   it('sums line item amounts when all same currency', async () => {
@@ -1113,7 +1113,7 @@ describe('getListings', () => {
     expect(allLogCalls).toContain('mixed currencies');
   });
 
-  it('disambiguates display name collisions with -a/-b suffixes', async () => {
+  it('keeps first auto-generated name bare and suffixes subsequent collisions', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -1148,21 +1148,135 @@ describe('getListings', () => {
     const listings = await getListings();
 
     const names = listings.map((l) => l.name);
-    // Alphabetical by URL: /xxxx gets -1, /yyyy gets -2
-    expect(names).toContain('Bundle a3f9-1');
-    expect(names).toContain('Bundle a3f9-2');
+    // First by link ID keeps bare name, second gets space-separated suffix
+    expect(names).toContain('Bundle a3f9');
+    expect(names).toContain('Bundle a3f9 2');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('display name collision');
   });
 
-  it('assigns deterministic numeric suffixes for colliding display names', async () => {
+  it('sorts by link ID for deterministic collision resolution', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Link IDs determine order, NOT URLs
+    // plink_aaaa... sorts before plink_bbbb... by ID
+    // but URLs are reversed to prove it's ID-based
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_aaaaa3f9', url: 'https://buy.stripe.com/zzz' }),
+        makePaymentLink({ id: 'plink_bbbba3f9', url: 'https://buy.stripe.com/aaa' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockImplementation((linkId: string) => {
+      if (linkId === 'plink_aaaaa3f9') {
+        return Promise.resolve({
+          data: [
+            makeLineItem({ price: { id: 'price_a1', unit_amount: 100, currency: 'usd', product: { name: 'A1', description: null, images: [], metadata: {} } } }),
+            makeLineItem({ price: { id: 'price_a2', unit_amount: 200, currency: 'usd', product: { name: 'A2', description: null, images: [], metadata: {} } } }),
+          ],
+        });
+      }
+      return Promise.resolve({
+        data: [
+          makeLineItem({ price: { id: 'price_b1', unit_amount: 300, currency: 'usd', product: { name: 'B1', description: null, images: [], metadata: {} } } }),
+          makeLineItem({ price: { id: 'price_b2', unit_amount: 400, currency: 'usd', product: { name: 'B2', description: null, images: [], metadata: {} } } }),
+        ],
+      });
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    // plink_aaaa sorts first by ID → gets bare name (URL /zzz)
+    const bundleA = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/zzz');
+    const bundleB = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/aaa');
+    expect(bundleA!.name).toBe('Bundle a3f9');
+    expect(bundleB!.name).toBe('Bundle a3f9 2');
+  });
+
+  it('suffixes sequence for three-way collision', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const links = Array.from({ length: 3 }, (_, i) =>
+      makePaymentLink({ id: `plink_${String(i).padStart(4, '0')}a3f9`, url: `https://buy.stripe.com/${String(i).padStart(4, '0')}` })
+    );
+    mocks.paymentLinksListMock.mockReturnValue(makeAsyncIterable(links));
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [
+        makeLineItem({ price: { id: 'price_a', unit_amount: 100, currency: 'usd', product: { name: 'A', description: null, images: [], metadata: {} } } }),
+        makeLineItem({ price: { id: 'price_b', unit_amount: 200, currency: 'usd', product: { name: 'B', description: null, images: [], metadata: {} } } }),
+      ],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    const names = listings.map((l) => l.name);
+    expect(names).toEqual(['Bundle a3f9', 'Bundle a3f9 2', 'Bundle a3f9 3']);
+  });
+
+  it('resolves independent collision groups without interference', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Two pairs: suffix 'aaaa' collides, suffix 'bbbb' collides
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_1111aaaa', url: 'https://buy.stripe.com/a1' }),
+        makePaymentLink({ id: 'plink_2222aaaa', url: 'https://buy.stripe.com/a2' }),
+        makePaymentLink({ id: 'plink_3333bbbb', url: 'https://buy.stripe.com/b1' }),
+        makePaymentLink({ id: 'plink_4444bbbb', url: 'https://buy.stripe.com/b2' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [
+        makeLineItem({ price: { id: 'price_x', unit_amount: 100, currency: 'usd', product: { name: 'X', description: null, images: [], metadata: {} } } }),
+        makeLineItem({ price: { id: 'price_y', unit_amount: 200, currency: 'usd', product: { name: 'Y', description: null, images: [], metadata: {} } } }),
+      ],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    const a1 = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/a1');
+    const a2 = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/a2');
+    const b1 = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/b1');
+    const b2 = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/b2');
+    expect(a1!.name).toBe('Bundle aaaa');
+    expect(a2!.name).toBe('Bundle aaaa 2');
+    expect(b1!.name).toBe('Bundle bbbb');
+    expect(b2!.name).toBe('Bundle bbbb 2');
+  });
+
+  it('does not flag spurious collision when configured and unconfigured bundles share suffix', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
 
-    // Two links whose IDs end with the same 4 chars — collision
-    // URLs are alphabetically ordered to verify deterministic assignment
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('holiday', true)]);
+      }
+      return Promise.resolve(['bundle.md']);
+    }) as never);
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/aaa\ntitle: Holiday Set\n---\n'
+    );
+
+    // Two links sharing suffix 'a3f9' — one configured, one not
     mocks.paymentLinksListMock.mockReturnValue(
       makeAsyncIterable([
         makePaymentLink({ id: 'plink_xxxxa3f9', url: 'https://buy.stripe.com/aaa' }),
@@ -1191,24 +1305,169 @@ describe('getListings', () => {
     );
     const listings = await getListings();
 
-    const names = listings.map((l) => l.name);
-    // Alphabetical by link URL: /aaa gets -1, /bbb gets -2
-    expect(names).toContain('Bundle a3f9-1');
-    expect(names).toContain('Bundle a3f9-2');
+    // Configured: "Holiday Set", unconfigured: "Bundle a3f9" — no collision
+    const configured = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/aaa');
+    const unconfigured = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/bbb');
+    expect(configured!.name).toBe('Holiday Set');
+    expect(unconfigured!.name).toBe('Bundle a3f9');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('display name collision');
+    expect(allLogCalls).not.toContain('collision');
   });
 
-  it('uses numeric suffix when more than 26 bundles share a display name', async () => {
+  it('disambiguates user-defined title collisions with warning', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('set-a', true), makeDirent('set-b', true)]);
+      }
+      return Promise.resolve(['bundle.md']);
+    }) as never);
+    readFileMock.mockImplementation((filePath: string) => {
+      if (String(filePath).includes('set-a')) {
+        return Promise.resolve('---\nlink: https://buy.stripe.com/aaa\ntitle: Holiday Set\n---\n');
+      }
+      return Promise.resolve('---\nlink: https://buy.stripe.com/bbb\ntitle: Holiday Set\n---\n');
+    });
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_aaa1', url: 'https://buy.stripe.com/aaa' }),
+        makePaymentLink({ id: 'plink_bbb2', url: 'https://buy.stripe.com/bbb' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockImplementation((linkId: string) => {
+      if (linkId === 'plink_aaa1') {
+        return Promise.resolve({
+          data: [
+            makeLineItem({ price: { id: 'price_a1', unit_amount: 100, currency: 'usd', product: { name: 'A1', description: null, images: [], metadata: {} } } }),
+            makeLineItem({ price: { id: 'price_a2', unit_amount: 200, currency: 'usd', product: { name: 'A2', description: null, images: [], metadata: {} } } }),
+          ],
+        });
+      }
+      return Promise.resolve({
+        data: [
+          makeLineItem({ price: { id: 'price_b1', unit_amount: 300, currency: 'usd', product: { name: 'B1', description: null, images: [], metadata: {} } } }),
+          makeLineItem({ price: { id: 'price_b2', unit_amount: 400, currency: 'usd', product: { name: 'B2', description: null, images: [], metadata: {} } } }),
+        ],
+      });
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    // First by link ID keeps bare, second gets " 2"
+    const bundleA = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/aaa');
+    const bundleB = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/bbb');
+    expect(bundleA!.name).toBe('Holiday Set');
+    expect(bundleB!.name).toBe('Holiday Set 2');
+
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('duplicate bundle title');
+    // Winner (bare name) should not appear in any collision warning
+    const collisionWarnings = logSpy.mock.calls
+      .map((c) => c[0] as string)
+      .filter((line) => line.includes('duplicate bundle title') || line.includes('collision'));
+    for (const w of collisionWarnings) {
+      expect(w).not.toContain('buy.stripe.com/aaa');
+    }
+  });
+
+  it('disambiguates cross-type collision — auto-generated name gets suffixed', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('sneaky', true)]);
+      }
+      return Promise.resolve(['bundle.md']);
+    }) as never);
+    // Config title deliberately matches auto-generated name format
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/aaa\ntitle: Bundle a3f9\n---\n'
+    );
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_xxxxa3f9', url: 'https://buy.stripe.com/aaa' }),
+        makePaymentLink({ id: 'plink_yyyya3f9', url: 'https://buy.stripe.com/bbb' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockImplementation((linkId: string) => {
+      if (linkId === 'plink_xxxxa3f9') {
+        return Promise.resolve({
+          data: [
+            makeLineItem({ price: { id: 'price_a1', unit_amount: 100, currency: 'usd', product: { name: 'A1', description: null, images: [], metadata: {} } } }),
+            makeLineItem({ price: { id: 'price_a2', unit_amount: 200, currency: 'usd', product: { name: 'A2', description: null, images: [], metadata: {} } } }),
+          ],
+        });
+      }
+      return Promise.resolve({
+        data: [
+          makeLineItem({ price: { id: 'price_b1', unit_amount: 300, currency: 'usd', product: { name: 'B1', description: null, images: [], metadata: {} } } }),
+          makeLineItem({ price: { id: 'price_b2', unit_amount: 400, currency: 'usd', product: { name: 'B2', description: null, images: [], metadata: {} } } }),
+        ],
+      });
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    // User-defined title keeps bare name, auto-generated gets suffixed
+    const configured = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/aaa');
+    const auto = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/bbb');
+    expect(configured!.name).toBe('Bundle a3f9');
+    expect(auto!.name).toBe('Bundle a3f9 2');
+
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('collides with configured title');
+  });
+
+  it('skips suffix numbers already taken by existing names', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
 
-    const links = Array.from({ length: 27 }, (_, i) =>
-      makePaymentLink({ id: `plink_${String(i).padStart(4, '0')}a3f9`, url: `https://buy.stripe.com/${String(i).padStart(4, '0')}` })
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([
+          makeDirent('set-a', true),
+          makeDirent('set-b', true),
+          makeDirent('set-c', true),
+        ]);
+      }
+      return Promise.resolve(['bundle.md']);
+    }) as never);
+    readFileMock.mockImplementation((filePath: string) => {
+      if (String(filePath).includes('set-a')) {
+        return Promise.resolve('---\nlink: https://buy.stripe.com/aaa\ntitle: Holiday Set\n---\n');
+      }
+      if (String(filePath).includes('set-b')) {
+        return Promise.resolve('---\nlink: https://buy.stripe.com/bbb\ntitle: Holiday Set\n---\n');
+      }
+      // Third config takes the " 2" name
+      return Promise.resolve('---\nlink: https://buy.stripe.com/ccc\ntitle: Holiday Set 2\n---\n');
+    });
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_aaa1', url: 'https://buy.stripe.com/aaa' }),
+        makePaymentLink({ id: 'plink_bbb2', url: 'https://buy.stripe.com/bbb' }),
+        makePaymentLink({ id: 'plink_ccc3', url: 'https://buy.stripe.com/ccc' }),
+      ])
     );
-    mocks.paymentLinksListMock.mockReturnValue(makeAsyncIterable(links));
     mocks.listLineItemsMock.mockResolvedValue({
       data: [
         makeLineItem({ price: { id: 'price_a', unit_amount: 100, currency: 'usd', product: { name: 'A', description: null, images: [], metadata: {} } } }),
@@ -1221,13 +1480,18 @@ describe('getListings', () => {
     );
     const listings = await getListings();
 
-    const names = listings.map((l) => l.name);
-    expect(names).toContain('Bundle a3f9-1');
-    expect(names).toContain('Bundle a3f9-26');
-    expect(names).toContain('Bundle a3f9-27');
+    // plink_aaa1 sorts first → keeps bare "Holiday Set"
+    // plink_bbb2 sorts second → "Holiday Set 2" taken by ccc3, skips to "Holiday Set 3"
+    // plink_ccc3 → singleton "Holiday Set 2" unchanged
+    const a = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/aaa');
+    const b = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/bbb');
+    const c = listings.find((l) => l.paymentLink === 'https://buy.stripe.com/ccc');
+    expect(a!.name).toBe('Holiday Set');
+    expect(b!.name).toBe('Holiday Set 3');
+    expect(c!.name).toBe('Holiday Set 2');
   });
 
-  it('warns about unconfigured bundles', async () => {
+  it('warns with instructions when bundle has no config', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -1255,6 +1519,76 @@ describe('getListings', () => {
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('no bundle config');
+    expect(allLogCalls).toContain('customers will see "Bundle test"');
+    expect(allLogCalls).toContain('bundles/');
+  });
+
+  it('uses final resolved name in no-config warning after collision', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Two bundles sharing suffix, neither configured — second gets disambiguated
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_aaaaf1f1', url: 'https://buy.stripe.com/aaa' }),
+        makePaymentLink({ id: 'plink_bbbbf1f1', url: 'https://buy.stripe.com/bbb' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [
+        makeLineItem({ price: { id: 'price_a', unit_amount: 100, currency: 'usd', product: { name: 'A', description: null, images: [], metadata: {} } } }),
+        makeLineItem({ price: { id: 'price_b', unit_amount: 200, currency: 'usd', product: { name: 'B', description: null, images: [], metadata: {} } } }),
+      ],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    await getListings();
+
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    // The second bundle's warning must show its FINAL name after collision resolution
+    expect(allLogCalls).toContain('customers will see "Bundle f1f1 2"');
+  });
+
+  it('warns with instructions when bundle config has no title', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('my-bundle', true)]);
+      }
+      return Promise.resolve(['bundle.md']);
+    }) as never);
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/bundle\ndescription: A lovely bundle\n---\n'
+    );
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_abcd', url: 'https://buy.stripe.com/bundle' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [
+        makeLineItem({ price: { id: 'price_a', unit_amount: 1000, currency: 'usd', product: { name: 'A', description: null, images: [], metadata: {} } } }),
+        makeLineItem({ price: { id: 'price_b', unit_amount: 500, currency: 'usd', product: { name: 'B', description: null, images: [], metadata: {} } } }),
+      ],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    await getListings();
+
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('bundle config has no title');
+    expect(allLogCalls).toContain('customers will see "Bundle abcd"');
+    expect(allLogCalls).toContain('Add a title field');
   });
 
   it('includes bundle counts in build summary', async () => {
@@ -1286,8 +1620,8 @@ describe('getListings', () => {
     await getListings();
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('Single-product cards: 1');
-    expect(allLogCalls).toContain('Bundle cards: 1');
+    expect(allLogCalls).toContain('Single-product listings: 1');
+    expect(allLogCalls).toContain('Bundle listings: 1');
   });
 
   // --- Listing order ---
@@ -1461,11 +1795,11 @@ describe('getListings', () => {
     expect(listings[0]!.description).toBe('This bundle includes: Alpha, Beta');
     // Image auto-generated (no images in config dir)
     expect(listings[0]!.image).toBe('https://example.com/alpha.jpg');
-    // imageAlt falls back to config title
-    expect(listings[0]!.imageAlt).toBe('Custom Name');
+    // imageAlt empty when no image_alt in config
+    expect(listings[0]!.imageAlt).toBe('');
   });
 
-  it('image_alt falls back to title when not specified in config', async () => {
+  it('uses empty imageAlt when bundle config has title but no image_alt', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -1498,7 +1832,7 @@ describe('getListings', () => {
     );
     const listings = await getListings();
 
-    expect(listings[0]!.imageAlt).toBe('My Bundle');
+    expect(listings[0]!.imageAlt).toBe('');
   });
 
   it('uses config image_alt even when title is not provided', async () => {
@@ -1610,7 +1944,7 @@ describe('getListings', () => {
     await getListings();
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('Bundle cards: 2');
+    expect(allLogCalls).toContain('Bundle listings: 2');
     expect(allLogCalls).toContain('1 configured');
     expect(allLogCalls).toContain('1 default');
   });

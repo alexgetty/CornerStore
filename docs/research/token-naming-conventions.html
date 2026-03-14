@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Token Naming Conventions -- Research Report</title>
+<style>
+  :root {
+    --bg: #fafaf8;
+    --fg: #1a1a1a;
+    --fg-secondary: #555;
+    --fg-muted: #777;
+    --surface: #fff;
+    --border: #e0ddd8;
+    --accent: #8b5e3c;
+    --accent-bg: #f5f0eb;
+    --code-bg: #f3f0ec;
+    --table-stripe: #faf8f5;
+    --converge: #2d6a30;
+    --diverge: #9a4a2f;
+    --corner: #5c4a32;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
+    border-bottom: 3px solid var(--fg);
+    padding-bottom: 0.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4rem;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  h4 {
+    font-size: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+  }
+
+  p { margin-bottom: 1rem; }
+
+  a { color: var(--accent); }
+
+  .meta {
+    color: var(--fg-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .callout {
+    background: var(--accent-bg);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+  }
+
+  .callout-corner {
+    background: #f5f0eb;
+    border-left: 4px solid var(--corner);
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+
+  .verdict {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-family: -apple-system, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.15em 0.5em;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+  }
+
+  .converge {
+    background: #e6f4e7;
+    color: var(--converge);
+  }
+
+  .diverge {
+    background: #fce8e2;
+    color: var(--diverge);
+  }
+
+  .mixed {
+    background: #fff3cd;
+    color: #7a5e00;
+  }
+
+  code {
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.35em;
+    border-radius: 3px;
+  }
+
+  pre {
+    background: var(--code-bg);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92rem;
+  }
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--fg);
+    padding: 0.5rem 0.75rem;
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: var(--table-stripe); }
+
+  ul, ol {
+    margin: 0.5rem 0 1rem 1.5rem;
+  }
+
+  li { margin-bottom: 0.3rem; }
+
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .toc h3 {
+    margin-top: 0;
+    font-size: 1rem;
+    font-style: normal;
+  }
+
+  .toc ol { margin-bottom: 0; }
+  .toc li { font-size: 0.92rem; }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .source-tag {
+    font-size: 0.78rem;
+    font-family: -apple-system, system-ui, sans-serif;
+    color: var(--fg-muted);
+    font-style: italic;
+  }
+
+  .gap {
+    color: var(--diverge);
+    font-style: italic;
+    font-size: 0.92rem;
+  }
+
+  .system-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  @media (max-width: 640px) {
+    .system-grid { grid-template-columns: 1fr; }
+  }
+
+  .system-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1rem;
+  }
+
+  .system-card h4 {
+    margin-top: 0;
+    font-style: normal;
+    font-size: 0.95rem;
+  }
+
+  .system-card code {
+    font-size: 0.82em;
+  }
+
+  .sources {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--fg);
+  }
+
+  .sources h2 {
+    border-bottom: none;
+    margin-top: 0;
+  }
+
+  .sources li {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+  }
+
+  details {
+    margin: 0.75rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+  }
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  details[open] summary {
+    margin-bottom: 0.75rem;
+  }
+
+  .weight-strong { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1>Design Token Naming Conventions</h1>
+<p class="meta">
+  Research report for Corner Store Storefront theming system<br>
+  March 2026 &middot; 11 systems surveyed, ~40 sources consulted
+</p>
+
+<div class="callout">
+  <strong>Scope.</strong> This report studies how open-source design systems name their CSS custom property tokens -- specifically the naming patterns that end users interact with. It does not cover token architecture, build tooling, or internal-only systems. Every claim is sourced; gaps are noted explicitly.
+</div>
+
+<nav class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#survey">System-by-System Survey</a></li>
+    <li><a href="#convergence">Convergence Summary</a></li>
+    <li><a href="#questions">Specific Questions Answered</a></li>
+    <li><a href="#renaming">Renaming History and Lessons</a></li>
+    <li><a href="#naming-guidance">Expert Naming Guidance</a></li>
+    <li><a href="#recommendations">Recommendations for Corner Store</a></li>
+    <li><a href="#sources">Sources</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="survey">1. System-by-System Survey</h2>
+
+<p>For each system: prefix, token name structure, actual token examples, abbreviation policy, semantic vs. functional approach, and scale naming. Quoted token names are verified from official docs or source code.</p>
+
+<!-- Open Props -->
+<h3>1.1 Open Props</h3>
+<p class="source-tag">Source: <a href="https://open-props.style/">open-props.style</a>, <a href="https://github.com/argyleink/open-props">GitHub repo</a>, <a href="https://github.com/argyleink/open-props/issues/160">Issue #160</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td>None. Raw names directly: <code>--blue-5</code>, <code>--size-3</code>. No namespace prefix on the primitive props.</td></tr>
+  <tr><td>Semantic layer</td><td>Theme aliases use unprefixed semantic names: <code>--surface-1</code> through <code>--surface-4</code>, <code>--text-1</code>, <code>--text-2</code>, <code>--link</code>, <code>--brand</code>.</td></tr>
+  <tr><td>Color naming</td><td>Primitive: <code>--{hue}-{0-12}</code> (e.g. <code>--gray-5</code>, <code>--blue-9</code>). Semantic: <code>--surface-{1-4}</code> for backgrounds, <code>--text-{1-2}</code> for text emphasis levels.</td></tr>
+  <tr><td>Scale naming</td><td>Pure numeric: <code>--size-{000-15}</code>, <code>--font-size-{00-8}</code>, <code>--radius-{1-6}</code>, <code>--shadow-{1-6}</code></td></tr>
+  <tr><td>Abbreviations</td><td>Minimal. Spells out: <code>--font-size</code>, <code>--font-weight</code>, <code>--border-size</code>, <code>--letter-spacing</code> (as <code>--font-letterspacing</code>).</td></tr>
+  <tr><td>Approach</td><td>Two-layer: functional primitives (property-based) + semantic theme aliases (purpose-based). Primitives organized by CSS property category.</td></tr>
+  <tr><td>Grammar</td><td><code>--{category}-{scale}</code> for primitives. <code>--{role}-{emphasis}</code> for semantic theme tokens.</td></tr>
+</table>
+
+<div class="callout">
+  <strong>Naming history.</strong> In <a href="https://github.com/argyleink/open-props/issues/160">Issue #160</a>, Adam Argyle considered prefixing theme tokens with an underscore (<code>--_surface-1</code>) to distinguish them from the generic props. He ultimately decided against it, calling the distinction "trivial and silly." The semantic names shipped unprefixed -- a deliberate choice to keep them short and human-friendly.
+</div>
+
+<!-- Pico CSS -->
+<h3>1.2 Pico CSS</h3>
+<p class="source-tag">Source: <a href="https://picocss.com/docs/css-variables">picocss.com/docs/css-variables</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td><code>--pico-</code> (customizable via Sass <code>$css-var-prefix</code>)</td></tr>
+  <tr><td>Color naming</td><td>Role + property: <code>--pico-primary</code>, <code>--pico-primary-background</code>, <code>--pico-primary-hover</code>, <code>--pico-primary-hover-background</code>. Base page colors: <code>--pico-background-color</code>, <code>--pico-color</code>, <code>--pico-muted-color</code>.</td></tr>
+  <tr><td>Interactive</td><td>States appended: <code>--pico-primary-hover</code>, <code>--pico-primary-hover-background</code>, <code>--pico-primary-focus</code>, <code>--pico-primary-inverse</code></td></tr>
+  <tr><td>Component tokens</td><td>Component + property: <code>--pico-card-background-color</code>, <code>--pico-card-border-color</code>, <code>--pico-form-element-spacing-vertical</code>, <code>--pico-switch-background-color</code></td></tr>
+  <tr><td>Abbreviations</td><td>None. Everything spelled out: <code>background-color</code>, <code>border-color</code>, <code>spacing-vertical</code>.</td></tr>
+  <tr><td>Scale naming</td><td>No numeric scales. Single values per property.</td></tr>
+  <tr><td>Grammar</td><td><code>--pico-{component}-{property}</code> or <code>--pico-{role}-{state}-{property}</code>. ~130 tokens total.</td></tr>
+</table>
+
+<!-- Shoelace / Web Awesome -->
+<h3>1.3 Shoelace (Web Awesome)</h3>
+<p class="source-tag">Source: <a href="https://shoelace.style/tokens/color">shoelace.style/tokens/*</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td><code>--sl-</code> for global design tokens. Component-level properties are unprefixed.</td></tr>
+  <tr><td>Color naming</td><td><code>--sl-color-{palette}-{swatch}</code>. Semantic palettes: <code>primary</code>, <code>success</code>, <code>warning</code>, <code>danger</code>, <code>neutral</code>. Swatches: 50, 100, 200...900, 950.</td></tr>
+  <tr><td>Typography</td><td>T-shirt sizes with multiplier prefix: <code>--sl-font-size-2x-small</code>, <code>--sl-font-size-x-small</code>, <code>--sl-font-size-small</code>, <code>--sl-font-size-medium</code>, <code>--sl-font-size-large</code>, <code>--sl-font-size-x-large</code>, through <code>--sl-font-size-4x-large</code></td></tr>
+  <tr><td>Spacing</td><td><code>--sl-spacing-3x-small</code> through <code>--sl-spacing-4x-large</code> (same t-shirt pattern)</td></tr>
+  <tr><td>Border radius</td><td><code>--sl-border-radius-small</code>, <code>-medium</code>, <code>-large</code>, <code>-x-large</code>, <code>-circle</code>, <code>-pill</code></td></tr>
+  <tr><td>Line height</td><td>Relative words: <code>--sl-line-height-denser</code>, <code>-dense</code>, <code>-normal</code>, <code>-loose</code>, <code>-looser</code></td></tr>
+  <tr><td>Abbreviations</td><td>None in global tokens. Everything spelled out.</td></tr>
+  <tr><td>Grammar</td><td><code>--sl-{category}-{subcategory}-{variant}</code></td></tr>
+</table>
+
+<!-- Radix Themes -->
+<h3>1.4 Radix Themes</h3>
+<p class="source-tag">Source: <a href="https://www.radix-ui.com/themes/docs/theme/color">radix-ui.com/themes/docs/theme/color</a>, <a href="https://www.radix-ui.com/themes/docs/theme/spacing">spacing</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td>None. Direct names: <code>--accent-1</code>, <code>--space-3</code>, <code>--gray-7</code>.</td></tr>
+  <tr><td>Color naming</td><td>Semantic aliases: <code>--accent-{1-12}</code>, <code>--accent-a{1-12}</code> (alpha). Functional: <code>--accent-surface</code>, <code>--accent-indicator</code>, <code>--accent-track</code>, <code>--accent-contrast</code>. Page-level: <code>--color-background</code>, <code>--color-surface</code>, <code>--color-panel-solid</code>, <code>--color-panel-translucent</code>, <code>--color-overlay</code>.</td></tr>
+  <tr><td>Spacing</td><td>Numeric: <code>--space-{1-9}</code>. Also <code>--scaling</code> multiplier.</td></tr>
+  <tr><td>Abbreviations</td><td>Minimal. Uses <code>-a</code> suffix for alpha variants.</td></tr>
+  <tr><td>Grammar</td><td><code>--{palette}-{step}</code> or <code>--{palette}-{functional-suffix}</code></td></tr>
+</table>
+
+<div class="callout">
+  <strong>Notable.</strong> Radix distinguishes <code>--color-background</code> (page bg) from <code>--color-surface</code> (component/card bg) explicitly. Both terms coexist with distinct meanings.
+</div>
+
+<!-- shadcn/ui -->
+<h3>1.5 shadcn/ui</h3>
+<p class="source-tag">Source: <a href="https://ui.shadcn.com/docs/theming">ui.shadcn.com/docs/theming</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td>None. Raw names: <code>--background</code>, <code>--primary</code>, <code>--muted</code>.</td></tr>
+  <tr><td>Color naming</td><td>Role pairs: <code>--background</code> / <code>--foreground</code>, <code>--primary</code> / <code>--primary-foreground</code>, <code>--secondary</code> / <code>--secondary-foreground</code>, <code>--muted</code> / <code>--muted-foreground</code>, <code>--accent</code> / <code>--accent-foreground</code>, <code>--destructive</code> / <code>--destructive-foreground</code>. Utility: <code>--border</code>, <code>--input</code>, <code>--ring</code>, <code>--radius</code>.</td></tr>
+  <tr><td>Convention</td><td>"The <code>background</code> suffix is omitted when the variable is used for the background color." So <code>--primary</code> = primary background, <code>--primary-foreground</code> = text on primary.</td></tr>
+  <tr><td>Component tokens</td><td><code>--sidebar</code> / <code>--sidebar-foreground</code>, <code>--sidebar-primary</code>, <code>--chart-1</code> through <code>--chart-5</code></td></tr>
+  <tr><td>Scale naming</td><td>Only <code>--radius</code> (single value). No numeric scales.</td></tr>
+  <tr><td>Abbreviations</td><td>None in token names.</td></tr>
+  <tr><td>Grammar</td><td><code>--{role}</code> for background, <code>--{role}-foreground</code> for text. Extremely flat.</td></tr>
+</table>
+
+<!-- DaisyUI -->
+<h3>1.6 DaisyUI</h3>
+<p class="source-tag">Source: <a href="https://daisyui.com/docs/colors/">daisyui.com/docs/colors</a>, <a href="https://daisyui.com/docs/v5/">v5 release notes</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td>v5: <code>--color-</code> (Tailwind v4 convention). v4 used cryptic abbreviations: <code>--p</code>, <code>--s</code>, <code>--b1</code>.</td></tr>
+  <tr><td>Color naming</td><td>Brand: <code>--color-primary</code>, <code>--color-secondary</code>, <code>--color-accent</code>. Surface: <code>--color-base-100</code>, <code>--color-base-200</code>, <code>--color-base-300</code>. Foreground: <code>--color-{role}-content</code> (e.g. <code>--color-primary-content</code>). State: <code>--color-info</code>, <code>--color-success</code>, <code>--color-warning</code>, <code>--color-error</code>.</td></tr>
+  <tr><td>Pairing convention</td><td><code>-content</code> suffix for foreground/text on any color: <code>--color-primary-content</code>, <code>--color-base-content</code>, <code>--color-error-content</code>.</td></tr>
+  <tr><td>Abbreviations</td><td>v5 eliminated abbreviations. Renamed <code>--p</code> to <code>--color-primary</code>, <code>--b1</code> to <code>--color-base-100</code>, etc.</td></tr>
+  <tr><td>Grammar</td><td><code>--color-{role}</code> for bg, <code>--color-{role}-content</code> for text.</td></tr>
+</table>
+
+<div class="callout">
+  <strong>Renaming case study.</strong> DaisyUI v4's abbreviated tokens (<code>--p</code>, <code>--s</code>, <code>--b1</code>, <code>--pc</code>, <code>--sf</code>) were a documented pain point. v5 renamed everything to readable full words aligned with Tailwind v4's <code>--color-</code> namespace. This was a breaking change that required manual migration. The lesson: cryptic abbreviations become technical debt.
+</div>
+
+<!-- Chakra UI -->
+<h3>1.7 Chakra UI</h3>
+<p class="source-tag">Source: <a href="https://chakra-ui.com/docs/theming/tokens">chakra-ui.com/docs/theming/tokens</a>, <a href="https://chakra-ui.com/docs/theming/semantic-tokens">semantic tokens</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td><code>--chakra-</code> (customizable).</td></tr>
+  <tr><td>Color naming</td><td>Primitives: <code>--chakra-colors-{hue}-{shade}</code> (e.g. <code>--chakra-colors-red-500</code>). Shades 50-950. Semantic: <code>--chakra-colors-bg</code>, <code>--chakra-colors-fg</code>, <code>--chakra-colors-border</code>.</td></tr>
+  <tr><td>Semantic palette</td><td>Per-color variants: <code>{color}.subtle</code>, <code>{color}.muted</code>, <code>{color}.emphasized</code>, <code>{color}.solid</code>, <code>{color}.fg</code>, <code>{color}.contrast</code>, <code>{color}.focus-ring</code>, <code>{color}.border</code>.</td></tr>
+  <tr><td>Spacing</td><td><code>--chakra-spacing-{n}</code> where n = 0.5, 1, 1.5, 2... 96</td></tr>
+  <tr><td>Typography</td><td>T-shirt: <code>--chakra-font-sizes-2xs</code> through <code>--chakra-font-sizes-9xl</code>. Weights: <code>--chakra-font-weights-thin</code> through <code>--chakra-font-weights-black</code>.</td></tr>
+  <tr><td>Grammar</td><td><code>--chakra-{category}-{name}</code>. Deeply nested: <code>--chakra-colors-gray-500</code>.</td></tr>
+</table>
+
+<!-- Material Design 3 -->
+<h3>1.8 Material Design 3 (Google)</h3>
+<p class="source-tag">Source: <a href="https://material-web.dev/theming/material-theming/">material-web.dev</a>, <a href="https://m3.material.io/styles/color/roles">m3.material.io/styles/color/roles</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td><code>--md-</code> with tier markers: <code>--md-ref-</code> (reference), <code>--md-sys-</code> (system), component tokens unprefixed from tier.</td></tr>
+  <tr><td>Color naming</td><td>Surface hierarchy: <code>--md-sys-color-surface</code>, <code>--md-sys-color-surface-container</code>. "On" pattern: <code>--md-sys-color-on-surface</code>, <code>--md-sys-color-on-primary</code>, <code>--md-sys-color-on-error</code>. Roles: <code>primary</code>, <code>secondary</code>, <code>tertiary</code>, <code>error</code> each with <code>on-</code> and <code>-container</code> + <code>on-{role}-container</code> variants.</td></tr>
+  <tr><td>Typography</td><td><code>--md-sys-typescale-body-medium-size</code>, <code>--md-sys-typescale-body-medium-line-height</code></td></tr>
+  <tr><td>Shape</td><td><code>--md-sys-shape-corner-small</code>, <code>-medium</code>, <code>-large</code></td></tr>
+  <tr><td>Abbreviations</td><td>None. Everything spelled out including tier markers.</td></tr>
+  <tr><td>Grammar</td><td><code>--md-{tier}-{category}-{role}</code> for system tokens. <code>--md-{component}-{element}-{property}</code> for component tokens.</td></tr>
+</table>
+
+<div class="callout">
+  <strong>The "on-" pattern.</strong> Material Design popularized using <code>on-{surface}</code> to name the foreground/text color for a given background. <code>--md-sys-color-primary</code> is the background; <code>--md-sys-color-on-primary</code> is the text that sits on it. This is a widely recognized convention, though most lighter-weight systems use <code>-foreground</code> or <code>-content</code> instead.
+</div>
+
+<!-- Salesforce SLDS -->
+<h3>1.9 Lightning Design System (Salesforce)</h3>
+<p class="source-tag">Source: <a href="https://www.lightningdesignsystem.com/2e1ef8501/p/591960-global-styling-hooks">SLDS docs</a>, <a href="https://www.salesforce.com/blog/what-are-styling-hooks/">Salesforce blog</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td><code>--slds-g-</code> (g = global scope)</td></tr>
+  <tr><td>Grammar</td><td><code>--slds-g-{category}-{property}-{pairing}-{role}-{attribute}-{state}-{range}</code>. Most complete formal grammar of any system surveyed.</td></tr>
+  <tr><td>Color naming</td><td><code>--slds-g-color-surface-container-1</code>, using numeric range (lowest = lightest).</td></tr>
+  <tr><td>Categories</td><td>color, font, radius, shadow, spacing, sizing -- each with its own range.</td></tr>
+  <tr><td>Abbreviations</td><td>None. BEM-influenced verbose naming.</td></tr>
+  <tr><td>Approach</td><td>Highly structured, enterprise-grade. Each segment of the name has formal semantics.</td></tr>
+</table>
+
+<!-- Adobe Spectrum -->
+<h3>1.10 Spectrum (Adobe)</h3>
+<p class="source-tag">Source: <a href="https://spectrum.adobe.com/page/design-tokens/">spectrum.adobe.com</a>, <a href="https://github.com/adobe/spectrum-css">GitHub</a></p>
+
+<table>
+  <tr><th>Attribute</th><th>Details</th></tr>
+  <tr><td>Prefix</td><td><code>--spectrum-</code></td></tr>
+  <tr><td>Color naming</td><td><code>--spectrum-gray-100</code> through <code>--spectrum-gray-900</code>. Semantic: <code>--spectrum-swatch-border-color</code>.</td></tr>
+  <tr><td>Sizing</td><td><code>--spectrum-component-height-200</code>, <code>--spectrum-font-size-100</code></td></tr>
+  <tr><td>Component overrides</td><td><code>--mod-{component}-{property}</code> prefix for component-level overrides.</td></tr>
+  <tr><td>Naming rule</td><td>"Token names in CSS are identical to the design specification, but with <code>--spectrum-</code> prefixed."</td></tr>
+  <tr><td>Grammar</td><td><code>--spectrum-{category}-{value}</code></td></tr>
+</table>
+
+<!-- Additional systems -->
+<h3>1.11 Additional Systems Surveyed</h3>
+
+<details>
+  <summary>Nord Health Design System</summary>
+  <p class="source-tag">Source: <a href="https://nordhealth.design/naming/">nordhealth.design/naming</a></p>
+  <p>Prefix: <code>--n-</code>. Grammar: <code>--n-{category}-{subcategory}-{name}</code>. Color roles: <code>accent</code>, <code>border</code>, <code>text</code>, <code>status</code>, <code>surface</code>. Modifiers: <code>weak</code>, <code>strong</code>, <code>active</code>. Sizes: t-shirt (<code>s</code>, <code>m</code>, <code>l</code>, <code>xl</code>). Examples: <code>--n-color-accent</code>, <code>--n-color-text-weak</code>, <code>--n-color-border-strong</code>, <code>--n-space-xl</code>.</p>
+</details>
+
+<details>
+  <summary>Atlassian Design System</summary>
+  <p class="source-tag">Source: <a href="https://atlassian.design/components/tokens/">atlassian.design</a></p>
+  <p>Prefix: <code>--ds-</code>. Grammar: <code>--ds-{category}-{modifier}</code>. Color: <code>--ds-text</code>, <code>--ds-text-subtle</code>, <code>--ds-text-inverse</code>, <code>--ds-background-neutral</code>, <code>--ds-background-brand-bold</code>. Elevation: <code>--ds-surface-raised</code>, <code>--ds-surface-overlay</code>. Intensity modifiers: <code>-subtlest</code>, <code>-subtler</code>, <code>-subtle</code>, <code>-bolder</code>, <code>-boldest</code>. Spacing: <code>--ds-space-050</code>, <code>--ds-space-100</code>, <code>--ds-space-200</code>.</p>
+</details>
+
+<details>
+  <summary>Tailwind CSS v4</summary>
+  <p class="source-tag">Source: <a href="https://tailwindcss.com/docs/theme">tailwindcss.com/docs/theme</a></p>
+  <p>Prefix: namespace-based. <code>--color-{name}</code>, <code>--spacing-{n}</code>, <code>--font-{name}</code>, <code>--radius-{size}</code>, <code>--shadow-{size}</code>. Font sizes: <code>--text-xs</code> through <code>--text-9xl</code>. Radius: <code>--radius-xs</code> through <code>--radius-4xl</code>. Weights: <code>--font-weight-thin</code> through <code>--font-weight-black</code>. No global prefix -- the namespace IS the category.</p>
+</details>
+
+<details>
+  <summary>IBM Carbon Design System</summary>
+  <p class="source-tag">Source: <a href="https://carbondesignsystem.com/elements/themes/overview/">carbondesignsystem.com</a>, <a href="https://carbondesignsystem.com/migrating/guide/design/">migration guide</a></p>
+  <p>Prefix: <code>--cds-</code>. Underwent major rename v10->v11: numeric suffixes (<code>interactive-01</code>, <code>text-01</code>, <code>ui-01</code>) replaced with descriptive adjectives (<code>text-primary</code>, <code>layer-01</code>). New grammar: <code>[element]-[role]-[order]-[state]</code>. 52 universal color tokens per theme.</p>
+</details>
+
+<details>
+  <summary>U.S. Web Design System (USWDS)</summary>
+  <p class="source-tag">Source: <a href="https://designsystem.digital.gov/design-tokens/">designsystem.digital.gov</a></p>
+  <p>Five color families: <code>base</code>, <code>primary</code>, <code>secondary</code>, <code>accent-warm</code>, <code>accent-cool</code>. Seven lightness grades per family. CSS prefix: <code>usa-</code>. Two-tier token model: system tokens (complete palette) and theme tokens (role-based subset).</p>
+</details>
+
+
+<!-- ============================================================ -->
+<h2 id="convergence">2. Convergence Summary</h2>
+
+<p>Across the 11 systems studied, certain patterns recur frequently enough to be considered de facto standards. Others remain genuinely contested. Here is what I found.</p>
+
+<h3>2.1 Where Systems Converge <span class="verdict converge">Strong Agreement</span></h3>
+
+<h4>Prefix for collision avoidance</h4>
+<p>Every system that ships as a library uses a prefix: <code>--sl-</code>, <code>--pico-</code>, <code>--chakra-</code>, <code>--md-</code>, <code>--slds-</code>, <code>--spectrum-</code>, <code>--ds-</code>, <code>--n-</code>, <code>--cds-</code>. The only exceptions are shadcn/ui and Radix Themes, which generate project-local CSS and don't need to avoid collisions with other libraries. <span class="weight-strong">For any system that ships as a package, a short prefix is universal practice.</span></p>
+
+<h4>Semantic (role-based) over functional (property-based) for theme tokens</h4>
+<p>Every system studied uses semantic naming for its theme-level color tokens. No system asks users to set <code>--background-color-of-card</code>. They all abstract to role: <code>primary</code>, <code>surface</code>, <code>accent</code>, <code>neutral</code>, <code>muted</code>, <code>destructive</code>/<code>error</code>/<code>danger</code>. The functional/property layer lives underneath (or doesn't exist at all).</p>
+
+<h4>Background/foreground pairing with consistent suffix</h4>
+<p>Every system that exposes user-facing color tokens pairs backgrounds with foreground/text tokens. The suffix varies, but the pattern is universal:</p>
+<table>
+  <tr><th>System</th><th>Background</th><th>Foreground suffix</th></tr>
+  <tr><td>shadcn/ui</td><td><code>--primary</code></td><td><code>--primary-foreground</code></td></tr>
+  <tr><td>DaisyUI v5</td><td><code>--color-primary</code></td><td><code>--color-primary-content</code></td></tr>
+  <tr><td>Material Design 3</td><td><code>--md-sys-color-primary</code></td><td><code>--md-sys-color-on-primary</code></td></tr>
+  <tr><td>Chakra UI</td><td><code>colors.bg</code></td><td><code>colors.fg</code></td></tr>
+  <tr><td>Nord Health</td><td><code>--n-color-surface</code></td><td><code>--n-color-text</code></td></tr>
+  <tr><td>Open Props</td><td><code>--surface-{n}</code></td><td><code>--text-{n}</code></td></tr>
+  <tr><td>Radix Themes</td><td><code>--color-background</code></td><td>(implicit via scale steps)</td></tr>
+  <tr><td>Atlassian</td><td><code>--ds-background-*</code></td><td><code>--ds-text-*</code></td></tr>
+</table>
+
+<h4>No abbreviations in public token names</h4>
+<p>The clear trend is toward full words. Pico spells out <code>background-color</code>. Shoelace spells out <code>border-radius</code>. Material spells out everything including tier markers. Nord explicitly recommends full words in their naming docs. DaisyUI's migration FROM abbreviations (<code>--p</code>, <code>--b1</code>) TO full words (<code>--color-primary</code>, <code>--color-base-100</code>) is the strongest evidence that abbreviations are a mistake for public APIs.</p>
+
+<p>The only common exception: <code>bg</code>/<code>fg</code> appear in Chakra UI and Tailwind utility classes, where brevity in heavily-repeated contexts is valued. But even Chakra uses full words for its CSS custom properties (<code>--chakra-colors-bg</code> is a semantic token name, not an abbreviation -- "bg" is the concept).</p>
+
+<h4>Kebab-case with hyphens</h4>
+<p>Universal. Every system uses <code>kebab-case</code> for CSS custom properties. No camelCase, no underscores (outside of Open Props' briefly-considered <code>--_</code> prefix).</p>
+
+<h3>2.2 Where Systems Diverge <span class="verdict diverge">No Consensus</span></h3>
+
+<h4>Scale naming: numbers vs. t-shirt sizes vs. relative words</h4>
+<table>
+  <tr><th>Approach</th><th>Used by</th><th>Examples</th></tr>
+  <tr><td>Pure numbers</td><td>Open Props, Radix, Tailwind</td><td><code>--size-3</code>, <code>--space-4</code>, <code>--text-sm</code> (Tailwind maps to numbers internally)</td></tr>
+  <tr><td>T-shirt sizes</td><td>Shoelace, Tailwind, Chakra, Nord</td><td><code>--sl-font-size-x-large</code>, <code>--radius-lg</code>, <code>--n-space-xl</code></td></tr>
+  <tr><td>Relative words</td><td>Shoelace (for line-height)</td><td><code>--sl-line-height-dense</code>, <code>--sl-line-height-loose</code></td></tr>
+  <tr><td>Hundreds scale</td><td>Material, Spectrum, Atlassian</td><td><code>--spectrum-font-size-100</code>, <code>--ds-space-200</code></td></tr>
+  <tr><td>Comparative adjectives</td><td>Corner Store draft</td><td><code>--cs-font-size-smaller</code>, <code>--cs-font-size-largest</code></td></tr>
+</table>
+
+<h4>Foreground naming: <code>-foreground</code> vs. <code>-content</code> vs. <code>on-</code> vs. <code>-text</code></h4>
+<p>No single winner. <code>-foreground</code> (shadcn), <code>-content</code> (DaisyUI), <code>on-</code> prefix (Material), and separate <code>text</code> category (Open Props, Atlassian, Nord) are all in active use.</p>
+
+<h4>Color hierarchy: numbered vs. named emphasis</h4>
+<p>Open Props uses <code>--text-1</code>, <code>--text-2</code> (numbered emphasis). shadcn uses named roles (<code>--muted</code>, <code>--accent</code>). Atlassian uses adjective intensity (<code>-subtle</code>, <code>-bold</code>). Material uses <code>primary</code>/<code>secondary</code>/<code>tertiary</code>. No convergence.</p>
+
+<h3>2.3 Patterns with Emerging Consensus <span class="verdict mixed">Trending</span></h3>
+
+<h4>"surface" has become standard terminology</h4>
+<p>Used by: Material Design 3 (<code>surface</code>, <code>surface-container</code>, <code>on-surface</code>), Open Props (<code>--surface-1</code> through <code>--surface-4</code>), Radix Themes (<code>--color-surface</code>, <code>--accent-surface</code>), Nord Health (<code>surface</code> role), Atlassian (<code>--ds-surface-raised</code>, <code>--ds-surface-overlay</code>), SLDS (<code>--slds-g-color-surface-container-1</code>).</p>
+<p>Not used by: shadcn/ui (uses <code>--background</code>), Pico CSS (uses <code>--background-color</code>), DaisyUI (uses <code>--color-base-100</code>).</p>
+<p><span class="weight-strong">"Surface" is not CSS-native vocabulary, but it has been adopted by enough major systems that it is no longer jargon -- it is emerging standard terminology for "background of a container/component."</span></p>
+
+<h4>"primary/secondary/accent" hierarchy is dominant</h4>
+<p>Nearly every system uses <code>primary</code>. Most add <code>secondary</code>. Several include <code>accent</code>. <code>tertiary</code> appears mainly in Material Design. The broader community has largely settled on primary + secondary + accent as the standard three-level brand color hierarchy.</p>
+
+<h4>State colors: <code>success</code>, <code>warning</code>, <code>error</code>/<code>danger</code>/<code>destructive</code></h4>
+<p><code>success</code> and <code>warning</code> are universal. The "bad" state varies: <code>error</code> (DaisyUI, Material, Carbon), <code>danger</code> (Shoelace), <code>destructive</code> (shadcn). <code>info</code> appears in DaisyUI, Shoelace, and Chakra but not universally.</p>
+
+
+<!-- ============================================================ -->
+<h2 id="questions">3. Specific Questions Answered</h2>
+
+<h3>3.1 Is "surface" jargon or standard?</h3>
+<p><span class="weight-strong">It has become standard.</span> Six of the eleven systems surveyed use "surface" as a token name for background colors. Material Design -- which has enormous reach through Android and Flutter -- made it a first-class concept. Open Props, Radix, Nord, Atlassian, and SLDS followed. It still requires a one-sentence explanation for someone encountering it for the first time, but that sentence is "surface = background of a thing." The Figma design community also uses "surface" as a standard element role for color variables.</p>
+<p class="source-tag">Verified via: <a href="https://m3.material.io/styles/color/roles">Material color roles</a>, <a href="https://open-props.style/">Open Props</a>, <a href="https://www.radix-ui.com/themes/docs/theme/color">Radix color docs</a>, <a href="https://nordhealth.design/naming/">Nord naming</a>, <a href="https://atlassian.design/components/tokens/">Atlassian tokens</a></p>
+
+<h3>3.2 "foreground/background" or "surface/text"?</h3>
+<p>These are two different framing decisions that both work. The key distinction:</p>
+<ul>
+  <li><strong>"foreground/background"</strong> treats colors as a pair on the same concept. shadcn: <code>--primary</code> (bg) + <code>--primary-foreground</code> (text). DaisyUI: <code>--color-primary</code> + <code>--color-primary-content</code>. The pair belongs together.</li>
+  <li><strong>"surface/text"</strong> treats colors as separate categories. Open Props: <code>--surface-1</code> + <code>--text-1</code>. Atlassian: <code>--ds-background-*</code> + <code>--ds-text-*</code>. The categories are independent; you combine them yourself.</li>
+</ul>
+<p>For a small token set (~45 tokens) aimed at non-expert users, the <strong>separate-category approach (surface + text)</strong> is simpler to explain: "here are your backgrounds, here are your text colors." The paired approach requires understanding that <code>--primary</code> and <code>--primary-foreground</code> are a unit.</p>
+
+<h3>3.3 Primary/secondary/tertiary hierarchy</h3>
+<p><code>primary</code> is universal. <code>secondary</code> is very common. <code>tertiary</code> is Material-specific and rarely adopted elsewhere. Most systems use <code>accent</code> instead of (or alongside) secondary. DaisyUI uses all three: <code>primary</code>, <code>secondary</code>, <code>accent</code>. shadcn uses <code>primary</code>, <code>secondary</code>, <code>accent</code>, <code>muted</code>.</p>
+<p>Multiple authors note that beyond "tertiary" the Latin ordinals (quaternary, quinary) are impractical. Systems that need more levels switch to descriptive names or numeric scales.</p>
+<p class="source-tag">Verified via: <a href="https://daisyui.com/docs/colors/">DaisyUI colors</a>, <a href="https://ui.shadcn.com/docs/theming">shadcn theming</a>, <a href="https://m3.material.io/styles/color/roles">Material color roles</a></p>
+
+<h3>3.4 Spell out "background" or abbreviate to "bg"?</h3>
+<p>The weight of evidence favors spelling it out:</p>
+<ul>
+  <li>Pico: <code>--pico-background-color</code>, <code>--pico-card-background-color</code> (full)</li>
+  <li>SLDS: <code>--slds-g-color-background-*</code> (full)</li>
+  <li>Atlassian: <code>--ds-background-*</code> (full)</li>
+  <li>Chakra: <code>--chakra-colors-bg</code> (abbreviated, but "bg" is the semantic concept name)</li>
+  <li>Tailwind: <code>bg-</code> in utility classes, but <code>--color-</code> in theme variables (no "bg" in custom properties)</li>
+</ul>
+<p>Most systems that expose CSS custom properties spell out "background." Abbreviation <code>bg</code> is more common in utility-class frameworks (Tailwind) where it's typed repeatedly. For token names that appear once in a theme file, the consensus favors readability.</p>
+<p>However: Corner Store uses <code>--cs-interactive-bg</code> in its current draft. This is defensible if "interactive" is the concept and "bg" is a well-understood shorthand for a property within that concept. But it mixes an abbreviated property (<code>bg</code>) with spelled-out concepts, which creates inconsistency with tokens like <code>--cs-surface-page</code> and <code>--cs-border-color</code>.</p>
+
+<h3>3.5 Interactive element tokens (buttons, links)</h3>
+<p>Approaches vary widely:</p>
+<ul>
+  <li><strong>Material:</strong> No dedicated interactive tokens. Buttons use <code>primary</code>, <code>secondary</code>, <code>tertiary</code>, plus component tokens (<code>--md-filled-button-container-color</code>).</li>
+  <li><strong>Pico:</strong> Interactive states on the color role: <code>--pico-primary-hover</code>, <code>--pico-primary-focus</code>.</li>
+  <li><strong>Carbon v10:</strong> Dedicated interactive concept: <code>interactive-01</code>, <code>interactive-02</code>.</li>
+  <li><strong>Shoelace:</strong> Component tokens: <code>--sl-button-font-size-medium</code>, <code>--sl-input-background-color-hover</code>.</li>
+  <li><strong>shadcn:</strong> No interactive-specific tokens. Components consume <code>--primary</code> and <code>--primary-foreground</code>.</li>
+</ul>
+<p>The trend is away from dedicated "interactive" tokens and toward components consuming the semantic color roles directly. "Interactive" as a token category is Carbon-era thinking; most modern systems let components reference <code>primary</code>.</p>
+
+<h3>3.6 Font size scale naming</h3>
+<table>
+  <tr><th>System</th><th>Approach</th><th>Examples</th></tr>
+  <tr><td>Open Props</td><td>Numeric index</td><td><code>--font-size-0</code> through <code>--font-size-8</code></td></tr>
+  <tr><td>Tailwind v4</td><td>T-shirt + multiplier</td><td><code>--text-xs</code>, <code>--text-sm</code>, <code>--text-base</code>, <code>--text-lg</code>, <code>--text-xl</code>, <code>--text-2xl</code>...9xl</td></tr>
+  <tr><td>Shoelace</td><td>T-shirt + multiplier</td><td><code>--sl-font-size-2x-small</code> through <code>--sl-font-size-4x-large</code></td></tr>
+  <tr><td>Chakra</td><td>T-shirt + multiplier</td><td><code>--chakra-font-sizes-xs</code> through <code>--chakra-font-sizes-9xl</code></td></tr>
+  <tr><td>Spectrum</td><td>Hundreds</td><td><code>--spectrum-font-size-100</code></td></tr>
+  <tr><td>Corner Store draft</td><td>Comparative adjectives</td><td><code>--cs-font-size-smallest</code>, <code>-smaller</code>, <code>-small</code>, <code>-base</code>, <code>-large</code>, <code>-larger</code>, <code>-largest</code></td></tr>
+</table>
+<p>T-shirt sizing (xs, sm, base/md, lg, xl, 2xl...) is the most common approach. The comparative-adjective approach (smallest, smaller, small) used in Corner Store's draft is unusual -- I found no other system using it. The problem with comparatives is twofold: (1) they imply a complete ordering that prevents inserting new sizes, and (2) <code>smallest</code> suggests "the smallest possible" rather than "a small size within the system."</p>
+
+<h3>3.7 Spacing token naming</h3>
+<table>
+  <tr><th>System</th><th>Approach</th><th>Examples</th></tr>
+  <tr><td>Open Props</td><td>Numeric index</td><td><code>--size-1</code> through <code>--size-15</code></td></tr>
+  <tr><td>Radix</td><td>Numeric index</td><td><code>--space-1</code> through <code>--space-9</code></td></tr>
+  <tr><td>Tailwind v4</td><td>Base unit multiplier</td><td><code>--spacing</code> = 0.25rem, used as multiplier</td></tr>
+  <tr><td>Atlassian</td><td>Hundreds</td><td><code>--ds-space-050</code>, <code>--ds-space-100</code>, <code>--ds-space-200</code></td></tr>
+  <tr><td>Nord</td><td>T-shirt</td><td><code>--n-space-s</code>, <code>--n-space-m</code>, <code>--n-space-xl</code></td></tr>
+  <tr><td>Corner Store draft</td><td>Purpose-named</td><td><code>--cs-spacing-container</code>, <code>--cs-spacing-section</code>, <code>--cs-spacing-listing</code></td></tr>
+</table>
+<p>Corner Store's approach is unique among surveyed systems: spacing tokens are named by purpose (<code>container</code>, <code>section</code>, <code>listing</code>) rather than by scale. This is more semantic and arguably more accessible to non-experts, but it creates coupling between tokens and components.</p>
+
+<h3>3.8 Is there a standard token name grammar?</h3>
+<p>No single standard, but a clear pattern emerges across expert guidance and implementations:</p>
+<pre><code>--{prefix}-{category}-{concept}-{property}-{modifier}
+
+Where:
+  prefix   = namespace (cs, sl, pico, md)
+  category = color, font, space, radius, shadow, border
+  concept  = surface, text, interactive, heading, button
+  property = size, weight, color, width (often implied)
+  modifier = variant (hover, muted, large) or scale (1, 2, sm, lg)</code></pre>
+<p>Not every token uses every level. Most small systems use 2-3 levels. SLDS uses up to 7. The key insight from Nathan Curtis (EightShapes): <strong>"Namespaces first, base levels in the middle, modifiers last."</strong></p>
+<p class="source-tag">Source: <a href="https://medium.com/eightshapes-llc/naming-tokens-in-design-systems-9e86c7444676">Nathan Curtis, "Naming Tokens in Design Systems"</a>, <a href="https://smart-interface-design-patterns.com/articles/naming-design-tokens/">Smashing/Vitaly Friedman article</a></p>
+
+
+<!-- ============================================================ -->
+<h2 id="renaming">4. Renaming History and Lessons</h2>
+
+<h3>4.1 DaisyUI v4 to v5: Abbreviations to Full Words</h3>
+<p>DaisyUI v4 used aggressively abbreviated CSS variable names: <code>--p</code> (primary), <code>--s</code> (secondary), <code>--b1</code> (base-100), <code>--pc</code> (primary-content), <code>--sf</code> (secondary-focus). v5 renamed every token to readable full words aligned with Tailwind v4's naming convention: <code>--color-primary</code>, <code>--color-base-100</code>, <code>--color-primary-content</code>.</p>
+<p>This was a full breaking change requiring manual migration. The rename was motivated by Tailwind v4's move to CSS-first configuration with semantic variable names. The lesson: abbreviated names that save keystrokes in authoring become opaque API contracts that resist documentation and onboarding.</p>
+<p class="source-tag">Source: <a href="https://daisyui.com/docs/upgrade/?lang=en">DaisyUI v5 upgrade guide</a>, <a href="https://daisyui.com/blog/daisyui-5-upcoming-changes/">v5 upcoming changes</a></p>
+
+<h3>4.2 IBM Carbon v10 to v11: Numbered to Descriptive</h3>
+<p>Carbon v10 used numeric suffixes: <code>interactive-01</code>, <code>text-01</code>, <code>text-02</code>, <code>ui-01</code>, <code>ui-02</code>, <code>ui-03</code>. Users couldn't tell what the numbers meant without consulting documentation. v11 replaced numbers with descriptive adjectives and renamed categories: <code>text-primary</code>, <code>text-secondary</code>, <code>layer-01</code>. Only layering tokens retained numeric suffixes (where the number has genuine sequential meaning).</p>
+<p>The rename affected 52 universal color tokens per theme. The new grammar is: <code>[element]-[role]-[order]-[state]</code>.</p>
+<p class="source-tag">Source: <a href="https://carbondesignsystem.com/migrating/guide/design/">Carbon migration guide</a></p>
+
+<h3>4.3 Open Props: Considered and Rejected Prefix Change</h3>
+<p>In <a href="https://github.com/argyleink/open-props/issues/160">Issue #160</a>, Adam Argyle considered adding an underscore prefix to theme tokens (<code>--_surface-1</code> instead of <code>--surface-1</code>) to distinguish them from generic props. He closed the issue after deciding the distinction was unnecessary, calling it "trivial and silly." The names shipped unprefixed. This shows that even framework authors agonize over naming, and simplicity often wins over clever disambiguation.</p>
+
+<h3>4.4 Atlassian Design Tokens: Structured Deprecation</h3>
+<p>Atlassian documented a formal deprecation lifecycle: tokens marked deprecated in a minor version, soft-deleted (functional but raising warnings) in the following minor, fully removed in the next major. This three-phase approach (deprecate, soft-delete, remove) is the most structured migration process found in any system surveyed.</p>
+<p class="source-tag">Source: <a href="https://developer.atlassian.com/platform/forge/design-tokens-and-theming/">Atlassian developer docs</a></p>
+
+<h3>4.5 Lessons Synthesized</h3>
+<ul>
+  <li><strong>Abbreviations are technical debt.</strong> Both DaisyUI and Carbon renamed away from abbreviated/numbered tokens toward descriptive names. Neither rename was trivial.</li>
+  <li><strong>Names that need documentation are bad names.</strong> If a user must look up what <code>--b1</code> or <code>--text-02</code> means, the name has failed its primary job.</li>
+  <li><strong>Numbers work when they have inherent meaning.</strong> Radix's <code>--space-1</code> through <code>--space-9</code> works because the numbers form a sequence. Carbon's <code>text-01</code> failed because "01" doesn't tell you what kind of text.</li>
+  <li><strong>Plan for deprecation.</strong> Alias old names to new ones during migration. Atlassian's three-phase approach is the gold standard.</li>
+</ul>
+
+
+<!-- ============================================================ -->
+<h2 id="naming-guidance">5. Expert Naming Guidance</h2>
+
+<h3>5.1 Nathan Curtis (EightShapes)</h3>
+<p>Curtis's taxonomy framework, documented in <a href="https://medium.com/eightshapes-llc/naming-tokens-in-design-systems-9e86c7444676">"Naming Tokens in Design Systems"</a> (2020), is the most-cited reference in this space. Key points:</p>
+<ul>
+  <li>Token names combine up to six levels: <strong>namespace, category, concept, property, variant, scale</strong>.</li>
+  <li>Example: <code>$esds-color-neutral-42</code> = namespace (<code>esds</code>) + category (<code>color</code>) + variant (<code>neutral</code>) + scale (<code>42</code>).</li>
+  <li>"Namespaces first, base levels in the middle, modifiers last."</li>
+  <li>Mode modifiers (light/dark) can be appended but are often handled at the declaration level rather than in the name.</li>
+</ul>
+<p class="gap">Note: The Medium article returned 403 when fetched directly. Key claims above are from search result excerpts and consistent with Curtis's other published work.</p>
+
+<h3>5.2 Vitaly Friedman (Smashing Magazine / Smart Interface Design Patterns)</h3>
+<p>The <a href="https://smart-interface-design-patterns.com/articles/naming-design-tokens/">naming article</a> synthesizes patterns across systems:</p>
+<ul>
+  <li>Naming levels: category, component/concept, property, variant/scale, state, mode.</li>
+  <li>"Regular systems typically use 2-4 levels."</li>
+  <li>"Good tokens explain what they do."</li>
+  <li>Namespaces first, base levels in middle, modifiers last -- consistent with Curtis.</li>
+</ul>
+
+<h3>5.3 W3C Design Tokens Community Group</h3>
+<p>The <a href="https://www.designtokens.org/tr/drafts/format/">DTCG specification</a> (2025.10 stable) intentionally does not prescribe naming conventions. It specifies:</p>
+<ul>
+  <li>Names must be valid JSON strings, are case-sensitive.</li>
+  <li>Characters <code>$</code>, <code>{</code>, <code>}</code>, <code>.</code> are restricted.</li>
+  <li>"Groups are arbitrary and tools should not use them to infer the type or purpose of design tokens."</li>
+  <li>Hierarchical paths use <code>.</code> as separator (e.g. <code>color.brand.primary</code>).</li>
+</ul>
+<p>The spec stays naming-agnostic by design, leaving conventions to individual systems.</p>
+
+<h3>5.4 Smashing Magazine (2024)</h3>
+<p>The <a href="https://www.smashingmagazine.com/2024/05/naming-best-practices/">"Best Practices for Naming"</a> article collects guidance:</p>
+<ul>
+  <li>Use full words instead of abbreviations. Abbreviations are unclear and open to interpretation.</li>
+  <li>Be consistent with prefixes.</li>
+  <li>"A good name has a logical structure, is short, meaningful, and known by everyone."</li>
+  <li>References Romina Kavcic's Design Tokens Naming Playbook for structured naming workshops.</li>
+</ul>
+
+
+<!-- ============================================================ -->
+<h2 id="recommendations">6. Recommendations for Corner Store</h2>
+
+<p>These recommendations apply the research findings to Corner Store's specific context: indie makers with basic CSS knowledge, ~45 tokens, <code>--cs-</code> prefix, semver-bound at v1.</p>
+
+<div class="callout-corner">
+  <strong>Framing.</strong> Corner Store's users are not design system engineers. They are people who make candles and hot sauce. They know enough CSS to change a color value but should never need to decode a naming convention. Every token name should be self-evident on first encounter.
+</div>
+
+<h3>6.1 Keep the <code>--cs-</code> prefix</h3>
+<p><strong>Status: Already correct.</strong> As an npm package, Corner Store needs a namespace prefix. <code>--cs-</code> is short (2 chars), memorable, and avoids collision. This aligns with universal practice across every packaged system surveyed.</p>
+
+<h3>6.2 Keep "surface" for backgrounds</h3>
+<p><strong>Status: Already correct.</strong> <code>--cs-surface-page</code>, <code>--cs-surface-listing</code>, <code>--cs-surface-header</code> align with the emerging standard. Six of eleven systems surveyed use "surface." A one-line comment in the generated theme file ("surface = background color") handles onboarding.</p>
+<p>The current names are also better than generic numbered <code>--cs-surface-1</code> tokens because they name the THING (page, listing, header) rather than an abstract level. A candle maker knows what "listing" means. They don't know what "surface-2" means.</p>
+
+<h3>6.3 Keep "text" as a separate category from "surface"</h3>
+<p><strong>Status: Already correct.</strong> <code>--cs-text-primary</code>, <code>--cs-text-secondary</code>, <code>--cs-text-muted</code> follow the Open Props / Atlassian / Nord pattern of separate text and surface categories. This is simpler to explain than the paired approach (<code>--primary</code> / <code>--primary-foreground</code>), which requires understanding that tokens come in pairs.</p>
+<p>Corner Store doesn't need per-surface foreground tokens because the use case is simple: one page, one text hierarchy, applied across all surfaces. shadcn needs <code>--card-foreground</code> because a card might have different text than the page. A maker's storefront does not have this complexity.</p>
+
+<h3>6.4 Rename "interactive" to spelled-out names</h3>
+<p><strong>Recommendation: Rename.</strong> The current <code>--cs-interactive-bg</code>, <code>--cs-interactive-bg-hover</code>, <code>--cs-interactive-text</code> have two problems:</p>
+<ol>
+  <li><code>bg</code> is an abbreviation in a system that otherwise spells things out (<code>surface</code>, <code>border-color</code>, <code>font-family</code>). This inconsistency was noted in the survey.</li>
+  <li>"Interactive" is jargon that a candle maker will not immediately understand. The research shows the trend is away from dedicated "interactive" tokens and toward buttons/CTAs consuming brand-role tokens directly.</li>
+</ol>
+<p>Two paths forward:</p>
+
+<p><strong>Option A: Rename to <code>--cs-action-*</code> with spelled-out properties.</strong></p>
+<pre><code>--cs-action-background       /* Button/CTA background */
+--cs-action-background-hover /* Button hover state */
+--cs-action-text             /* Button/CTA text color */</code></pre>
+<p>"Action" is shorter than "interactive" and more intuitive -- a button IS an action. But it still introduces a concept name for what is essentially "the button color."</p>
+
+<p><strong>Option B: Rename to <code>--cs-button-*</code>.</strong></p>
+<pre><code>--cs-button-background       /* Button/CTA background */
+--cs-button-background-hover /* Button hover state */
+--cs-button-text             /* Button/CTA text color */</code></pre>
+<p>Most direct. A maker sees "button" and knows exactly what it styles. The concern is that it's component-specific, which could feel limiting. But Corner Store has exactly one interactive element (the buy CTA). Naming it what it is has no downside.</p>
+
+<p>I would lean toward <strong>Option B</strong> based on the research principle "name the thing, not the abstraction," which is already embedded in Corner Store's own selector naming philosophy (<code>.cs-listing-buy</code>, not <code>.cs-interactive-element</code>). But this is a one-way-ish decision that deserves your judgment.</p>
+
+<h3>6.5 Reconsider the font-size comparative scale</h3>
+<p><strong>Recommendation: Rename.</strong> The current scale (<code>smallest</code>, <code>smaller</code>, <code>small</code>, <code>base</code>, <code>large</code>, <code>larger</code>, <code>largest</code>) has no precedent in any system surveyed. Two concerns from the research:</p>
+<ol>
+  <li><strong>Extensibility.</strong> "Smallest" and "largest" are superlatives that semantically close the scale. What if you need something smaller than "smallest" later? T-shirt sizes (<code>xs</code>, <code>2xs</code>) or numbers can always extend.</li>
+  <li><strong>Familiarity.</strong> Every developer who has used Tailwind, Chakra, Shoelace, or Spectrum has internalized the t-shirt / multiplier pattern. Comparative adjectives are a convention of one.</li>
+</ol>
+<p>Recommended alternatives (in order of preference for Corner Store's audience):</p>
+
+<p><strong>Option A: T-shirt with spelled-out words.</strong> Follows Shoelace's lead. Maximum readability for CSS-literate non-experts.</p>
+<pre><code>--cs-font-size-x-small    /* Fine print, captions */
+--cs-font-size-small      /* Labels, metadata */
+--cs-font-size-base       /* Body text (renamed from nothing) */
+--cs-font-size-large      /* Subheadings */
+--cs-font-size-x-large    /* Section headings */
+--cs-font-size-2x-large   /* Page titles */</code></pre>
+
+<p><strong>Option B: T-shirt abbreviated.</strong> Follows Tailwind/Chakra. Shorter, but abbreviations.</p>
+<pre><code>--cs-font-size-xs
+--cs-font-size-sm
+--cs-font-size-base
+--cs-font-size-lg
+--cs-font-size-xl
+--cs-font-size-2xl</code></pre>
+
+<p>Given Corner Store's "spell things out" tendency everywhere else, <strong>Option A</strong> is more internally consistent. You lose the Tailwind familiarity of <code>sm</code>/<code>lg</code> but gain clarity for the maker audience. And <code>x-small</code>, <code>small</code>, <code>large</code>, <code>x-large</code> maps directly to CSS's own <code>font-size</code> keywords, which gives them prior art in the language itself.</p>
+
+<h3>6.6 Keep purpose-named spacing tokens (but understand the trade-off)</h3>
+<p>Corner Store's spacing tokens (<code>--cs-spacing-container</code>, <code>--cs-spacing-section</code>, <code>--cs-spacing-listing</code>) are purpose-named rather than scale-based. No other surveyed system does this. Every other system uses a generic spacing scale (<code>--space-1</code>, <code>--spacing-md</code>, <code>--n-space-xl</code>).</p>
+<p>However, for ~45 tokens aimed at people who change values and don't compose new layouts, purpose-naming has a genuine advantage: a maker knows exactly what <code>--cs-spacing-listing</code> controls without CSS knowledge. The trade-off is that adding a new component requires adding new spacing tokens. At Corner Store's scale (~5 components, stable scope), this is manageable.</p>
+<p><strong>Recommendation: Keep purpose-named spacing for now.</strong> If the component count grows significantly, introduce a supplementary generic scale. But don't pre-optimize for a problem that doesn't exist yet.</p>
+
+<h3>6.7 Consistency pass on the full token set</h3>
+<p>The research revealed a few inconsistencies in the current draft worth resolving before v1:</p>
+
+<table>
+  <tr><th>Current token</th><th>Issue</th><th>Suggested fix</th></tr>
+  <tr><td><code>--cs-interactive-bg</code></td><td>Abbreviation + jargon (see 6.4)</td><td><code>--cs-button-background</code> or <code>--cs-action-background</code></td></tr>
+  <tr><td><code>--cs-interactive-bg-hover</code></td><td>Same</td><td><code>--cs-button-background-hover</code></td></tr>
+  <tr><td><code>--cs-interactive-text</code></td><td>Same</td><td><code>--cs-button-text</code></td></tr>
+  <tr><td><code>--cs-font-size-smallest</code></td><td>Comparative adjective, no precedent (see 6.5)</td><td><code>--cs-font-size-x-small</code></td></tr>
+  <tr><td><code>--cs-font-size-smaller</code></td><td>Same</td><td><code>--cs-font-size-small</code></td></tr>
+  <tr><td><code>--cs-font-size-small</code></td><td>(Collides if adopting t-shirt)</td><td><code>--cs-font-size-small</code> (stays, maps to body-supporting)</td></tr>
+  <tr><td><code>--cs-font-size-larger</code></td><td>Comparative adjective</td><td><code>--cs-font-size-x-large</code></td></tr>
+  <tr><td><code>--cs-font-size-largest</code></td><td>Superlative, closes the scale</td><td><code>--cs-font-size-2x-large</code></td></tr>
+  <tr><td><code>--cs-radius-listing</code></td><td>Component-coupled radius</td><td>Fine for now -- only two radii. But if a third appears, consider a generic scale.</td></tr>
+  <tr><td><code>--cs-shadow-listing-hover</code></td><td>Only one shadow token, component-coupled</td><td>Fine for now -- consider <code>--cs-shadow-hover</code> if it's used beyond listings.</td></tr>
+</table>
+
+<h3>6.8 Grammar summary for Corner Store</h3>
+<p>Based on the research, the recommended grammar for <code>--cs-</code> tokens is:</p>
+<pre><code>--cs-{category}-{concept}-{modifier}
+
+Categories (what kind of property):
+  surface, text, button, border, radius, shadow,
+  font, spacing, transition, focus, layout
+
+Concepts (what thing):
+  page, listing, header, placeholder, section, container
+
+Modifiers (which variant):
+  hover, muted, tight, base, small, large, x-large</code></pre>
+<p>Not every token uses every level. The guiding principle: <strong>a maker who has never read the documentation should be able to guess what the token controls from its name alone.</strong></p>
+
+
+<!-- ============================================================ -->
+<h2 id="methodology">Research Gaps and Methodology Notes</h2>
+
+<ul>
+  <li>Nathan Curtis's canonical "Naming Tokens in Design Systems" article on Medium returned a 403 error when fetched. Claims attributed to Curtis come from search result excerpts and his other published writing. I could not verify exact quotes.</li>
+  <li>IBM Carbon's specific token rename mappings (v10 name -> v11 name, complete list) were referenced in migration docs but the GitHub markdown file hit a rate limit. The general pattern (numeric to descriptive) is confirmed across multiple sources.</li>
+  <li>Francesco Improta's "The Difference Between Background and Surface Tokens" article was behind a paywall. The distinction between these concepts is inferred from system implementations rather than this specific source.</li>
+  <li>The survey focuses on CSS custom property naming specifically. Systems like Chakra and Carbon also expose tokens through JavaScript APIs with different naming -- those APIs were not studied.</li>
+  <li>This report does not cover naming for animation, z-index, or breakpoint tokens, as those are outside Corner Store's current scope.</li>
+</ul>
+
+
+<!-- ============================================================ -->
+<div class="sources">
+<h2 id="sources">Sources</h2>
+
+<h3>System Documentation</h3>
+<ol>
+  <li><a href="https://open-props.style/">Open Props -- official site and token reference</a></li>
+  <li><a href="https://github.com/argyleink/open-props">Open Props GitHub repository</a></li>
+  <li><a href="https://github.com/argyleink/open-props/issues/160">Open Props Issue #160 -- naming convention discussion</a></li>
+  <li><a href="https://picocss.com/docs/css-variables">Pico CSS -- CSS variables documentation</a></li>
+  <li><a href="https://shoelace.style/tokens/color">Shoelace -- color tokens</a></li>
+  <li><a href="https://shoelace.style/tokens/typography">Shoelace -- typography tokens</a></li>
+  <li><a href="https://shoelace.style/tokens/border-radius">Shoelace -- border radius tokens</a></li>
+  <li><a href="https://shoelace.style/tokens/more">Shoelace -- additional tokens</a></li>
+  <li><a href="https://www.radix-ui.com/themes/docs/theme/color">Radix Themes -- color documentation</a></li>
+  <li><a href="https://www.radix-ui.com/themes/docs/theme/spacing">Radix Themes -- spacing documentation</a></li>
+  <li><a href="https://ui.shadcn.com/docs/theming">shadcn/ui -- theming documentation</a></li>
+  <li><a href="https://daisyui.com/docs/colors/">DaisyUI -- colors documentation</a></li>
+  <li><a href="https://daisyui.com/docs/v5/">DaisyUI -- v5 release notes</a></li>
+  <li><a href="https://daisyui.com/docs/upgrade/?lang=en">DaisyUI -- v5 upgrade guide</a></li>
+  <li><a href="https://chakra-ui.com/docs/theming/tokens">Chakra UI -- design tokens</a></li>
+  <li><a href="https://chakra-ui.com/docs/theming/semantic-tokens">Chakra UI -- semantic tokens</a></li>
+  <li><a href="https://material-web.dev/theming/material-theming/">Material Web -- theming</a></li>
+  <li><a href="https://m3.material.io/styles/color/roles">Material Design 3 -- color roles</a></li>
+  <li><a href="https://m3.material.io/foundations/design-tokens">Material Design 3 -- design tokens</a></li>
+  <li><a href="https://www.lightningdesignsystem.com/2e1ef8501/p/591960-global-styling-hooks">SLDS -- global styling hooks</a></li>
+  <li><a href="https://www.salesforce.com/blog/what-are-styling-hooks/">Salesforce -- what are styling hooks</a></li>
+  <li><a href="https://spectrum.adobe.com/page/design-tokens/">Adobe Spectrum -- design tokens</a></li>
+  <li><a href="https://github.com/adobe/spectrum-css">Adobe Spectrum CSS -- GitHub</a></li>
+  <li><a href="https://nordhealth.design/naming/">Nord Health -- naming conventions</a></li>
+  <li><a href="https://atlassian.design/components/tokens/">Atlassian -- design tokens</a></li>
+  <li><a href="https://developer.atlassian.com/platform/forge/design-tokens-and-theming/">Atlassian -- tokens and theming</a></li>
+  <li><a href="https://tailwindcss.com/docs/theme">Tailwind CSS v4 -- theme variables</a></li>
+  <li><a href="https://carbondesignsystem.com/elements/themes/overview/">IBM Carbon -- themes overview</a></li>
+  <li><a href="https://carbondesignsystem.com/migrating/guide/design/">IBM Carbon -- migration guide (design)</a></li>
+  <li><a href="https://designsystem.digital.gov/design-tokens/">USWDS -- design tokens</a></li>
+</ol>
+
+<h3>Expert Guidance and Articles</h3>
+<ol start="31">
+  <li><a href="https://medium.com/eightshapes-llc/naming-tokens-in-design-systems-9e86c7444676">Nathan Curtis, "Naming Tokens in Design Systems" (EightShapes, 2020)</a></li>
+  <li><a href="https://medium.com/eightshapes-llc/reimagining-a-token-taxonomy-462d35b2b033">Nathan Curtis, "Reimagining a Token Taxonomy" (EightShapes)</a></li>
+  <li><a href="https://smart-interface-design-patterns.com/articles/naming-design-tokens/">Vitaly Friedman, "How To Name Design Tokens in Design Systems"</a></li>
+  <li><a href="https://www.smashingmagazine.com/2024/05/naming-best-practices/">Smashing Magazine, "Best Practices for Naming Design Tokens, Components and Variables" (2024)</a></li>
+  <li><a href="https://css-tricks.com/the-dilemma-of-naming-font-size-variables/">CSS-Tricks, "The Dilemma of Naming Font Size Variables"</a></li>
+  <li><a href="https://css-tricks.com/open-props-and-custom-properties-as-a-system/">CSS-Tricks, "Open Props and Custom Properties as a System"</a></li>
+  <li><a href="https://designtokens.substack.com/p/how-to-manage-breaking-changes-in">Francesco Improta, "How to Manage Breaking Changes in Design Tokens"</a></li>
+  <li><a href="https://www.designtokens.org/tr/drafts/format/">W3C Design Tokens Community Group -- Format Module (2025.10)</a></li>
+  <li><a href="https://www.w3.org/community/design-tokens/">W3C Design Tokens Community Group</a></li>
+  <li><a href="https://isaichenko.dev/blog/shadcn-colors-naming/">Denys Isaichenko, "Making Sense of Shadcn UI's Theming and Color Variables"</a></li>
+</ol>
+</div>
+
+</body>
+</html>
