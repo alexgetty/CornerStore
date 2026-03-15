@@ -1,44 +1,21 @@
 ---
+import "../styles/pages/index.css";
 import Base from "../layouts/Base.astro";
-import ProductGrid from "../components/ProductGrid.astro";
+import Listings from "../components/Listings/Listings.astro";
 import { getListings } from "../lib/storefront";
 
 const listings = await getListings();
 ---
 
 <Base title="Corner Store">
-  <header class="header">
-    <div class="container">
+  <header class="cs-header">
+    <div class="cs-main">
       <h1>Corner Store</h1>
     </div>
   </header>
-  <main class="main">
-    <div class="container">
-      <ProductGrid listings={listings} />
+  <main class="cs-storefront">
+    <div class="cs-main">
+      <Listings listings={listings} />
     </div>
   </main>
 </Base>
-
-<style>
-  .container {
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-  }
-
-  .header {
-    padding: 2rem 0;
-    border-bottom: 1px solid #e5e5e5;
-    background: #fff;
-  }
-
-  .header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
-
-  .main {
-    padding: 2.5rem 0 4rem;
-  }
-</style>

@@ -1,0 +1,19 @@
+@layer package {
+  :root {
+    /* Neutrals */
+    --cs-black: #1a1a1a;
+    --cs-white: #fafafa;
+    --cs-gray-100: #f5f5f5;
+    --cs-gray-200: #e5e5e5;
+    --cs-gray-300: #d4d4d4;
+    --cs-gray-400: #a3a3a3;
+    --cs-gray-500: #777;
+    --cs-gray-600: #555;
+    --cs-gray-700: #333;
+
+    /* Brand — placeholder, full palette TBD */
+    --cs-ochre: #c25e30;
+    --cs-rust: #a84f28;
+    --cs-cream: #fdf6e3;
+  }
+}

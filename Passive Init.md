@@ -1,0 +1,1 @@
+If a site is already set up and someone runs init again, we should only update things we have to, like if they change a detail in the setup, or the package code is changed. if they have already set things up and doesn't specify explicit overrides in the new init, we should keep the old values.

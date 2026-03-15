@@ -1,0 +1,105 @@
+/* Corner Store Theme
+ *
+ * Every --cs-* token your storefront reads, with its default value.
+ * Change any value below to customize your store's appearance.
+ *
+ * Palette variables (--cs-black, --cs-ochre, etc.) come from the package
+ * and are available for use here. You can also use hex values, rgb(), or
+ * define your own variables — whatever you prefer.
+ *
+ * Tokens you don't change keep their defaults. You can safely delete
+ * any line you haven't modified.
+ */
+
+:root {
+  /* -------------------------------------------------------
+   * Quick Start — highest-impact tokens
+   * Change these four and your store already looks different.
+   * ------------------------------------------------------- */
+  --cs-background: var(--cs-white);
+  --cs-heading-text-color: var(--cs-black);
+  --cs-button-background: var(--cs-black);
+  --cs-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* -------------------------------------------------------
+   * Surfaces
+   * ------------------------------------------------------- */
+  --cs-header-surface: #fff;
+  --cs-image-background: var(--cs-gray-200);
+  --cs-listing-surface: #fff;
+
+  /* -------------------------------------------------------
+   * Text — composition-level, grouped by context
+   * ------------------------------------------------------- */
+  --cs-body-font-weight: 400;
+  --cs-body-line-height: 1.6;
+  --cs-body-text-color: var(--cs-gray-600);
+  --cs-emphasis-font-weight: 600;
+  --cs-heading-font-weight: 700;
+  --cs-heading-letter-spacing: -0.02em;
+  --cs-heading-line-height: 1.3;
+  --cs-highlight-text-color: var(--cs-ochre);
+  --cs-muted-text-color: var(--cs-gray-500);
+  --cs-thin-font-weight: 300;
+
+  /* -------------------------------------------------------
+   * Font — universal character-level
+   * ------------------------------------------------------- */
+  --cs-font-size-smallest: 0.75rem;
+  --cs-font-size-smaller: 0.8125rem;
+  --cs-font-size-small: 0.875rem;
+  --cs-font-size-base: 1rem;
+  --cs-font-size-large: 1.125rem;
+  --cs-font-size-larger: 1.5rem;
+  --cs-font-size-largest: 2rem;
+
+  /* -------------------------------------------------------
+   * Buttons
+   * ------------------------------------------------------- */
+  --cs-button-background-hover: var(--cs-gray-700);
+  --cs-button-padding-horizontal: 1.25rem;
+  --cs-button-padding-vertical: 0.625rem;
+  --cs-button-text-color: #fff;
+
+  /* -------------------------------------------------------
+   * Focus
+   * ------------------------------------------------------- */
+  --cs-focus-color: var(--cs-black);
+  --cs-focus-offset: 2px;
+  --cs-focus-width: 2px;
+
+  /* -------------------------------------------------------
+   * Borders
+   * ------------------------------------------------------- */
+  --cs-border-color: var(--cs-gray-200);
+
+  /* -------------------------------------------------------
+   * Shadows
+   * ------------------------------------------------------- */
+  --cs-listing-shadow-hover: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+  /* -------------------------------------------------------
+   * Border Radius
+   * ------------------------------------------------------- */
+  --cs-listing-border-radius: 8px;
+  --cs-button-border-radius: 6px;
+
+  /* -------------------------------------------------------
+   * Transitions
+   * ------------------------------------------------------- */
+  --cs-transition-fast: 0.15s ease;
+  --cs-transition-normal: 0.2s ease;
+
+  /* -------------------------------------------------------
+   * Layout
+   * ------------------------------------------------------- */
+  --cs-image-aspect-ratio: 4 / 3;
+  --cs-listing-inner-gap: 0.5rem;
+  --cs-listing-minimum-width: 280px;
+  --cs-listing-padding: 1.25rem;
+  --cs-listings-gap: 1.5rem;
+  --cs-main-gap: 2rem;
+  --cs-main-padding: 1.5rem;
+  --cs-main-width: 1080px;
+}

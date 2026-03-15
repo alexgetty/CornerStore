@@ -1,0 +1,1 @@
+Borders, Shadows, Transitions, etc can be customized via tokens, but not turned on or off.

@@ -1,0 +1,82 @@
+@layer package {
+  .cs-listing {
+    background: var(--cs-listing-surface);
+    border: 1px solid var(--cs-border-color);
+    border-radius: var(--cs-listing-border-radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--cs-transition-normal);
+  }
+
+  .cs-listing:hover {
+    box-shadow: var(--cs-listing-shadow-hover);
+  }
+
+  .cs-listing-image {
+    margin: 0;
+  }
+
+  .cs-listing-image img {
+    width: 100%;
+    aspect-ratio: var(--cs-image-aspect-ratio);
+    object-fit: cover;
+    display: block;
+  }
+
+  .cs-listing-placeholder {
+    width: 100%;
+    aspect-ratio: var(--cs-image-aspect-ratio);
+    background: var(--cs-image-background);
+  }
+
+  .cs-listing-details {
+    padding: var(--cs-listing-padding);
+    display: flex;
+    flex-direction: column;
+    gap: var(--cs-listing-inner-gap);
+    flex: 1;
+  }
+
+  .cs-listing-name {
+    font-size: var(--cs-font-size-large);
+    font-weight: var(--cs-emphasis-font-weight);
+    line-height: var(--cs-heading-line-height);
+  }
+
+  .cs-listing-description {
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-body-text-color);
+    line-height: var(--cs-body-line-height);
+  }
+
+  .cs-listing-price {
+    font-size: var(--cs-font-size-large);
+    font-weight: var(--cs-emphasis-font-weight);
+    color: var(--cs-heading-text-color);
+    margin-top: auto;
+  }
+
+  .cs-listing-buy {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
+    background: var(--cs-button-background);
+    color: var(--cs-button-text-color);
+    text-decoration: none;
+    border-radius: var(--cs-button-border-radius);
+    font-size: var(--cs-font-size-small);
+    font-weight: 500;
+    text-align: center;
+    transition: background var(--cs-transition-fast);
+  }
+
+  .cs-listing-buy:hover {
+    background: var(--cs-button-background-hover);
+  }
+
+  .cs-listing-buy:focus-visible {
+    outline: var(--cs-focus-width) solid var(--cs-focus-color);
+    outline-offset: var(--cs-focus-offset);
+  }
+}

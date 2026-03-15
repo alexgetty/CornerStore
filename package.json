@@ -1,8 +1,27 @@
 {
-  "name": "storefront",
+  "name": "corner-store",
   "version": "0.1.0",
   "type": "module",
-  "private": true,
+  "bin": {
+    "corner-store": "./bin/init.mjs"
+  },
+  "exports": {
+    ".": "./src/lib/storefront/index.ts",
+    "./stripe": "./src/lib/stripe/index.ts",
+    "./components": "./src/components/index.ts",
+    "./layouts/Base": "./src/layouts/Base.astro",
+    "./styles/reset.css": "./src/styles/reset.css",
+    "./styles/palette.css": "./src/styles/palette.css",
+    "./styles/defaults.css": "./src/styles/defaults.css",
+    "./styles/pages/index.css": "./src/styles/pages/index.css"
+  },
+  "files": [
+    "bin/",
+    "src/lib/",
+    "src/components/",
+    "src/layouts/",
+    "src/styles/"
+  ],
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -14,9 +33,11 @@
     "ci": "npm run typecheck && npm run test:coverage && npm run build"
   },
   "dependencies": {
-    "astro": "^5",
     "gray-matter": "^4.0.3",
     "stripe": "^20"
+  },
+  "peerDependencies": {
+    "astro": "^5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9",

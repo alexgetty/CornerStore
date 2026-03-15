@@ -1,0 +1,24 @@
+---
+import "./StatusPage.css";
+import Base from "../../layouts/Base.astro";
+
+interface Props {
+  title: string;
+  heading: string;
+  message: string;
+  linkText: string;
+  linkHref: string;
+}
+
+const { title, heading, message, linkText, linkHref } = Astro.props;
+---
+
+<Base title={title}>
+  <main class="cs-status-page">
+    <div class="cs-status-content">
+      <h1 class="cs-status-heading">{heading}</h1>
+      <p class="cs-status-message">{message}</p>
+      <a href={linkHref} class="cs-status-action">{linkText}</a>
+    </div>
+  </main>
+</Base>

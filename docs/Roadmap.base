@@ -1,0 +1,8 @@
+filters:
+  and:
+    - file.folder == "docs/todo"
+views:
+  - type: table
+    name: Table
+  - type: table
+    name: View

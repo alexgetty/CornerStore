@@ -1,0 +1,19 @@
+---
+import "./Listings.css";
+import Listing from "../Listing/Listing.astro";
+import type { Listing as ListingType } from "../../lib/storefront";
+
+interface Props {
+  listings: ListingType[];
+}
+
+const { listings } = Astro.props;
+---
+
+<section class="cs-listings">
+  {listings.length > 0 ? (
+    listings.map((listing) => <Listing listing={listing} />)
+  ) : (
+    <p class="cs-listings-empty">No products available.</p>
+  )}
+</section>

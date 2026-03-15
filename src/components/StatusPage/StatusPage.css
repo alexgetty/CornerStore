@@ -1,0 +1,47 @@
+@layer package {
+  .cs-status-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cs-status-content {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    max-width: 480px;
+  }
+
+  .cs-status-heading {
+    font-size: var(--cs-font-size-larger);
+    font-weight: var(--cs-heading-font-weight);
+    margin-bottom: 0.75rem;
+  }
+
+  .cs-status-message {
+    color: var(--cs-body-text-color);
+    margin-bottom: 1.5rem;
+    line-height: var(--cs-body-line-height);
+  }
+
+  .cs-status-action {
+    display: inline-block;
+    padding: var(--cs-button-padding-vertical) 1.5rem;
+    background: var(--cs-button-background);
+    color: var(--cs-button-text-color);
+    text-decoration: none;
+    border-radius: var(--cs-button-border-radius);
+    font-size: var(--cs-font-size-small);
+    font-weight: 500;
+    transition: background var(--cs-transition-fast);
+  }
+
+  .cs-status-action:hover {
+    background: var(--cs-button-background-hover);
+  }
+
+  .cs-status-action:focus-visible {
+    outline: var(--cs-focus-width) solid var(--cs-focus-color);
+    outline-offset: var(--cs-focus-offset);
+  }
+}

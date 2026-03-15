@@ -1,0 +1,1 @@
+cornerstore.config.js is generated but nothing reads it. Store name is hardcoded in scaffolded pages.

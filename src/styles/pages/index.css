@@ -1,0 +1,23 @@
+@layer package {
+  .cs-main {
+    max-width: var(--cs-main-width);
+    margin: 0 auto;
+    padding: 0 var(--cs-main-padding);
+  }
+
+  .cs-header {
+    padding: var(--cs-main-gap) 0;
+    border-bottom: 1px solid var(--cs-border-color);
+    background: var(--cs-header-surface);
+  }
+
+  .cs-header h1 {
+    font-size: var(--cs-font-size-larger);
+    font-weight: var(--cs-heading-font-weight);
+    letter-spacing: var(--cs-heading-letter-spacing);
+  }
+
+  .cs-storefront {
+    padding: 2.5rem 0 4rem;
+  }
+}

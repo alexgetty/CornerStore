@@ -1,61 +1,11 @@
 ---
-import Base from "../layouts/Base.astro";
+import StatusPage from "../components/StatusPage/StatusPage.astro";
 ---
 
-<Base title="Checkout Cancelled - Corner Store">
-  <main class="page">
-    <div class="content">
-      <h1>Your checkout was cancelled.</h1>
-      <p>No charge has been made. You can return to the store whenever you are ready.</p>
-      <a href="/" class="link">Back to store</a>
-    </div>
-  </main>
-</Base>
-
-<style>
-  .page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .content {
-    text-align: center;
-    padding: 2rem 1.5rem;
-    max-width: 480px;
-  }
-
-  .content h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-  }
-
-  .content p {
-    color: #555;
-    margin-bottom: 1.5rem;
-    line-height: 1.6;
-  }
-
-  .link {
-    display: inline-block;
-    padding: 0.625rem 1.5rem;
-    background: #1a1a1a;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: background 0.15s ease;
-  }
-
-  .link:hover {
-    background: #333;
-  }
-
-  .link:focus-visible {
-    outline: 2px solid #1a1a1a;
-    outline-offset: 2px;
-  }
-</style>
+<StatusPage
+  title="Checkout Cancelled - Corner Store"
+  heading="Your checkout was cancelled."
+  message="No charge has been made. You can return to the store whenever you are ready."
+  linkText="Back to store"
+  linkHref="/"
+/>
