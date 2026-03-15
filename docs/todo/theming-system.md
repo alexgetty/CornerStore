@@ -15,7 +15,7 @@ Migrate from hardcoded CSS in scoped Astro `<style>` blocks to a two-layer CSS a
 
 The two layers exist solely to separate authorship boundaries. The layer mechanic is entirely package-internal — theme authors write plain CSS and never see `@layer`. Base.astro imports the user's theme via `@import url('./theme/theme.css') layer(theme)`, which assigns everything in the file (and anything it `@import`s) to the `theme` layer automatically.
 
-Theme switching is a folder swap. Replace the contents of `theme/` and the storefront changes appearance. No JS, no build step. `theme/theme.css` is the single entry point — Base.astro always imports it.
+Theme switching is a folder swap. Replace the contents of `theme/` and the storefront changes appearance. No JS, no build step. `theme/theme.css` is the single entry point — Base.astro conditionally imports it if present.
 
 Cross-browser consistency is handled by an aggressive reset in the package layer. The seller's problem space starts at theming, not normalizing. No dark mode — these are maker brand storefronts, not apps.
 
@@ -33,96 +33,126 @@ Token names are semver-bound public API once shipped. Breaking changes (renames,
 
 Versioning policy details in `docs/todo/token-versioning.md`.
 
+### Naming Convention
+
+Token names follow `--cs-{thing}-{property}-{modifier}`, ordered general to specific. The "thing" leads — all tokens for a given element sort together regardless of group. This aligns with the selector convention (`cs-listing-image`, `cs-listing-name`).
+
+Naming rules:
+- **No abbreviations** unless universally understood (`max` yes, `bg` no)
+- **Names must stand alone** without a purpose/description column
+- **Describe intent, not implementation** — token names describe what the maker sees, not what CSS property is used
+- **"Surface"** = a layer that sits on the background (listing, header). "Background" = the base layer (page) or a container fill (image area)
+
+Font-level properties (family, size, weight) describe individual characters. Composition-level properties (text color, line height, letter spacing) describe how text is arranged in context — these are prefixed by their context (`heading-`, `body-`, etc.).
+
+### Deprecation Policy
+
+Three-phase deprecation (Atlassian model): deprecated in a minor version (functional, warns), soft-deleted in the following minor (functional, loud warnings), removed in the next major. npm version-level download stats inform timing. `cornerstore doctor` CLI command scans theme files for deprecated tokens locally.
+
 Grouped by usage:
 
 ### Surfaces
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-surface-page` | `#fafafa` | Page background |
-| `--cs-surface-listing` | `#fff` | Listing background |
-| `--cs-surface-header` | `#fff` | Header/nav background |
-| `--cs-surface-placeholder` | `#e5e5e5` | Image placeholder, empty areas |
+| Token | Default |
+|-------|---------|
+| `--cs-background` | `#fafafa` |
+| `--cs-header-surface` | `#fff` |
+| `--cs-image-background` | `#e5e5e5` |
+| `--cs-listing-surface` | `#fff` |
 
-### Text
+### Text Styles
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-text-primary` | `#1a1a1a` | Body text, headings, price |
-| `--cs-text-secondary` | `#555` | Descriptions, supporting text |
-| `--cs-text-muted` | `#777` | Empty states, disabled text |
+Composition-level properties grouped by context. Body/heading/etc. prefixes group related properties together when sorted alphabetically.
 
-### Interactive
+| Token | Default |
+|-------|---------|
+| `--cs-body-font-weight` | `400` |
+| `--cs-body-line-height` | `1.6` |
+| `--cs-body-text-color` | `#555` |
+| `--cs-emphasis-font-weight` | `600` |
+| `--cs-heading-font-weight` | `700` |
+| `--cs-heading-letter-spacing` | `-0.02em` |
+| `--cs-heading-line-height` | `1.3` |
+| `--cs-heading-text-color` | `#1a1a1a` |
+| `--cs-highlight-text-color` | `#c25e30` |
+| `--cs-muted-text-color` | `#777` |
+| `--cs-thin-font-weight` | `300` |
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-interactive-bg` | `#1a1a1a` | Button/CTA background |
-| `--cs-interactive-bg-hover` | `#333` | Button hover state |
-| `--cs-interactive-text` | `#fff` | Button/CTA text color |
+### Font
+
+Universal character-level properties. These apply to all text uniformly.
+
+| Token | Default |
+|-------|---------|
+| `--cs-font-family` | System stack |
+| `--cs-font-size-smallest` | `0.75rem` |
+| `--cs-font-size-smaller` | `0.8125rem` |
+| `--cs-font-size-small` | `0.875rem` |
+| `--cs-font-size-base` | `1rem` |
+| `--cs-font-size-large` | `1.125rem` |
+| `--cs-font-size-larger` | `1.5rem` |
+| `--cs-font-size-largest` | `2rem` |
+
+Font size scale is intentionally closed at 7 levels (3 below base, base, 3 above base). If a storefront needs more than 7 text sizes, the design is the problem.
+
+### Buttons
+
+| Token | Default |
+|-------|---------|
+| `--cs-button-background` | `#1a1a1a` |
+| `--cs-button-background-hover` | `#333` |
+| `--cs-button-padding-horizontal` | `1.25rem` |
+| `--cs-button-padding-vertical` | `0.625rem` |
+| `--cs-button-text-color` | `#fff` |
 
 ### Focus
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-focus-color` | `#1a1a1a` | Focus ring color |
-| `--cs-focus-width` | `2px` | Focus outline width |
-| `--cs-focus-offset` | `2px` | Focus outline offset |
+| Token | Default |
+|-------|---------|
+| `--cs-focus-color` | `#1a1a1a` |
+| `--cs-focus-offset` | `2px` |
+| `--cs-focus-width` | `2px` |
 
 ### Borders
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-border-color` | `#e5e5e5` | Listing borders, dividers |
-| `--cs-radius-listing` | `8px` | Listing border-radius |
-| `--cs-radius-button` | `6px` | Button border-radius |
+| Token | Default |
+|-------|---------|
+| `--cs-border-color` | `#e5e5e5` |
 
 ### Shadows
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-shadow-listing-hover` | `0 2px 12px rgba(0,0,0,0.08)` | Listing hover elevation |
+| Token | Default |
+|-------|---------|
+| `--cs-listing-shadow-hover` | `0 2px 12px rgba(0,0,0,0.08)` |
 
-### Typography
+### Border Radius
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-font-family` | System stack | Base font |
-| `--cs-font-size-smallest` | TBD | Fine print, captions |
-| `--cs-font-size-smaller` | TBD | Labels, metadata |
-| `--cs-font-size-small` | TBD | Supporting text |
-| `--cs-font-size-base` | TBD | Body text |
-| `--cs-font-size-large` | TBD | Subheadings |
-| `--cs-font-size-larger` | TBD | Section headings |
-| `--cs-font-size-largest` | TBD | Page titles |
-| `--cs-font-weight-medium` | `500` | Buttons |
-| `--cs-font-weight-semibold` | `600` | Product names, prices |
-| `--cs-font-weight-bold` | `700` | Headings |
-| `--cs-line-height` | `1.6` | Body text |
-| `--cs-line-height-tight` | `1.3` | Headings, names |
-| `--cs-letter-spacing-tight` | `-0.02em` | Headings |
+| Token | Default |
+|-------|---------|
+| `--cs-listing-border-radius` | `8px` |
+| `--cs-button-border-radius` | `6px` |
+
+Future: a single `--cs-roundness` multiplier that proportionally derives all radii is planned as a vibe layer (see `docs/todo/vibe-layers.md`).
 
 ### Transitions
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-transition-fast` | `0.15s ease` | Button states |
-| `--cs-transition-normal` | `0.2s ease` | Listing hover |
+| Token | Default |
+|-------|---------|
+| `--cs-transition-fast` | `0.15s ease` |
+| `--cs-transition-normal` | `0.2s ease` |
 
 ### Layout
 
-| Token | Default | Purpose |
-|-------|---------|---------|
-| `--cs-max-width` | `1080px` | Container max-width |
-| `--cs-max-width-narrow` | `480px` | Status page content width |
-| `--cs-spacing-container` | `1.5rem` | Container horizontal padding |
-| `--cs-spacing-section` | `2rem` | Section vertical padding |
-| `--cs-spacing-listing` | `1.25rem` | Listing content padding |
-| `--cs-spacing-listing-gap` | `0.5rem` | Listing content gap |
-| `--cs-spacing-listings-gap` | `1.5rem` | Listing collection gap |
-| `--cs-listings-min-column` | `280px` | Listings auto-fill min column |
-| `--cs-spacing-button-y` | `0.625rem` | Button vertical padding |
-| `--cs-spacing-button-x` | `1.25rem` | Button horizontal padding |
-| `--cs-image-aspect-ratio` | `4 / 3` | Product image aspect ratio |
+| Token | Default |
+|-------|---------|
+| `--cs-image-aspect-ratio` | `4 / 3` |
+| `--cs-listing-inner-gap` | `0.5rem` |
+| `--cs-listing-minimum-width` | `280px` |
+| `--cs-listing-padding` | `1.25rem` |
+| `--cs-listings-gap` | `1.5rem` |
+| `--cs-main-gap` | `2rem` |
+| `--cs-main-padding` | `1.5rem` |
+| `--cs-main-width` | `1080px` |
 
 ---
 
@@ -156,7 +186,7 @@ Selectors are semver-bound public API, same as tokens. Breaking changes (renames
 
 | Class | Element | Purpose |
 |---|---|---|
-| `cs-container` | `div` | Max-width content wrapper |
+| `cs-main` | `div` | Max-width content wrapper |
 | `cs-header` | `header` | Site header/nav area |
 | `cs-storefront` | `main` | Primary content area |
 
@@ -173,7 +203,7 @@ Selectors are semver-bound public API, same as tokens. Breaking changes (renames
 |---|---|---|
 | `cs-listing` | `article` | Individual listing root |
 | `cs-listing-image` | `figure` | Image container |
-| `cs-listing-placeholder` | `div` | Placeholder when no image |
+| `cs-listing-placeholder` | `div` | Fallback content when no image is set |
 | `cs-listing-name` | `h2` | Product/bundle name |
 | `cs-listing-description` | `p` | Product description |
 | `cs-listing-price` | `p` | Price display |
@@ -229,9 +259,9 @@ A theme referencing the palette:
 
 ```css
 :root {
-  --cs-interactive-bg: var(--cs-ochre);
-  --cs-surface-page: var(--cs-cream);
-  --cs-text-primary: var(--cs-black);
+  --cs-button-background: var(--cs-ochre);
+  --cs-background: var(--cs-cream);
+  --cs-heading-text-color: var(--cs-black);
 }
 ```
 
@@ -239,9 +269,9 @@ A theme ignoring the palette entirely:
 
 ```css
 :root {
-  --cs-interactive-bg: #0000ff;
-  --cs-surface-page: #fff;
-  --cs-text-primary: #111;
+  --cs-button-background: #0000ff;
+  --cs-background: #fff;
+  --cs-heading-text-color: #111;
 }
 ```
 
@@ -253,9 +283,9 @@ A theme with its own color scheme:
   --brand-light: #d4a574;
   --bg: #fdf6e3;
 
-  --cs-text-primary: var(--brand);
-  --cs-interactive-bg: var(--brand-light);
-  --cs-surface-page: var(--bg);
+  --cs-heading-text-color: var(--brand);
+  --cs-button-background: var(--brand-light);
+  --cs-background: var(--bg);
 }
 ```
 
@@ -353,11 +383,12 @@ Update `Base.astro` to import the layer stack, the user's theme, and add `<slot 
 
 **Deliverables:**
 - Import `reset.css`, `palette.css`, `defaults.css` (package layer)
-- Import the user's theme via `@import url('./theme/theme.css') layer(theme)` — this assigns the entire theme file (and any `@import`s within it) to the `theme` layer automatically. The user writes plain CSS; the layer wrapping is invisible to them.
+- Conditionally import the user's theme: Base.astro frontmatter checks if `theme/theme.css` exists at build time. If present, import via `@import url('./theme/theme.css') layer(theme)` — this assigns everything in the file (and anything it `@import`s) to the `theme` layer automatically. The user writes plain CSS; the layer wrapping is invisible to them. If absent, skip the import entirely — Vite resolves CSS `@import`s as module imports and will fail the build on a missing file, so the conditional check is required.
 - Add `<slot name="head" />` inside `<head>`
 - Remove `<style is:global>` block (contents now in reset.css + defaults.css)
+- Validate that Astro's conditional rendering of `<style>` blocks with `@import` works correctly in both present and absent cases
 
-**If no theme exists:** All tokens resolve to `defaults.css` values. The site renders with the package defaults — functional, unstyled. This is the correct zero-config state.
+**If no theme exists:** The conditional import is skipped. All tokens resolve to `defaults.css` values. The site renders with the package defaults — functional, unstyled. This is the correct zero-config state. The build must not fail.
 
 ### Phase 5: Remove legacy styles
 
@@ -376,8 +407,8 @@ All examples below are plain CSS — no `@layer` wrapping. Base.astro handles th
 ```css
 :root {
   /* Surfaces */
-  /* --cs-surface-page: var(--cs-cream); */
-  /* --cs-surface-listing: var(--cs-white); */
+  /* --cs-background: var(--cs-cream); */
+  /* --cs-listing-surface: var(--cs-white); */
   /* ... every token, grouped, with defaults shown */
 }
 ```
@@ -386,11 +417,11 @@ All examples below are plain CSS — no `@layer` wrapping. Base.astro handles th
 
 ```css
 :root {
-  --cs-surface-page: #f5f0eb;
-  --cs-text-primary: #2b2b2b;
-  --cs-interactive-bg: #c25e30;
-  --cs-interactive-bg-hover: #a84f28;
-  --cs-interactive-text: #fff;
+  --cs-background: #f5f0eb;
+  --cs-heading-text-color: #2b2b2b;
+  --cs-button-background: #c25e30;
+  --cs-button-background-hover: #a84f28;
+  --cs-button-text-color: #fff;
   --cs-font-family: "Georgia", serif;
   /* ... */
 }
@@ -402,15 +433,15 @@ All examples below are plain CSS — no `@layer` wrapping. Base.astro handles th
 @import url('./tokens.css');
 
 :root {
-  --cs-surface-page: var(--warm-bg);
-  --cs-text-primary: var(--neutral);
-  --cs-interactive-bg: var(--brand);
-  --cs-interactive-bg-hover: var(--brand-dark);
+  --cs-background: var(--warm-bg);
+  --cs-heading-text-color: var(--neutral);
+  --cs-button-background: var(--brand);
+  --cs-button-background-hover: var(--brand-dark);
   --cs-font-size-small: calc(var(--type-base) / var(--type-scale));
   --cs-font-size-base: var(--type-base);
   --cs-font-size-large: calc(var(--type-base) * var(--type-scale));
-  --cs-spacing-listing: calc(var(--space-unit) * 2.5);
-  --cs-spacing-listings-gap: calc(var(--space-unit) * 3);
+  --cs-listing-padding: calc(var(--space-unit) * 2.5);
+  --cs-listings-gap: calc(var(--space-unit) * 3);
   /* ... */
 }
 ```
@@ -446,7 +477,8 @@ The CLI doesn't exist yet. Document requirements so it includes theming from day
 - Init generates `theme/theme.css` with all token defaults using palette references, grouped with human-readable comments
 - The generated theme file is identical to `defaults.css` values — the site looks the same with or without it
 - No theme selection prompt. The maker gets a working starting point and can customize immediately, download a theme from the repository to replace it, or use the scaffold from the docs to start blank
-- The generated file should lead with a "Your Brand" section highlighting the 5-6 highest-impact tokens (brand color, page background, text color, font) before listing the full set
+- The generated file should lead with the highest-impact tokens (`--cs-background`, `--cs-heading-text-color`, `--cs-button-background`, `--cs-font-family`) before listing the full set
+- Future: vibe layers (see `docs/todo/vibe-layers.md`) may restructure the generated file into progressive customization tiers
 
 ### Phase 8: Documentation
 
@@ -468,4 +500,4 @@ The CLI doesn't exist yet. Document requirements so it includes theming from day
 | `defaults.css` not loaded | Component CSS uses `var()` without fallbacks — if `defaults.css` is missing, unstyled. This is a hard dependency, enforced by Base.astro importing it |
 | Theme file grows unwieldy | Token-only themes are small. Themes with creative overrides grow proportionally to ambition — that's expected |
 | `@import ... layer(theme)` browser support | Supported in all evergreen browsers since 2022. Verify Astro's CSS processing respects the `layer()` modifier on `@import`. Test early in Phase 4 |
-| Missing `theme/theme.css` | If the file doesn't exist, the `@import` fails silently (per CSS spec). All tokens resolve to `defaults.css` values. The site renders with package defaults — functional, unstyled. This is the correct zero-config state |
+| Missing `theme/theme.css` | Base.astro conditionally imports the theme — frontmatter checks file existence at build time, skips the import if absent. All tokens resolve to `defaults.css` values. The build succeeds and the site renders with package defaults |

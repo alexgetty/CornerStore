@@ -45,3 +45,14 @@ export interface LinkWarning {
   linkUrl: string;
   reason: string;
 }
+
+export interface PaymentLink {
+  id: string;
+  url: string;
+}
+
+export type PendingBundle = Omit<BundleListing, 'name'> & {
+  suffix: string;
+  config: BundleConfig | undefined;
+  linkId: string;
+};

@@ -1327,12 +1327,12 @@ describe('getListings', () => {
       }
       return Promise.resolve(['bundle.md']);
     }) as never);
-    readFileMock.mockImplementation((filePath: string) => {
+    readFileMock.mockImplementation(((filePath: string) => {
       if (String(filePath).includes('set-a')) {
         return Promise.resolve('---\nlink: https://buy.stripe.com/aaa\ntitle: Holiday Set\n---\n');
       }
       return Promise.resolve('---\nlink: https://buy.stripe.com/bbb\ntitle: Holiday Set\n---\n');
-    });
+    }) as never);
 
     mocks.paymentLinksListMock.mockReturnValue(
       makeAsyncIterable([
@@ -1450,7 +1450,7 @@ describe('getListings', () => {
       }
       return Promise.resolve(['bundle.md']);
     }) as never);
-    readFileMock.mockImplementation((filePath: string) => {
+    readFileMock.mockImplementation(((filePath: string) => {
       if (String(filePath).includes('set-a')) {
         return Promise.resolve('---\nlink: https://buy.stripe.com/aaa\ntitle: Holiday Set\n---\n');
       }
@@ -1459,7 +1459,7 @@ describe('getListings', () => {
       }
       // Third config takes the " 2" name
       return Promise.resolve('---\nlink: https://buy.stripe.com/ccc\ntitle: Holiday Set 2\n---\n');
-    });
+    }) as never);
 
     mocks.paymentLinksListMock.mockReturnValue(
       makeAsyncIterable([
