@@ -2,12 +2,20 @@
 import "./Listings.css";
 import Listing from "../Listing/Listing.astro";
 import type { Listing as ListingType } from "../../lib/storefront";
+import { getListings } from "../../lib/storefront";
 
 interface Props {
-  listings: ListingType[];
+  listings?: ListingType[];
+  limit?: number;
 }
 
-const { listings } = Astro.props;
+const { listings: listingsProp, limit } = Astro.props;
+
+let listings: ListingType[] = listingsProp ?? await getListings();
+
+if (limit !== undefined) {
+  listings = listings.slice(0, limit);
+}
 ---
 
 <section class="cs-listings">

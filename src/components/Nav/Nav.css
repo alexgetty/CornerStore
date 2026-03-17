@@ -1,0 +1,50 @@
+@layer package {
+  .cs-header {
+    padding: var(--cs-main-gap) 0;
+    border-bottom: 1px solid var(--cs-border-color);
+    background: var(--cs-header-surface);
+  }
+
+  .cs-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .cs-nav-name {
+    font-size: var(--cs-font-size-larger);
+    font-weight: var(--cs-heading-font-weight);
+    letter-spacing: var(--cs-heading-letter-spacing);
+    color: var(--cs-heading-text-color);
+    text-decoration: none;
+  }
+
+  .cs-nav-name:hover {
+    color: var(--cs-highlight-text-color);
+  }
+
+  .cs-nav-links {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cs-nav-links a {
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-body-text-color);
+    text-decoration: none;
+    transition: color var(--cs-transition-fast);
+  }
+
+  .cs-nav-links a:hover {
+    color: var(--cs-heading-text-color);
+  }
+
+  .cs-nav-links a:focus-visible {
+    outline: var(--cs-focus-width) solid var(--cs-focus-color);
+    outline-offset: var(--cs-focus-offset);
+  }
+}

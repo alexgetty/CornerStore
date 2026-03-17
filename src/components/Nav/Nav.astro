@@ -1,0 +1,26 @@
+---
+import "./Nav.css";
+import type { ResolvedNavItem } from "../../lib/storefront";
+
+interface Props {
+  storeName: string;
+  nav: ResolvedNavItem[];
+}
+
+const { storeName, nav } = Astro.props;
+---
+
+<header class="cs-header">
+  <div class="cs-main cs-nav">
+    <a href="/" class="cs-nav-name">{storeName}</a>
+    {nav.length > 0 && (
+      <nav aria-label="Main navigation">
+        <ul class="cs-nav-links">
+          {nav.map((item) => (
+            <li><a href={item.href}>{item.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+    )}
+  </div>
+</header>

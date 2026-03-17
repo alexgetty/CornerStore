@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="...">
+  <link rel="preconnect" href="https://buy.stripe.com">
+  <title>Welcome — Store Name</title>
+</head>
+<body>
+  <a href="#main-content" class="cs-skip-link">Skip to main content</a>
+
+  <header class="cs-header">
+    <a href="/" class="cs-store-name">Store Name</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="/" aria-current="page">Shop</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <h1 class="cs-sr-only">Welcome</h1>
+    <p>Hand-poured candles made in small batches.</p>
+
+    <section aria-label="Products">
+      <ul role="list">
+        <!-- Product with image -->
+        <li>
+          <article itemscope itemtype="https://schema.org/Product">
+            <h2 itemprop="name">Lavender Fields</h2>
+            <img src="..." alt="Lavender Fields soy candle in amber glass jar" itemprop="image">
+            <p itemprop="description">Hand-poured soy candle with dried lavender.</p>
+            <p itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+              <span itemprop="priceCurrency" content="USD">$</span><data value="25.00" itemprop="price">25.00</data>
+              <span itemprop="availability" content="https://schema.org/InStock">In stock</span>
+            </p>
+            <a href="https://buy.stripe.com/..." aria-label="Buy Lavender Fields — $25.00" itemprop="url">Buy</a>
+          </article>
+        </li>
+        <!-- Product without image -->
+        <li>
+          <article itemscope itemtype="https://schema.org/Product">
+            <h2 itemprop="name">Cedar &amp; Smoke</h2>
+            <div class="cs-image-placeholder"></div>
+            <p itemprop="description">Woodsy hand-poured candle.</p>
+            <p itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+              <span itemprop="priceCurrency" content="USD">$</span><data value="30.00" itemprop="price">30.00</data>
+              <span itemprop="availability" content="https://schema.org/InStock">In stock</span>
+            </p>
+            <a href="https://buy.stripe.com/..." aria-label="Buy Cedar &amp; Smoke — $30.00" itemprop="url">Buy</a>
+          </article>
+        </li>
+      </ul>
+    </section>
+
+    <p>Can't find what you're looking for? Reach out.</p>
+  </main>
+
+  <footer class="cs-footer">
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="/shipping-policy">Shipping Policy</a></li>
+        <li><a href="/returns-policy">Returns Policy</a></li>
+        <li><a href="/faq">FAQ</a></li>
+      </ul>
+    </nav>
+  </footer>
+</body>
+</html>

@@ -56,3 +56,27 @@ export type PendingBundle = Omit<BundleListing, 'name'> & {
   config: BundleConfig | undefined;
   linkId: string;
 };
+
+export interface NavItem {
+  label: string;
+  page: string;
+  path?: string;
+}
+
+export interface ResolvedNavItem {
+  label: string;
+  href: string;
+}
+
+export interface StoreConfig {
+  name: string;
+  home: string;
+  nav: NavItem[];
+  footerNav: NavItem[];
+}
+
+export interface PageData {
+  slug: string;
+  title: string;
+  hasExplicitTitle: boolean;
+}

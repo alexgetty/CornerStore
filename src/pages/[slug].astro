@@ -1,0 +1,32 @@
+---
+import ContentPage from "../layouts/ContentPage.astro";
+import { Listings, Listing } from "../components";
+import { loadConfig, loadPages } from "../lib/storefront";
+import type { PageData } from "../lib/storefront";
+
+export async function getStaticPaths() {
+  const config = await loadConfig();
+  const pages = await loadPages(config);
+
+  return [...pages.entries()]
+    .filter(([slug]) => slug !== config.home)
+    .map(([slug, page]) => ({
+      params: { slug },
+      props: { page },
+    }));
+}
+
+interface Props {
+  page: PageData;
+}
+
+const { page } = Astro.props;
+
+const mdxModules = import.meta.glob('/pages/*.mdx');
+const mod = await (mdxModules[`/pages/${page.slug}.mdx`] as any)() as any;
+const Content = mod.default;
+---
+
+<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
+  <Content components={{ Listings, Listing }} />
+</ContentPage>

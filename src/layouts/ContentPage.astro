@@ -1,0 +1,39 @@
+---
+import Base from "./Base.astro";
+import Nav from "../components/Nav/Nav.astro";
+import "./ContentPage.css";
+import { loadConfig, getNav } from "../lib/storefront";
+import type { ResolvedNavItem } from "../lib/storefront";
+
+interface Props {
+  title: string;
+  hasExplicitTitle?: boolean;
+}
+
+const { title, hasExplicitTitle = true } = Astro.props;
+const config = await loadConfig();
+const { nav, footerNav } = getNav(config);
+---
+
+<Base title={`${title} — ${config.name}`}>
+  <Nav storeName={config.name} nav={nav} />
+  <main class="cs-content">
+    <div class="cs-main cs-prose">
+      <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
+      <slot />
+    </div>
+  </main>
+  {footerNav.length > 0 && (
+    <footer class="cs-footer">
+      <div class="cs-main">
+        <nav aria-label="Footer navigation">
+          <ul class="cs-footer-links">
+            {footerNav.map((item: ResolvedNavItem) => (
+              <li><a href={item.href}>{item.label}</a></li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    </footer>
+  )}
+</Base>

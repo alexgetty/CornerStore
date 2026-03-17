@@ -20,6 +20,13 @@ console.log('\n  Your Stripe secret key lets Corner Store fetch your products.')
 console.log('  It stays local in .env and is never sent anywhere except directly to Stripe.');
 const stripeKey = (await rl.question('  Stripe secret key (press Enter to skip): ')).trim();
 
+// Page selection
+console.log('\n  Choose which pages to include:\n');
+const wantAbout = (await rl.question('  About page? (Y/n): ')).trim().toLowerCase() !== 'n';
+const wantShipping = (await rl.question('  Shipping Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
+const wantReturns = (await rl.question('  Returns Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
+const wantFaq = (await rl.question('  FAQ? (Y/n): ')).trim().toLowerCase() !== 'n';
+
 rl.close();
 
 const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'corner-store';
@@ -27,8 +34,18 @@ const dir = process.cwd();
 
 console.log('\n  Scaffolding your store...\n');
 
+// Build nav arrays from answers
+const nav = [{ label: 'Shop', page: 'home' }];
+const footerNav = [];
+
+if (wantAbout) nav.push({ label: 'About', page: 'about' });
+if (wantShipping) footerNav.push({ label: 'Shipping Policy', page: 'shipping-policy' });
+if (wantReturns) footerNav.push({ label: 'Returns Policy', page: 'returns-policy' });
+if (wantFaq) footerNav.push({ label: 'FAQ', page: 'faq' });
+
 // Directory structure
 await mkdir(join(dir, 'src', 'pages'), { recursive: true });
+await mkdir(join(dir, 'pages'), { recursive: true });
 await mkdir(join(dir, 'theme'), { recursive: true });
 
 // package.json
@@ -41,6 +58,7 @@ await writeFile(join(dir, 'package.json'), JSON.stringify({
     preview: 'astro preview',
   },
   dependencies: {
+    '@astrojs/mdx': '^4',
     'astro': '^5',
     'corner-store': '^0.1.0',
   },
@@ -48,9 +66,11 @@ await writeFile(join(dir, 'package.json'), JSON.stringify({
 
 // astro.config.mjs
 await writeFile(join(dir, 'astro.config.mjs'), `import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
 
 export default defineConfig({
   output: 'static',
+  integrations: [mdx()],
   vite: {
     plugins: [{
       name: 'corner-store-theme-watcher',
@@ -93,12 +113,11 @@ dist/
 `);
 
 // cornerstore.config.js
-await writeFile(join(dir, 'cornerstore.config.js'), `// Corner Store configuration
-// Edit the values below to customize your store
-
-export default {
-  // Your store name — appears in the header and browser tab
+await writeFile(join(dir, 'cornerstore.config.js'), `export default {
   name: ${JSON.stringify(storeName)},
+  home: 'home',
+  nav: ${JSON.stringify(nav, null, 4)},
+  footerNav: ${JSON.stringify(footerNav, null, 4)},
 }
 `);
 
@@ -106,28 +125,92 @@ export default {
 const themeTemplate = await readFile(join(packageRoot, 'theme', 'theme.css'), 'utf-8');
 await writeFile(join(dir, 'theme', 'theme.css'), themeTemplate);
 
+// Page stubs
+const stubsDir = join(packageRoot, 'bin', 'stubs');
+
+// Home — always scaffolded
+const homeStub = await readFile(join(stubsDir, 'home.mdx'), 'utf-8');
+await writeFile(join(dir, 'pages', 'home.mdx'), homeStub);
+
+if (wantAbout) {
+  const stub = await readFile(join(stubsDir, 'about.mdx'), 'utf-8');
+  await writeFile(join(dir, 'pages', 'about.mdx'), stub);
+}
+
+if (wantShipping) {
+  const stub = await readFile(join(stubsDir, 'shipping-policy.mdx'), 'utf-8');
+  await writeFile(join(dir, 'pages', 'shipping-policy.mdx'), stub);
+}
+
+if (wantReturns) {
+  const stub = await readFile(join(stubsDir, 'returns-policy.mdx'), 'utf-8');
+  await writeFile(join(dir, 'pages', 'returns-policy.mdx'), stub);
+}
+
+if (wantFaq) {
+  const stub = await readFile(join(stubsDir, 'faq.mdx'), 'utf-8');
+  await writeFile(join(dir, 'pages', 'faq.mdx'), stub);
+}
+
 // src/pages/index.astro
 await writeFile(join(dir, 'src', 'pages', 'index.astro'), `---
-import 'corner-store/styles/pages/index.css';
-import Base from 'corner-store/layouts/Base';
-import { Listings } from 'corner-store/components';
-import { getListings } from 'corner-store';
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { loadConfig, loadPages } from 'corner-store';
 
-const listings = await getListings();
+const config = await loadConfig();
+const pages = await loadPages(config);
+const homePage = pages.get(config.home);
+
+const mdxModules = import.meta.glob('/pages/*.mdx');
+const homeModule = mdxModules[\`/pages/\${config.home}.mdx\`];
+
+let Content = null;
+if (homeModule) {
+  const mod = await homeModule();
+  Content = mod.default;
+}
 ---
 
-<Base title=${JSON.stringify(storeName)}>
-  <header class="cs-header">
-    <div class="cs-main">
-      <h1>${storeName}</h1>
-    </div>
-  </header>
-  <main class="cs-storefront">
-    <div class="cs-main">
-      <Listings listings={listings} />
-    </div>
-  </main>
-</Base>
+{Content ? (
+  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
+    <Content components={{ Listings, Listing }} />
+  </ContentPage>
+) : (
+  <ContentPage title={config.name}>
+    <p>Create <code>pages/{config.home}.mdx</code> to get started.</p>
+  </ContentPage>
+)}
+`);
+
+// src/pages/[slug].astro
+await writeFile(join(dir, 'src', 'pages', '[slug].astro'), `---
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { loadConfig, loadPages } from 'corner-store';
+
+export async function getStaticPaths() {
+  const config = await loadConfig();
+  const pages = await loadPages(config);
+
+  return [...pages.entries()]
+    .filter(([slug]) => slug !== config.home)
+    .map(([slug, page]) => ({
+      params: { slug },
+      props: { page },
+    }));
+}
+
+const { page } = Astro.props;
+
+const mdxModules = import.meta.glob('/pages/*.mdx');
+const mod = await mdxModules[\`/pages/\${page.slug}.mdx\`]();
+const Content = mod.default;
+---
+
+<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
+  <Content components={{ Listings, Listing }} />
+</ContentPage>
 `);
 
 // src/pages/404.astro

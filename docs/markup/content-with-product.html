@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="...">
+  <title>The One That Started It All — Store Name</title>
+</head>
+<body>
+  <a href="#main-content" class="cs-skip-link">Skip to main content</a>
+
+  <header class="cs-header">
+    <a href="/" class="cs-store-name">Store Name</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="/">Shop</a></li>
+        <li><a href="/about" aria-current="page">About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <h1>The One That Started It All</h1>
+    <p>I made this candle for my mom's birthday and everyone asked where to buy one.</p>
+
+    <article itemscope itemtype="https://schema.org/Product">
+      <h2 itemprop="name">Lavender Fields</h2>
+      <img src="..." alt="Lavender Fields soy candle in amber glass jar" itemprop="image">
+      <p itemprop="description">Hand-poured soy candle with dried lavender.</p>
+      <p itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+        <span itemprop="priceCurrency" content="USD">$</span><data value="25.00" itemprop="price">25.00</data>
+        <span itemprop="availability" content="https://schema.org/InStock">In stock</span>
+      </p>
+      <a href="https://buy.stripe.com/..." aria-label="Buy Lavender Fields — $25.00" itemprop="url">Buy</a>
+    </article>
+
+    <p>It's still our best seller two years later.</p>
+  </main>
+
+  <footer class="cs-footer">
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="/shipping-policy">Shipping Policy</a></li>
+        <li><a href="/returns-policy">Returns Policy</a></li>
+        <li><a href="/faq">FAQ</a></li>
+      </ul>
+    </nav>
+  </footer>
+</body>
+</html>

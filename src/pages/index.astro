@@ -1,21 +1,28 @@
 ---
-import "../styles/pages/index.css";
-import Base from "../layouts/Base.astro";
-import Listings from "../components/Listings/Listings.astro";
-import { getListings } from "../lib/storefront";
+import ContentPage from "../layouts/ContentPage.astro";
+import { Listings, Listing } from "../components";
+import { loadConfig, loadPages } from "../lib/storefront";
 
-const listings = await getListings();
+const config = await loadConfig();
+const pages = await loadPages(config);
+const homePage = pages.get(config.home);
+
+const mdxModules = import.meta.glob('/pages/*.mdx');
+const homeModule = mdxModules[`/pages/${config.home}.mdx`];
+
+let Content: any = null;
+if (homeModule) {
+  const mod = await homeModule() as any;
+  Content = mod.default;
+}
 ---
 
-<Base title="Corner Store">
-  <header class="cs-header">
-    <div class="cs-main">
-      <h1>Corner Store</h1>
-    </div>
-  </header>
-  <main class="cs-storefront">
-    <div class="cs-main">
-      <Listings listings={listings} />
-    </div>
-  </main>
-</Base>
+{Content ? (
+  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
+    <Content components={{ Listings, Listing }} />
+  </ContentPage>
+) : (
+  <ContentPage title={config.name}>
+    <p>Create <code>pages/{config.home}.mdx</code> to get started.</p>
+  </ContentPage>
+)}
