@@ -4,3 +4,5 @@ coverage
 .env
 .astro
 .DS_Store
+claude.md
+.obsidian
