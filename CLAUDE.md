@@ -10,17 +10,6 @@ Part of the Little BigSmall product family.
 
 Makers deserve cheap infrastructure to power their value-add businesses. Every dollar saved on platform fees is a dollar that stays with the person who made the thing.
 
-## Product Rules
-
-These are non-negotiable. They don't change with scope, timeline, or priorities.
-
-- **No feature gating. Ever.** Self-hosted gets every feature for free, forever. Hosted gets every base feature for free. You only pay commission when you're making money.
-- **Stripe is the single source of truth.** Pricing, SKUs, descriptions, images — all live in Stripe. No separate storage layer.
-- **The architecture IS the pricing model.** Client-side generated URLs can only contain one product at a time. Multi-product cart requires exactly one serverless function. This technical constraint maps to product tiers.
-- **Commission-based, not subscription.** Paid features are priced as incremental commission percentages, not flat monthly fees. Cost scales with revenue. Feels fair at every scale.
-- **Open source is distribution, not charity.** Every self-hosted storefront is a billboard and proof of concept. The code being open is the growth strategy.
-- **Compete on experience, not lock-in.** If someone forks the code and serves makers well, that's a win.
-
 ## Distribution
 
 **Primary:** NPM package with a CLI init command (`cornerstore init`) that scaffolds the user's project — bundle directory, theme template, config. This is the documented, supported path. All guides, onboarding, and educational resources target this model.
@@ -29,106 +18,13 @@ These are non-negotiable. They don't change with scope, timeline, or priorities.
 
 Every barrel export is a public API contract — treat exports deliberately. See `docs/todo/export-audit.md`.
 
-## Architecture Principles
+## Design & Development Principles
 
-- Static site + Stripe Checkout for single-product transactions (no backend needed)
-- Serverless function for multi-product cart checkout (the one backend requirement)
-- Stripe API for all product data — no database, no CMS
-- Storefront components will be built on BigSmall Blocks (shared component library, currently "The Construct"). Not integrated yet — will be introduced when moving from prototype to launch-ready.
-- Catalog management is handled by Back Office (separate product, not part of this repo)
-
-## Product Tiers
-
-| Tier | Infrastructure | Cart | Cost |
-|------|---------------|------|------|
-| Self-Hosted Simple | User hosts static site | Single product per checkout | Free forever |
-| Self-Hosted Full | User hosts static site + serverless function | Multi-product cart | Free forever |
-| Hosted Free | We host everything | Multi-product cart | Free up to $1K/mo revenue |
-| Hosted Paid | We host everything | Multi-product cart | Commission-based above threshold |
+**Read [`docs/principles.md`](docs/principles.md) before making design or implementation decisions.** Covers product strategy, product rules, content architecture, CSS architecture, theming, and usability.
 
 ## Test-Driven Development
 
-Strict TDD. No exceptions. No implementation code exists without a failing test that demanded it.
-
-### Why
-
-Agents write plausible code that looks correct but introduces entropy — untested paths, edge cases that "should work," defensive code that may or may not do anything. Strict TDD inverts this. The test defines the contract before implementation. 100% coverage means nothing sneaks past.
-
-### The Rule
-
-**Red -> Green -> Refactor.** No shortcuts.
-
-1. **Red**: Write a failing test that defines expected behavior
-2. **Green**: Write the minimum code to make the test pass
-3. **Refactor**: Clean up while keeping tests green
-
-If there's no failing test, there's no reason to write code.
-
-> **STOP. Before you edit any implementation file, ask yourself:**
-> 1. Have I written or modified a test for this change?
-> 2. Did I run that test and watch it fail?
->
-> If the answer to either is "no", you are violating TDD. Step back. Write the test first. This is not optional.
-
-**When adding tests for existing code**, temporarily break the implementation to verify the test fails. A test that can't catch a regression is worthless.
-
-### Workflow
-
-**Before writing any code:**
-1. Identify the behavior to implement
-2. Write a test that exercises that behavior
-3. Run the test — confirm it fails
-4. Only then write implementation
-
-**During implementation:**
-- Write only enough code to pass the current failing test
-- Resist the urge to "finish" the implementation
-- Each new behavior requires a new failing test first
-
-**After tests pass:**
-- Refactor if needed (tests stay green)
-- No new functionality during refactor
-
-**After feature complete:**
-- Write E2E tests that verify the full user journey
-- E2E tests come after implementation because you need a working system to test
-- These catch composition bugs that unit tests miss
-
-### Test Scope
-
-| Level | What it tests | Mocks? | When |
-|-------|---------------|--------|------|
-| Unit | Single function/method in isolation | Yes | Before implementation |
-| Integration | Multiple real components together | Minimal | Before implementation |
-| Contract | Implementations against interfaces | No | Before implementation |
-| End-to-end | Full user journey through system | No | After implementation |
-
-### Coverage Standards
-
-- **100% lines. 100% branches. No exceptions.** CI fails if coverage drops.
-- Exhaustive coverage for type guards: N conditions = N tests.
-- Parameterized tests for method validation: cover all methods systematically.
-- No spot-checking. Test all paths.
-
-**Genuinely untestable lines:** Exhaust all options first (mock it, inject a dependency, restructure). If truly untestable, use a coverage ignore comment with mandatory explanation. Every ignore comment is a flag for future review.
-
-### No Flaky Tests
-
-A flaky test is worse than no test. Flaky tests erode trust and train people to ignore failures.
-
-- Never use `setTimeout` as synchronization. Use deterministic signals.
-- Async resources must expose readiness (promises, events, callbacks).
-- Use `waitFor` with assertions, not delays.
-- Isolate external dependencies. No shared state between tests.
-- Make assertions deterministic.
-
-If you find a flaky test: treat it as a critical bug, identify the race condition, fix the API not the test, run multiple times to verify.
-
-### Anti-Patterns
-
-- **Never loosen tests to make code pass.** Fix the code or fix a genuinely broken test.
-- **Never skip tests.** A skipped test is a lie about coverage.
-- **Never write implementation without a failing test.**
+**Read [`docs/tdd.md`](docs/tdd.md) before writing any implementation code.** Strict TDD, no exceptions. Red -> Green -> Refactor. 100% coverage. No implementation without a failing test.
 
 ## Documentation
 

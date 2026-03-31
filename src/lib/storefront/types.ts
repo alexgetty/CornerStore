@@ -73,10 +73,12 @@ export interface StoreConfig {
   home: string;
   nav: NavItem[];
   footerNav: NavItem[];
+  contact?: string;
 }
 
 export interface PageData {
   slug: string;
   title: string;
   hasExplicitTitle: boolean;
+  description: string | undefined;
 }

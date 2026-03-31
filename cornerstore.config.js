@@ -19,5 +19,10 @@ export default {
     { label: 'Shipping Policy', page: 'shipping-policy' },
     { label: 'Returns Policy', page: 'returns-policy' },
     { label: 'FAQ', page: 'faq' },
+    { label: 'Privacy Policy', page: 'privacy-policy' },
+    { label: 'Terms of Service', page: 'terms-of-service' },
   ],
+
+  // Contact email — displayed in the footer (optional)
+  // contact: 'hello@example.com',
 }

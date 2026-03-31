@@ -30,26 +30,32 @@
         <li>
           <article itemscope itemtype="https://schema.org/Product">
             <h2 itemprop="name">Lavender Fields</h2>
-            <img src="..." alt="Lavender Fields soy candle in amber glass jar" itemprop="image">
+            <div class="cs-image-frame">
+              <img
+                src="..."
+                alt="Lavender Fields soy candle in amber glass jar"
+                width="800"
+                height="800"
+                itemprop="image"
+              >
+            </div>
             <p itemprop="description">Hand-poured soy candle with dried lavender.</p>
-            <p itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+            <div itemprop="offers" itemscope itemtype="https://schema.org/Offer">
               <span itemprop="priceCurrency" content="USD">$</span><data value="25.00" itemprop="price">25.00</data>
-              <span itemprop="availability" content="https://schema.org/InStock">In stock</span>
-            </p>
-            <a href="https://buy.stripe.com/..." aria-label="Buy Lavender Fields — $25.00" itemprop="url">Buy</a>
+            </div>
+            <a href="https://buy.stripe.com/..." aria-label="Buy Lavender Fields — $25.00">Buy</a>
           </article>
         </li>
         <!-- Product without image -->
         <li>
           <article itemscope itemtype="https://schema.org/Product">
             <h2 itemprop="name">Cedar &amp; Smoke</h2>
-            <div class="cs-image-placeholder"></div>
+            <div class="cs-image-placeholder" aria-hidden="true"></div>
             <p itemprop="description">Woodsy hand-poured candle.</p>
-            <p itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+            <div itemprop="offers" itemscope itemtype="https://schema.org/Offer">
               <span itemprop="priceCurrency" content="USD">$</span><data value="30.00" itemprop="price">30.00</data>
-              <span itemprop="availability" content="https://schema.org/InStock">In stock</span>
-            </p>
-            <a href="https://buy.stripe.com/..." aria-label="Buy Cedar &amp; Smoke — $30.00" itemprop="url">Buy</a>
+            </div>
+            <a href="https://buy.stripe.com/..." aria-label="Buy Cedar &amp; Smoke — $30.00">Buy</a>
           </article>
         </li>
       </ul>

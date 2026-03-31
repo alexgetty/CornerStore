@@ -1,47 +1,81 @@
 @layer package {
-  .cs-status-page {
-    min-height: 100vh;
+  .cs-status {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-  }
-
-  .cs-status-content {
     text-align: center;
-    padding: 2rem 1.5rem;
-    max-width: 480px;
+    flex-grow: 1;
   }
 
-  .cs-status-heading {
+  .cs-status h1 {
     font-size: var(--cs-font-size-larger);
     font-weight: var(--cs-heading-font-weight);
     margin-bottom: 0.75rem;
   }
 
-  .cs-status-message {
+  .cs-status p {
     color: var(--cs-body-text-color);
     margin-bottom: 1.5rem;
     line-height: var(--cs-body-line-height);
   }
 
-  .cs-status-action {
+  .cs-status a {
     display: inline-block;
-    padding: var(--cs-button-padding-vertical) 1.5rem;
-    background: var(--cs-button-background);
+    padding-top: var(--cs-button-padding-vertical);
+    padding-bottom: var(--cs-button-padding-vertical);
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    background-color: var(--cs-button-background);
     color: var(--cs-button-text-color);
     text-decoration: none;
     border-radius: var(--cs-button-border-radius);
     font-size: var(--cs-font-size-small);
     font-weight: 500;
-    transition: background var(--cs-transition-fast);
+    transition: background-color var(--cs-transition-fast);
   }
 
-  .cs-status-action:hover {
-    background: var(--cs-button-background-hover);
+  .cs-status a:hover {
+    background-color: var(--cs-button-background-hover);
   }
 
-  .cs-status-action:focus-visible {
-    outline: var(--cs-focus-width) solid var(--cs-focus-color);
+  .cs-status .cs-status-secondary {
+    color: var(--cs-muted-text-color);
+    font-size: var(--cs-font-size-small);
+    margin-bottom: 0.5rem;
+    line-height: var(--cs-body-line-height);
+  }
+
+  .cs-status .cs-status-contact {
+    color: var(--cs-muted-text-color);
+    font-size: var(--cs-font-size-small);
+    margin-bottom: 1.5rem;
+    line-height: var(--cs-body-line-height);
+  }
+
+  .cs-status .cs-status-contact a {
+    display: inline;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    background-color: transparent;
+    color: var(--cs-muted-text-color);
+    text-decoration: underline;
+    border-radius: 0;
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  .cs-status .cs-status-contact a:hover {
+    color: var(--cs-heading-text-color);
+    background-color: transparent;
+  }
+
+  .cs-status a:focus-visible {
+    outline-width: var(--cs-focus-width);
+    outline-style: solid;
+    outline-color: var(--cs-focus-color);
     outline-offset: var(--cs-focus-offset);
   }
 }

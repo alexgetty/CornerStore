@@ -9,12 +9,18 @@ export function parseConfig(raw: unknown): StoreConfig {
     ? raw
     : {}) as Record<string, unknown>;
 
-  return {
+  const config: StoreConfig = {
     name: typeof obj.name === 'string' && obj.name ? obj.name : 'My Store',
     home: typeof obj.home === 'string' && obj.home ? obj.home : 'home',
     nav: Array.isArray(obj.nav) ? obj.nav.filter(isValidNavItem) : [],
     footerNav: Array.isArray(obj.footerNav) ? obj.footerNav.filter(isValidNavItem) : [],
   };
+
+  if (typeof obj.contact === 'string' && obj.contact) {
+    config.contact = obj.contact;
+  }
+
+  return config;
 }
 
 function isValidNavItem(item: unknown): item is NavItem {

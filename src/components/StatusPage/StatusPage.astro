@@ -1,24 +1,31 @@
 ---
 import "./StatusPage.css";
 import Base from "../../layouts/Base.astro";
+import { loadConfig } from "../../lib/storefront";
 
 interface Props {
   title: string;
   heading: string;
   message: string;
+  secondaryMessage?: string;
   linkText: string;
   linkHref: string;
 }
 
-const { title, heading, message, linkText, linkHref } = Astro.props;
+const { title, heading, message, secondaryMessage, linkText, linkHref } = Astro.props;
+const config = await loadConfig();
 ---
 
-<Base title={title}>
-  <main class="cs-status-page">
-    <div class="cs-status-content">
-      <h1 class="cs-status-heading">{heading}</h1>
-      <p class="cs-status-message">{message}</p>
-      <a href={linkHref} class="cs-status-action">{linkText}</a>
-    </div>
+<Base title={`${title} — ${config.name}`}>
+  <main id="main-content" class="cs-status">
+    <h1>{heading}</h1>
+    <p>{message}</p>
+    {secondaryMessage && <p class="cs-status-secondary">{secondaryMessage}</p>}
+    {config.contact && (
+      <p class="cs-status-contact">
+        Questions? Reach us at <a href={`mailto:${config.contact}`}>{config.contact}</a>
+      </p>
+    )}
+    <a href={linkHref}>{linkText}</a>
   </main>
 </Base>

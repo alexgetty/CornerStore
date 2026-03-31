@@ -185,7 +185,6 @@ Google's Required Properties for Merchant Listings:
 | `offers.price` | Required |
 | `offers.priceCurrency` | Required |
 | `offers.url` | Recommended |
-| `offers.availability` | Recommended |
 | `description` | Recommended |
 
 Google recommends JSON-LD over Microdata.
@@ -206,6 +205,5 @@ Google recommends JSON-LD over Microdata.
 ### Medium
 8. Nav `aria-label` includes redundant "navigation"
 9. Schema.org `offers.url` points to Stripe, not the product page
-10. Schema.org availability missing
-11. No meta description on any page
-12. `<section>` element lacks accessible name
+10. No meta description on any page
+11. `<section>` element lacks accessible name

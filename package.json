@@ -13,8 +13,7 @@
     "./layouts/ContentPage": "./src/layouts/ContentPage.astro",
     "./styles/reset.css": "./src/styles/reset.css",
     "./styles/palette.css": "./src/styles/palette.css",
-    "./styles/defaults.css": "./src/styles/defaults.css",
-    "./styles/pages/index.css": "./src/styles/pages/index.css"
+    "./styles/defaults.css": "./src/styles/defaults.css"
   },
   "files": [
     "bin/",
@@ -36,7 +35,8 @@
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",
     "gray-matter": "^4.0.3",
-    "stripe": "^20"
+    "stripe": "^20",
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "astro": "^5"

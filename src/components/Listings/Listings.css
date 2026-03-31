@@ -1,5 +1,5 @@
 @layer package {
-  .cs-listings {
+  .cs-listings ul {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(var(--cs-listing-minimum-width), 1fr));
     gap: var(--cs-listings-gap);
@@ -8,8 +8,10 @@
   .cs-listings-empty {
     text-align: center;
     color: var(--cs-muted-text-color);
-    padding: 3rem 1rem;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
     font-size: var(--cs-font-size-large);
-    grid-column: 1 / -1;
   }
 }

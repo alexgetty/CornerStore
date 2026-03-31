@@ -27,6 +27,10 @@ const wantShipping = (await rl.question('  Shipping Policy? (Y/n): ')).trim().to
 const wantReturns = (await rl.question('  Returns Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
 const wantFaq = (await rl.question('  FAQ? (Y/n): ')).trim().toLowerCase() !== 'n';
 
+// Contact email
+console.log('');
+const contactEmail = (await rl.question('  Contact email (press Enter to skip): ')).trim();
+
 rl.close();
 
 const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'corner-store';
@@ -42,6 +46,8 @@ if (wantAbout) nav.push({ label: 'About', page: 'about' });
 if (wantShipping) footerNav.push({ label: 'Shipping Policy', page: 'shipping-policy' });
 if (wantReturns) footerNav.push({ label: 'Returns Policy', page: 'returns-policy' });
 if (wantFaq) footerNav.push({ label: 'FAQ', page: 'faq' });
+footerNav.push({ label: 'Privacy Policy', page: 'privacy-policy' });
+footerNav.push({ label: 'Terms of Service', page: 'terms-of-service' });
 
 // Directory structure
 await mkdir(join(dir, 'src', 'pages'), { recursive: true });
@@ -113,13 +119,18 @@ dist/
 `);
 
 // cornerstore.config.js
-await writeFile(join(dir, 'cornerstore.config.js'), `export default {
-  name: ${JSON.stringify(storeName)},
-  home: 'home',
-  nav: ${JSON.stringify(nav, null, 4)},
-  footerNav: ${JSON.stringify(footerNav, null, 4)},
+const configLines = [
+  `export default {`,
+  `  name: ${JSON.stringify(storeName)},`,
+  `  home: 'home',`,
+  `  nav: ${JSON.stringify(nav, null, 4)},`,
+  `  footerNav: ${JSON.stringify(footerNav, null, 4)},`,
+];
+if (contactEmail) {
+  configLines.push(`  contact: ${JSON.stringify(contactEmail)},`);
 }
-`);
+configLines.push(`}\n`);
+await writeFile(join(dir, 'cornerstore.config.js'), configLines.join('\n'));
 
 // theme/theme.css — read from the package's source copy
 const themeTemplate = await readFile(join(packageRoot, 'theme', 'theme.css'), 'utf-8');
@@ -151,6 +162,13 @@ if (wantFaq) {
   const stub = await readFile(join(stubsDir, 'faq.mdx'), 'utf-8');
   await writeFile(join(dir, 'pages', 'faq.mdx'), stub);
 }
+
+// Privacy Policy and Terms of Service — always scaffolded
+const privacyStub = await readFile(join(stubsDir, 'privacy-policy.mdx'), 'utf-8');
+await writeFile(join(dir, 'pages', 'privacy-policy.mdx'), privacyStub);
+
+const tosStub = await readFile(join(stubsDir, 'terms-of-service.mdx'), 'utf-8');
+await writeFile(join(dir, 'pages', 'terms-of-service.mdx'), tosStub);
 
 // src/pages/index.astro
 await writeFile(join(dir, 'src', 'pages', 'index.astro'), `---

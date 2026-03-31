@@ -65,30 +65,91 @@
     --cs-main-gap: 2rem;
     --cs-main-padding: 1.5rem;
     --cs-main-width: 1080px;
+    --cs-prose-width: 42rem;
   }
 
   body {
     font-family: var(--cs-font-family);
     line-height: var(--cs-body-line-height);
     color: var(--cs-heading-text-color);
-    background: var(--cs-background);
+    background-color: var(--cs-background);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
 
-  .cs-main {
+  header,
+  main,
+  footer {
     max-width: var(--cs-main-width);
-    margin: 0 auto;
-    padding: 0 var(--cs-main-padding);
+    align-self: center;
+    width: 100%;
+    padding-left: var(--cs-main-padding);
+    padding-right: var(--cs-main-padding);
+  }
+
+  main {
+    flex-grow: 1;
+  }
+
+  .cs-skip-link {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: -1px;
+    margin-bottom: -1px;
+    margin-left: -1px;
+    margin-right: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .cs-skip-link:focus {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+    padding-top: var(--cs-button-padding-vertical);
+    padding-bottom: var(--cs-button-padding-vertical);
+    padding-left: var(--cs-button-padding-horizontal);
+    padding-right: var(--cs-button-padding-horizontal);
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    background-color: var(--cs-button-background);
+    color: var(--cs-button-text-color);
+    font-size: var(--cs-font-size-small);
+    font-weight: var(--cs-emphasis-font-weight);
+    text-decoration: none;
+    z-index: 9999;
   }
 
   .cs-sr-only {
     position: absolute;
     width: 1px;
     height: 1px;
-    padding: 0;
-    margin: -1px;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: -1px;
+    margin-bottom: -1px;
+    margin-left: -1px;
+    margin-right: -1px;
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
-    border: 0;
+    border-width: 0;
   }
 }

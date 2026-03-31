@@ -164,6 +164,26 @@ describe('parseConfig', () => {
   it('defaults footerNav to empty array when non-array', () => {
     expect(parseConfig({ footerNav: {} }).footerNav).toEqual([]);
   });
+
+  it('extracts contact when valid email string', () => {
+    const config = parseConfig({ contact: 'hello@example.com' });
+    expect(config.contact).toBe('hello@example.com');
+  });
+
+  it('contact is undefined when missing', () => {
+    const config = parseConfig({});
+    expect(config.contact).toBeUndefined();
+  });
+
+  it('contact is undefined when non-string', () => {
+    const config = parseConfig({ contact: 42 });
+    expect(config.contact).toBeUndefined();
+  });
+
+  it('contact is undefined when empty string', () => {
+    const config = parseConfig({ contact: '' });
+    expect(config.contact).toBeUndefined();
+  });
 });
 
 // ─── resolveNavItem ─────────────────────────────────────────────────────────

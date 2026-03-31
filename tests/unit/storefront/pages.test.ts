@@ -21,6 +21,121 @@ const baseConfig: StoreConfig = {
   footerNav: [],
 };
 
+describe('frontmatterSchema', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('accepts valid frontmatter with title and description', async () => {
+    const { frontmatterSchema } = await import('../../../src/lib/storefront/pages.js');
+    const result = frontmatterSchema.parse({ title: 'About', description: 'About page' });
+    expect(result.title).toBe('About');
+    expect(result.description).toBe('About page');
+  });
+
+  it('defaults title and description to undefined when omitted', async () => {
+    const { frontmatterSchema } = await import('../../../src/lib/storefront/pages.js');
+    const result = frontmatterSchema.parse({});
+    expect(result.title).toBeUndefined();
+    expect(result.description).toBeUndefined();
+  });
+
+  it('coerces non-string title to undefined', async () => {
+    const { frontmatterSchema } = await import('../../../src/lib/storefront/pages.js');
+    const result = frontmatterSchema.parse({ title: 42 });
+    expect(result.title).toBeUndefined();
+  });
+
+  it('coerces non-string description to undefined', async () => {
+    const { frontmatterSchema } = await import('../../../src/lib/storefront/pages.js');
+    const result = frontmatterSchema.parse({ description: true });
+    expect(result.description).toBeUndefined();
+  });
+
+  it('strips unknown fields', async () => {
+    const { frontmatterSchema } = await import('../../../src/lib/storefront/pages.js');
+    const result = frontmatterSchema.parse({ title: 'Hi', extra: 'junk', count: 99 });
+    expect(result).toEqual({ title: 'Hi', description: undefined });
+  });
+
+  it('preserves empty string title', async () => {
+    const { frontmatterSchema } = await import('../../../src/lib/storefront/pages.js');
+    const result = frontmatterSchema.parse({ title: '' });
+    expect(result.title).toBe('');
+  });
+
+  it('preserves empty string description', async () => {
+    const { frontmatterSchema } = await import('../../../src/lib/storefront/pages.js');
+    const result = frontmatterSchema.parse({ description: '' });
+    expect(result.description).toBe('');
+  });
+});
+
+describe('resolvePageTitle', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('returns explicit title and hasExplicitTitle true when title is a non-empty string', async () => {
+    const { resolvePageTitle } = await import('../../../src/lib/storefront/pages.js');
+    const result = resolvePageTitle({ title: 'About Us' }, 'about', baseConfig);
+    expect(result).toEqual({ title: 'About Us', hasExplicitTitle: true });
+  });
+
+  it('falls back to nav label when title is undefined', async () => {
+    const { resolvePageTitle } = await import('../../../src/lib/storefront/pages.js');
+    const config: StoreConfig = {
+      ...baseConfig,
+      nav: [{ label: 'About Page', page: 'about' }],
+    };
+    const result = resolvePageTitle({}, 'about', config);
+    expect(result).toEqual({ title: 'About Page', hasExplicitTitle: false });
+  });
+
+  it('falls back to footerNav label when title is undefined and not in nav', async () => {
+    const { resolvePageTitle } = await import('../../../src/lib/storefront/pages.js');
+    const config: StoreConfig = {
+      ...baseConfig,
+      footerNav: [{ label: 'FAQ Page', page: 'faq' }],
+    };
+    const result = resolvePageTitle({}, 'faq', config);
+    expect(result).toEqual({ title: 'FAQ Page', hasExplicitTitle: false });
+  });
+
+  it('prefers nav label over footerNav label', async () => {
+    const { resolvePageTitle } = await import('../../../src/lib/storefront/pages.js');
+    const config: StoreConfig = {
+      ...baseConfig,
+      nav: [{ label: 'Nav Label', page: 'about' }],
+      footerNav: [{ label: 'Footer Label', page: 'about' }],
+    };
+    const result = resolvePageTitle({}, 'about', config);
+    expect(result).toEqual({ title: 'Nav Label', hasExplicitTitle: false });
+  });
+
+  it('falls back to slug when title is undefined and page is not in any nav', async () => {
+    const { resolvePageTitle } = await import('../../../src/lib/storefront/pages.js');
+    const result = resolvePageTitle({}, 'orphan', baseConfig);
+    expect(result).toEqual({ title: 'orphan', hasExplicitTitle: false });
+  });
+
+  it('treats empty string title as missing', async () => {
+    const { resolvePageTitle } = await import('../../../src/lib/storefront/pages.js');
+    const result = resolvePageTitle({ title: '' }, 'faq', baseConfig);
+    expect(result).toEqual({ title: 'faq', hasExplicitTitle: false });
+  });
+
+  it('treats non-string title as missing', async () => {
+    const { resolvePageTitle } = await import('../../../src/lib/storefront/pages.js');
+    const result = resolvePageTitle({ title: 42 }, 'about', baseConfig);
+    expect(result).toEqual({ title: 'about', hasExplicitTitle: false });
+  });
+});
+
 describe('loadPages', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -279,6 +394,50 @@ describe('loadPages', () => {
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('[Storefront] Warning: pages/malformed.mdx:');
     expect(allLogCalls).toContain('failed to parse frontmatter');
+  });
+
+  it('includes description from frontmatter when present', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['about.mdx']);
+    readFileMock.mockResolvedValue('---\ntitle: About\ndescription: Learn about us\n---\n');
+
+    const { loadPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadPages(baseConfig);
+
+    expect(result.get('about')!.description).toBe('Learn about us');
+  });
+
+  it('sets description to undefined when not in frontmatter', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['about.mdx']);
+    readFileMock.mockResolvedValue('---\ntitle: About\n---\n');
+
+    const { loadPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadPages(baseConfig);
+
+    expect(result.get('about')!.description).toBeUndefined();
+  });
+
+  it('sets description to empty string when frontmatter description is empty', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['about.mdx']);
+    readFileMock.mockResolvedValue('---\ntitle: About\ndescription: ""\n---\n');
+
+    const { loadPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadPages(baseConfig);
+
+    expect(result.get('about')!.description).toBe('');
+  });
+
+  it('coerces non-string description to undefined in loadPages', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['about.mdx']);
+    readFileMock.mockResolvedValue('---\ntitle: About\ndescription: 42\n---\n');
+
+    const { loadPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadPages(baseConfig);
+
+    expect(result.get('about')!.description).toBeUndefined();
   });
 
   it('warns and skips when frontmatter parser throws non-Error value', async () => {

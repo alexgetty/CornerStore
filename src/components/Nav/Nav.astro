@@ -5,22 +5,27 @@ import type { ResolvedNavItem } from "../../lib/storefront";
 interface Props {
   storeName: string;
   nav: ResolvedNavItem[];
+  currentPath?: string;
 }
 
-const { storeName, nav } = Astro.props;
+const { storeName, nav, currentPath } = Astro.props;
+
+function normalizePath(p: string): string {
+  return p === '/' ? p : p.replace(/\/$/, '');
+}
+
+const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefined;
 ---
 
 <header class="cs-header">
-  <div class="cs-main cs-nav">
-    <a href="/" class="cs-nav-name">{storeName}</a>
-    {nav.length > 0 && (
-      <nav aria-label="Main navigation">
-        <ul class="cs-nav-links">
-          {nav.map((item) => (
-            <li><a href={item.href}>{item.label}</a></li>
-          ))}
-        </ul>
-      </nav>
-    )}
-  </div>
+  <a href="/" class="cs-store-name">{storeName}</a>
+  {nav.length > 0 && (
+    <nav aria-label="Main">
+      <ul class="cs-nav-links">
+        {nav.map((item) => (
+          <li><a href={item.href} {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}>{item.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+  )}
 </header>

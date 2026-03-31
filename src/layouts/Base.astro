@@ -8,9 +8,13 @@ import path from 'node:path';
 
 interface Props {
   title: string;
+  description?: string;
+  ogImage?: string;
+  ogUrl?: string;
+  ogType?: string;
 }
 
-const { title } = Astro.props;
+const { title, description, ogImage, ogUrl, ogType } = Astro.props;
 
 const themePath = path.resolve(process.cwd(), 'theme/theme.css');
 const themeExists = fs.existsSync(themePath);
@@ -26,12 +30,20 @@ if (themeExists) {
     <style is:inline>@layer package, theme;</style>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {description && <meta name="description" content={description} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://buy.stripe.com" />
+    <meta property="og:title" content={title} />
+    <meta property="og:type" content={ogType ?? "website"} />
+    {description && <meta property="og:description" content={description} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogUrl && <meta property="og:url" content={ogUrl} />}
     <slot name="head" />
     {themeCSS && <Fragment set:html={`<style>@layer theme{${themeCSS}}</style>`} />}
     <title>{title}</title>
   </head>
   <body>
+    <a href="#main-content" class="cs-skip-link">Skip to main content</a>
     <slot />
   </body>
 </html>

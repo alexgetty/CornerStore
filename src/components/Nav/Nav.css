@@ -1,18 +1,18 @@
 @layer package {
   .cs-header {
-    padding: var(--cs-main-gap) 0;
-    border-bottom: 1px solid var(--cs-border-color);
-    background: var(--cs-header-surface);
-  }
-
-  .cs-nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
+    padding-top: var(--cs-main-gap);
+    padding-bottom: var(--cs-main-gap);
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: var(--cs-border-color);
+    background-color: var(--cs-header-surface);
   }
 
-  .cs-nav-name {
+  .cs-store-name {
     font-size: var(--cs-font-size-larger);
     font-weight: var(--cs-heading-font-weight);
     letter-spacing: var(--cs-heading-letter-spacing);
@@ -20,16 +20,13 @@
     text-decoration: none;
   }
 
-  .cs-nav-name:hover {
+  .cs-store-name:hover {
     color: var(--cs-highlight-text-color);
   }
 
   .cs-nav-links {
     display: flex;
     gap: 1.5rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
   }
 
   .cs-nav-links a {
@@ -44,7 +41,9 @@
   }
 
   .cs-nav-links a:focus-visible {
-    outline: var(--cs-focus-width) solid var(--cs-focus-color);
+    outline-width: var(--cs-focus-width);
+    outline-style: solid;
+    outline-color: var(--cs-focus-color);
     outline-offset: var(--cs-focus-offset);
   }
 }

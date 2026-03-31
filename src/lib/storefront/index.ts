@@ -6,4 +6,4 @@ export { getListings } from './get-listings.js';
 export { getErrorMessage } from './utils.js';
 export { loadConfig, getNav, resolveNavItem, parseConfig } from './config.js';
 export type { PageData } from './types.js';
-export { loadPages } from './pages.js';
+export { loadPages, resolvePageTitle, frontmatterSchema } from './pages.js';

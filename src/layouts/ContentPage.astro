@@ -8,32 +8,36 @@ import type { ResolvedNavItem } from "../lib/storefront";
 interface Props {
   title: string;
   hasExplicitTitle?: boolean;
+  description?: string;
 }
 
-const { title, hasExplicitTitle = true } = Astro.props;
+const { title, hasExplicitTitle = true, description } = Astro.props;
 const config = await loadConfig();
 const { nav, footerNav } = getNav(config);
 ---
 
-<Base title={`${title} — ${config.name}`}>
-  <Nav storeName={config.name} nav={nav} />
-  <main class="cs-content">
-    <div class="cs-main cs-prose">
-      <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
-      <slot />
-    </div>
+<Base title={`${title} — ${config.name}`} description={description}>
+  <Nav storeName={config.name} nav={nav} currentPath={Astro.url.pathname} />
+  <main id="main-content">
+    <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
+    <slot />
   </main>
-  {footerNav.length > 0 && (
+  {(footerNav.length > 0 || config.contact) && (
     <footer class="cs-footer">
-      <div class="cs-main">
-        <nav aria-label="Footer navigation">
+      {footerNav.length > 0 && (
+        <nav aria-label="Footer">
           <ul class="cs-footer-links">
             {footerNav.map((item: ResolvedNavItem) => (
               <li><a href={item.href}>{item.label}</a></li>
             ))}
           </ul>
         </nav>
-      </div>
+      )}
+      {config.contact && (
+        <p class="cs-footer-contact">
+          <a href={`mailto:${config.contact}`}>{config.contact}</a>
+        </p>
+      )}
     </footer>
   )}
 </Base>

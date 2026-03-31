@@ -1,8 +1,20 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import matter from 'gray-matter';
+import { z } from 'zod';
 import type { PageData, StoreConfig } from './types.js';
 import { getErrorMessage } from './utils.js';
+
+const optionalString = z
+  .unknown()
+  .transform((val) => (typeof val === 'string' ? val : undefined));
+
+export const frontmatterSchema = z
+  .object({
+    title: optionalString,
+    description: optionalString,
+  })
+  .strip();
 
 export const PAGES_DIR = join(process.cwd(), 'pages');
 
@@ -12,6 +24,18 @@ function findNavLabel(slug: string, config: StoreConfig): string | undefined {
   const footerItem = config.footerNav.find((item) => item.page === slug);
   if (footerItem) return footerItem.label;
   return undefined;
+}
+
+export function resolvePageTitle(
+  data: Record<string, unknown>,
+  slug: string,
+  config: StoreConfig
+): { title: string; hasExplicitTitle: boolean } {
+  const hasExplicitTitle = typeof data.title === 'string' && data.title.length > 0;
+  const title = hasExplicitTitle
+    ? data.title as string
+    : findNavLabel(slug, config) ?? slug;
+  return { title, hasExplicitTitle };
 }
 
 export async function loadPages(config: StoreConfig): Promise<Map<string, PageData>> {
@@ -40,20 +64,18 @@ export async function loadPages(config: StoreConfig): Promise<Map<string, PageDa
       continue;
     }
 
-    let data: Record<string, unknown>;
+    let rawData: Record<string, unknown>;
     try {
-      ({ data } = matter(raw));
+      ({ data: rawData } = matter(raw));
     } catch (err: unknown) {
       console.log(`[Storefront] Warning: pages/${file}: failed to parse frontmatter — ${getErrorMessage(err)}`);
       continue;
     }
 
-    const hasExplicitTitle = typeof data.title === 'string' && data.title.length > 0;
-    const title = hasExplicitTitle
-      ? data.title as string
-      : findNavLabel(slug, config) ?? slug;
+    const parsed = frontmatterSchema.parse(rawData);
+    const { title, hasExplicitTitle } = resolvePageTitle(parsed, slug, config);
 
-    pages.set(slug, { slug, title, hasExplicitTitle });
+    pages.set(slug, { slug, title, hasExplicitTitle, description: parsed.description });
   }
 
   return pages;

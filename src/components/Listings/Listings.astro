@@ -18,9 +18,15 @@ if (limit !== undefined) {
 }
 ---
 
-<section class="cs-listings">
+<section class="cs-listings" aria-label="Products">
   {listings.length > 0 ? (
-    listings.map((listing) => <Listing listing={listing} />)
+    <ul role="list">
+      {listings.map((listing) => (
+        <li>
+          <Listing listing={listing} />
+        </li>
+      ))}
+    </ul>
   ) : (
     <p class="cs-listings-empty">No products available.</p>
   )}
