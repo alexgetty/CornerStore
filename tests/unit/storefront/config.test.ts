@@ -231,7 +231,12 @@ describe('getNav', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  function page(slug: string) {
+    return { slug, title: slug, hasExplicitTitle: true, description: undefined };
+  }
+
   it('resolves both nav and footerNav arrays', () => {
+    const pages = new Map([['home', page('home')], ['about', page('about')], ['faq', page('faq')]]);
     const result = getNav({
       name: 'Test',
       home: 'home',
@@ -242,7 +247,7 @@ describe('getNav', () => {
       footerNav: [
         { label: 'FAQ', page: 'faq' },
       ],
-    });
+    }, pages);
     expect(result.nav).toEqual([
       { label: 'Shop', href: '/' },
       { label: 'About', href: '/about' },
@@ -258,19 +263,100 @@ describe('getNav', () => {
       home: 'home',
       nav: [],
       footerNav: [],
-    });
+    }, new Map());
     expect(result.nav).toEqual([]);
     expect(result.footerNav).toEqual([]);
   });
 
   it('resolves home page items to / in footerNav too', () => {
+    const pages = new Map([['index', page('index')]]);
     const result = getNav({
       name: 'Test',
       home: 'index',
       nav: [],
       footerNav: [{ label: 'Home', page: 'index' }],
-    });
+    }, pages);
     expect(result.footerNav).toEqual([{ label: 'Home', href: '/' }]);
+  });
+
+  it('includes items with matching pages', () => {
+    const pages = new Map([['about', page('about')]]);
+    const result = getNav({
+      name: 'Test',
+      home: 'home',
+      nav: [{ label: 'About', page: 'about' }],
+      footerNav: [],
+    }, pages);
+    expect(result.nav).toEqual([{ label: 'About', href: '/about' }]);
+  });
+
+  it('omits items referencing missing pages', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = getNav({
+      name: 'Test',
+      home: 'home',
+      nav: [{ label: 'About', page: 'about' }],
+      footerNav: [],
+    }, new Map());
+    expect(result.nav).toEqual([]);
+  });
+
+  it('always includes items with path override regardless of pages', () => {
+    const result = getNav({
+      name: 'Test',
+      home: 'home',
+      nav: [{ label: 'Blog', page: 'blog', path: '/writing' }],
+      footerNav: [],
+    }, new Map());
+    expect(result.nav).toEqual([{ label: 'Blog', href: '/writing' }]);
+  });
+
+  it('logs warning for each omitted item', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    getNav({
+      name: 'Test',
+      home: 'home',
+      nav: [{ label: 'About', page: 'about' }],
+      footerNav: [{ label: 'FAQ', page: 'faq' }],
+    }, new Map());
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalledWith('[Storefront] Warning: nav references "about" but pages/about.mdx does not exist');
+    expect(warnSpy).toHaveBeenCalledWith('[Storefront] Warning: nav references "faq" but pages/faq.mdx does not exist');
+  });
+
+  it('omits all page-based items when pages map is empty', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = getNav({
+      name: 'Test',
+      home: 'home',
+      nav: [
+        { label: 'About', page: 'about' },
+        { label: 'FAQ', page: 'faq' },
+      ],
+      footerNav: [],
+    }, new Map());
+    expect(result.nav).toEqual([]);
+  });
+
+  it('handles mix of valid, invalid, and path-override items', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const pages = new Map([['about', page('about')]]);
+    const result = getNav({
+      name: 'Test',
+      home: 'home',
+      nav: [
+        { label: 'About', page: 'about' },
+        { label: 'Missing', page: 'missing' },
+        { label: 'Blog', page: 'blog', path: '/writing' },
+      ],
+      footerNav: [],
+    }, pages);
+    expect(result.nav).toEqual([
+      { label: 'About', href: '/about' },
+      { label: 'Blog', href: '/writing' },
+    ]);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('[Storefront] Warning: nav references "missing" but pages/missing.mdx does not exist');
   });
 });
 

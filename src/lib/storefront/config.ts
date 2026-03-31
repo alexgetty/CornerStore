@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { StoreConfig, NavItem, ResolvedNavItem } from './types.js';
+import type { StoreConfig, NavItem, ResolvedNavItem, PageData } from './types.js';
 
 export const CONFIG_FILENAME = 'cornerstore.config.js';
 
@@ -34,10 +34,24 @@ export function resolveNavItem(item: NavItem, home: string): ResolvedNavItem {
   return { label: item.label, href };
 }
 
-export function getNav(config: StoreConfig): { nav: ResolvedNavItem[]; footerNav: ResolvedNavItem[] } {
+export function getNav(config: StoreConfig, pages: Map<string, PageData>): { nav: ResolvedNavItem[]; footerNav: ResolvedNavItem[] } {
+  function filterAndResolve(items: NavItem[]): ResolvedNavItem[] {
+    const result: ResolvedNavItem[] = [];
+    for (const item of items) {
+      if (item.path !== undefined) {
+        result.push(resolveNavItem(item, config.home));
+      } else if (pages.has(item.page)) {
+        result.push(resolveNavItem(item, config.home));
+      } else {
+        console.warn(`[Storefront] Warning: nav references "${item.page}" but pages/${item.page}.mdx does not exist`);
+      }
+    }
+    return result;
+  }
+
   return {
-    nav: config.nav.map(item => resolveNavItem(item, config.home)),
-    footerNav: config.footerNav.map(item => resolveNavItem(item, config.home)),
+    nav: filterAndResolve(config.nav),
+    footerNav: filterAndResolve(config.footerNav),
   };
 }
 

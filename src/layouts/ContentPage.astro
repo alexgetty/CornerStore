@@ -2,7 +2,7 @@
 import Base from "./Base.astro";
 import Nav from "../components/Nav/Nav.astro";
 import "./ContentPage.css";
-import { loadConfig, getNav } from "../lib/storefront";
+import { loadConfig, loadPages, getNav } from "../lib/storefront";
 import type { ResolvedNavItem } from "../lib/storefront";
 
 interface Props {
@@ -13,7 +13,8 @@ interface Props {
 
 const { title, hasExplicitTitle = true, description } = Astro.props;
 const config = await loadConfig();
-const { nav, footerNav } = getNav(config);
+const pages = await loadPages(config);
+const { nav, footerNav } = getNav(config, pages);
 ---
 
 <Base title={`${title} — ${config.name}`} description={description}>
