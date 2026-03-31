@@ -5,6 +5,10 @@
     gap: var(--cs-listings-gap);
   }
 
+  .cs-listings li {
+    display: flex;
+  }
+
   .cs-listings-empty {
     text-align: center;
     color: var(--cs-muted-text-color);

@@ -63,15 +63,20 @@
     color: var(--cs-heading-text-color);
   }
 
-  main ul,
-  main ol {
+  main > ul,
+  main > ol,
+  main > article > ul,
+  main > article > ol {
     color: var(--cs-body-text-color);
     line-height: var(--cs-body-line-height);
     margin-bottom: 1.25rem;
     padding-left: 1.5rem;
   }
 
-  main li + li {
+  main > ul li + li,
+  main > ol li + li,
+  main > article > ul li + li,
+  main > article > ol li + li {
     margin-top: 0.5rem;
   }
 

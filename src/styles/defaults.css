@@ -81,11 +81,8 @@
   header,
   main,
   footer {
-    max-width: var(--cs-main-width);
-    align-self: center;
-    width: 100%;
-    padding-left: var(--cs-main-padding);
-    padding-right: var(--cs-main-padding);
+    padding-left: max(var(--cs-main-padding), calc((100% - var(--cs-main-width)) / 2 + var(--cs-main-padding)));
+    padding-right: max(var(--cs-main-padding), calc((100% - var(--cs-main-width)) / 2 + var(--cs-main-padding)));
   }
 
   main {
