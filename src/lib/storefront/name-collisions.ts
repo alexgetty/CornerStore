@@ -60,7 +60,7 @@ export function resolveBundleNames(
 
         warnings.push({
           linkUrl: userDefined[i]!.pending.paymentLink,
-          reason: `duplicate bundle title "${baseName}" — disambiguated to "${newName}"`,
+          reason: `listing config title collision: "${baseName}" is already used — renamed to "${newName}"`,
         });
       }
     }
@@ -79,12 +79,12 @@ export function resolveBundleNames(
         if (userDefined.length > 0) {
           warnings.push({
             linkUrl: entry.pending.paymentLink,
-            reason: `auto-generated name "${baseName}" collides with configured title — disambiguated to "${newName}"`,
+            reason: `auto-generated name "${baseName}" matches a configured listing title — renamed to "${newName}"`,
           });
         } else {
           warnings.push({
             linkUrl: entry.pending.paymentLink,
-            reason: `display name collision — disambiguated to "${newName}"`,
+            reason: `auto-generated name collision: "${baseName}" — renamed to "${newName}"`,
           });
         }
       }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { findUniqueName, resolveBundleNames } from '../../../src/lib/storefront/name-collisions.js';
-import type { PendingBundle, BundleConfig } from '../../../src/lib/storefront/types.js';
+import type { PendingBundle, ListingConfig } from '../../../src/lib/storefront/types.js';
 
 function makePendingBundle(overrides: Partial<PendingBundle> = {}): PendingBundle {
   return {
@@ -46,7 +46,7 @@ describe('resolveBundleNames', () => {
   });
 
   it('uses config title when present', () => {
-    const config: BundleConfig = { link: 'https://buy.stripe.com/test', title: 'Holiday Set' };
+    const config: ListingConfig = { link: 'https://buy.stripe.com/test', title: 'Holiday Set' };
     const pending = makePendingBundle({ config, linkId: 'plink_abc' });
 
     const { listings } = resolveBundleNames([pending]);
@@ -82,7 +82,7 @@ describe('resolveBundleNames', () => {
     const names = [...listings.values()].map((l) => l.name);
     expect(names).toContain('Bundle a3f9');
     expect(names).toContain('Bundle a3f9 2');
-    expect(warnings.some((w) => w.reason.includes('display name collision'))).toBe(true);
+    expect(warnings.some((w) => w.reason.includes('auto-generated name collision'))).toBe(true);
   });
 
   it('handles three-way collision', () => {
@@ -115,8 +115,8 @@ describe('resolveBundleNames', () => {
   });
 
   it('disambiguates user-defined title collisions with warning', () => {
-    const configA: BundleConfig = { link: 'https://buy.stripe.com/aaa', title: 'Holiday Set' };
-    const configB: BundleConfig = { link: 'https://buy.stripe.com/bbb', title: 'Holiday Set' };
+    const configA: ListingConfig = { link: 'https://buy.stripe.com/aaa', title: 'Holiday Set' };
+    const configB: ListingConfig = { link: 'https://buy.stripe.com/bbb', title: 'Holiday Set' };
     const a = makePendingBundle({ config: configA, linkId: 'plink_aaa1', paymentLink: 'https://buy.stripe.com/aaa' });
     const b = makePendingBundle({ config: configB, linkId: 'plink_bbb2', paymentLink: 'https://buy.stripe.com/bbb' });
 
@@ -124,13 +124,13 @@ describe('resolveBundleNames', () => {
 
     expect(listings.get(a)!.name).toBe('Holiday Set');
     expect(listings.get(b)!.name).toBe('Holiday Set 2');
-    expect(warnings.some((w) => w.reason.includes('duplicate bundle title'))).toBe(true);
+    expect(warnings.some((w) => w.reason.includes('listing config title collision'))).toBe(true);
     // Winner should not have a collision warning
     expect(warnings.filter((w) => w.linkUrl === 'https://buy.stripe.com/aaa')).toHaveLength(0);
   });
 
   it('gives user-defined titles priority over auto-generated in cross-type collision', () => {
-    const config: BundleConfig = { link: 'https://buy.stripe.com/aaa', title: 'Bundle a3f9' };
+    const config: ListingConfig = { link: 'https://buy.stripe.com/aaa', title: 'Bundle a3f9' };
     const configured = makePendingBundle({
       config,
       suffix: 'a3f9',
@@ -147,11 +147,11 @@ describe('resolveBundleNames', () => {
 
     expect(listings.get(configured)!.name).toBe('Bundle a3f9');
     expect(listings.get(auto)!.name).toBe('Bundle a3f9 2');
-    expect(warnings.some((w) => w.reason.includes('collides with configured title'))).toBe(true);
+    expect(warnings.some((w) => w.reason.includes('matches a configured listing title'))).toBe(true);
   });
 
   it('no collision when configured and unconfigured have different names', () => {
-    const config: BundleConfig = { link: 'https://buy.stripe.com/aaa', title: 'Holiday Set' };
+    const config: ListingConfig = { link: 'https://buy.stripe.com/aaa', title: 'Holiday Set' };
     const configured = makePendingBundle({
       config,
       suffix: 'a3f9',
@@ -170,9 +170,9 @@ describe('resolveBundleNames', () => {
   });
 
   it('skips suffix numbers already taken by existing names', () => {
-    const configA: BundleConfig = { link: 'https://buy.stripe.com/aaa', title: 'Holiday Set' };
-    const configB: BundleConfig = { link: 'https://buy.stripe.com/bbb', title: 'Holiday Set' };
-    const configC: BundleConfig = { link: 'https://buy.stripe.com/ccc', title: 'Holiday Set 2' };
+    const configA: ListingConfig = { link: 'https://buy.stripe.com/aaa', title: 'Holiday Set' };
+    const configB: ListingConfig = { link: 'https://buy.stripe.com/bbb', title: 'Holiday Set' };
+    const configC: ListingConfig = { link: 'https://buy.stripe.com/ccc', title: 'Holiday Set 2' };
     const a = makePendingBundle({ config: configA, linkId: 'plink_aaa1', paymentLink: 'https://buy.stripe.com/aaa' });
     const b = makePendingBundle({ config: configB, linkId: 'plink_bbb2', paymentLink: 'https://buy.stripe.com/bbb' });
     const c = makePendingBundle({ config: configC, linkId: 'plink_ccc3', paymentLink: 'https://buy.stripe.com/ccc' });

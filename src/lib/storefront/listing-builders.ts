@@ -1,13 +1,17 @@
-import type { StripeProductData, PaymentLink, SingleListing, BundleConfig, LinkWarning, PendingBundle } from './types.js';
+import type { StripeProductData, PaymentLink, SingleListing, ListingConfig, LinkWarning, PendingBundle } from './types.js';
 import { formatPrice } from './pricing.js';
 
-export function buildSingleListing(product: StripeProductData, link: PaymentLink): SingleListing {
+export function buildListing(
+  product: StripeProductData,
+  link: PaymentLink,
+  config?: ListingConfig,
+): SingleListing {
   return {
     kind: 'single',
-    name: product.name,
-    description: product.description,
-    image: product.image,
-    imageAlt: product.imageAlt,
+    name: config?.title ?? product.name,
+    description: config?.description ?? product.description,
+    image: config?.image ?? product.image,
+    imageAlt: config?.image_alt ?? product.imageAlt,
     price: formatPrice(product.rawPrice, product.currency),
     rawPrice: product.rawPrice,
     currency: product.currency,
@@ -18,7 +22,7 @@ export function buildSingleListing(product: StripeProductData, link: PaymentLink
 export function buildBundleListing(
   productDataItems: StripeProductData[],
   link: PaymentLink,
-  config: BundleConfig | undefined,
+  config: ListingConfig | undefined,
 ): { bundle: PendingBundle; warnings: LinkWarning[] } {
   const warnings: LinkWarning[] = [];
   const sorted = [...productDataItems].sort((a, b) =>

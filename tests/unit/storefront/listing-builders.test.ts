@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSingleListing, buildBundleListing } from '../../../src/lib/storefront/listing-builders.js';
+import { buildListing, buildBundleListing } from '../../../src/lib/storefront/listing-builders.js';
 import type { StripeProductData, PaymentLink } from '../../../src/lib/storefront/types.js';
 
 function makeProduct(overrides: Partial<StripeProductData> = {}): StripeProductData {
@@ -22,12 +22,12 @@ function makeLink(overrides: Partial<PaymentLink> = {}): PaymentLink {
   };
 }
 
-describe('buildSingleListing', () => {
+describe('buildListing', () => {
   it('returns SingleListing with correct fields', () => {
     const product = makeProduct();
     const link = makeLink();
 
-    const result = buildSingleListing(product, link);
+    const result = buildListing(product, link);
 
     expect(result).toEqual({
       kind: 'single',
@@ -46,7 +46,7 @@ describe('buildSingleListing', () => {
     const product = makeProduct({ rawPrice: 1000, currency: 'gbp' });
     const link = makeLink();
 
-    const result = buildSingleListing(product, link);
+    const result = buildListing(product, link);
 
     expect(result.price).toBe('£10.00');
   });
@@ -55,7 +55,7 @@ describe('buildSingleListing', () => {
     const product = makeProduct({ imageAlt: 'A lovely candle' });
     const link = makeLink();
 
-    const result = buildSingleListing(product, link);
+    const result = buildListing(product, link);
 
     expect(result.imageAlt).toBe('A lovely candle');
   });
@@ -64,7 +64,7 @@ describe('buildSingleListing', () => {
     const product = makeProduct();
     const link = makeLink({ url: 'https://buy.stripe.com/custom' });
 
-    const result = buildSingleListing(product, link);
+    const result = buildListing(product, link);
 
     expect(result.paymentLink).toBe('https://buy.stripe.com/custom');
   });
@@ -73,7 +73,7 @@ describe('buildSingleListing', () => {
     const product = makeProduct({ description: null });
     const link = makeLink();
 
-    const result = buildSingleListing(product, link);
+    const result = buildListing(product, link);
 
     expect(result.description).toBeNull();
   });
@@ -82,9 +82,85 @@ describe('buildSingleListing', () => {
     const product = makeProduct({ image: null });
     const link = makeLink();
 
-    const result = buildSingleListing(product, link);
+    const result = buildListing(product, link);
 
     expect(result.image).toBeNull();
+  });
+
+  it('applies config title override', () => {
+    const product = makeProduct();
+    const link = makeLink();
+    const config = { link: 'https://buy.stripe.com/test', title: 'Custom Name' };
+
+    const result = buildListing(product, link, config);
+
+    expect(result.name).toBe('Custom Name');
+  });
+
+  it('applies config description override', () => {
+    const product = makeProduct();
+    const link = makeLink();
+    const config = { link: 'https://buy.stripe.com/test', description: 'Custom description' };
+
+    const result = buildListing(product, link, config);
+
+    expect(result.description).toBe('Custom description');
+  });
+
+  it('applies config image override', () => {
+    const product = makeProduct();
+    const link = makeLink();
+    const config = { link: 'https://buy.stripe.com/test', image: '/listings/my-product/hero.jpg' };
+
+    const result = buildListing(product, link, config);
+
+    expect(result.image).toBe('/listings/my-product/hero.jpg');
+  });
+
+  it('applies config image_alt override', () => {
+    const product = makeProduct();
+    const link = makeLink();
+    const config = { link: 'https://buy.stripe.com/test', image_alt: 'A beautiful product' };
+
+    const result = buildListing(product, link, config);
+
+    expect(result.imageAlt).toBe('A beautiful product');
+  });
+
+  it('uses Stripe data when config has no overrides', () => {
+    const product = makeProduct();
+    const link = makeLink();
+    const config = { link: 'https://buy.stripe.com/test' };
+
+    const result = buildListing(product, link, config);
+
+    expect(result.name).toBe('Test Product');
+    expect(result.description).toBe('A test product');
+    expect(result.image).toBe('https://example.com/img.jpg');
+    expect(result.imageAlt).toBe('');
+  });
+
+  it('uses Stripe data when no config provided', () => {
+    const product = makeProduct();
+    const link = makeLink();
+
+    const result = buildListing(product, link);
+
+    expect(result.name).toBe('Test Product');
+    expect(result.description).toBe('A test product');
+  });
+
+  it('partial config only overrides specified fields', () => {
+    const product = makeProduct();
+    const link = makeLink();
+    const config = { link: 'https://buy.stripe.com/test', title: 'Custom Name' };
+
+    const result = buildListing(product, link, config);
+
+    expect(result.name).toBe('Custom Name');
+    expect(result.description).toBe('A test product');
+    expect(result.image).toBe('https://example.com/img.jpg');
+    expect(result.imageAlt).toBe('');
   });
 });
 
@@ -231,11 +307,11 @@ describe('buildBundleListing', () => {
   it('uses config image when provided', () => {
     const products = [makeProduct(), makeProduct({ name: 'B' })];
     const link = makeLink();
-    const config = { link: 'https://buy.stripe.com/test', image: '/bundles/custom.jpg' };
+    const config = { link: 'https://buy.stripe.com/test', image: '/listings/custom.jpg' };
 
     const { bundle } = buildBundleListing(products, link, config);
 
-    expect(bundle.image).toBe('/bundles/custom.jpg');
+    expect(bundle.image).toBe('/listings/custom.jpg');
   });
 
   it('stores config and linkId on PendingBundle', () => {

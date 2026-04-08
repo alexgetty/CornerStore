@@ -104,7 +104,7 @@ export async function setupDefaultMocks() {
   mocks.listLineItemsMock.mockResolvedValue({
     data: [makeLineItem()],
   });
-  // Default: no bundle config directory
+  // Default: no listing config directory
   const { readdirMock } = await getFsMock();
   readdirMock.mockRejectedValue(
     Object.assign(new Error('ENOENT'), { code: 'ENOENT' })

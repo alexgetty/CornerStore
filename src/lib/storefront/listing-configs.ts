@@ -1,19 +1,19 @@
 import { readdir, readFile, copyFile, mkdir } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import matter from 'gray-matter';
-import type { BundleConfig } from './types.js';
+import type { ListingConfig } from './types.js';
 import { getErrorMessage } from './utils.js';
 
-export const BUNDLES_DIR = join(process.cwd(), 'bundles');
-export const BUNDLES_PUBLIC_DIR = join(process.cwd(), 'public', 'bundles');
+export const LISTINGS_DIR = join(process.cwd(), 'listings');
+export const LISTINGS_PUBLIC_DIR = join(process.cwd(), 'public', 'listings');
 export const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg']);
 
-export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
-  const configs = new Map<string, BundleConfig>();
+export async function loadListingConfigs(): Promise<Map<string, ListingConfig>> {
+  const configs = new Map<string, ListingConfig>();
 
   let entries: { name: string; isDirectory(): boolean }[];
   try {
-    entries = await readdir(BUNDLES_DIR, { withFileTypes: true });
+    entries = await readdir(LISTINGS_DIR, { withFileTypes: true });
   } catch (err: unknown) {
     if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'ENOENT') {
       return configs;
@@ -24,12 +24,12 @@ export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
   const subdirs = entries.filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name));
 
   for (const dir of subdirs) {
-    const dirPath = join(BUNDLES_DIR, dir.name);
+    const dirPath = join(LISTINGS_DIR, dir.name);
     let files: string[];
     try {
       files = ((await readdir(dirPath)) as string[]).sort();
     } catch (err: unknown) {
-      console.log(`[Storefront] Warning: bundles/${dir.name}: failed to read — ${getErrorMessage(err)}`);
+      console.log(`[Storefront] Warning: listings/${dir.name}: failed to read — ${getErrorMessage(err)}`);
       continue;
     }
 
@@ -37,7 +37,7 @@ export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
     if (mdFiles.length === 0) continue;
 
     if (mdFiles.length > 1) {
-      console.log(`[Storefront] Warning: bundles/${dir.name}: multiple .md files — using ${mdFiles[0]}, ignoring ${mdFiles.slice(1).join(', ')}`);
+      console.log(`[Storefront] Warning: listings/${dir.name}: multiple .md files — using ${mdFiles[0]}, ignoring ${mdFiles.slice(1).join(', ')}`);
     }
 
     const mdFile = mdFiles[0]!;
@@ -45,7 +45,7 @@ export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
     try {
       content = await readFile(join(dirPath, mdFile), 'utf-8');
     } catch (err: unknown) {
-      console.log(`[Storefront] Warning: bundles/${dir.name}/${mdFile}: failed to read — ${getErrorMessage(err)}`);
+      console.log(`[Storefront] Warning: listings/${dir.name}/${mdFile}: failed to read — ${getErrorMessage(err)}`);
       continue;
     }
 
@@ -53,12 +53,12 @@ export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
     try {
       ({ data } = matter(content));
     } catch (err: unknown) {
-      console.log(`[Storefront] Warning: bundles/${dir.name}/${mdFile}: failed to parse frontmatter — ${getErrorMessage(err)}`);
+      console.log(`[Storefront] Warning: listings/${dir.name}/${mdFile}: failed to parse frontmatter — ${getErrorMessage(err)}`);
       continue;
     }
 
     if (!data.link || typeof data.link !== 'string') {
-      console.log(`[Storefront] Warning: bundles/${dir.name}/${mdFile}: missing required "link" field — skipped`);
+      console.log(`[Storefront] Warning: listings/${dir.name}/${mdFile}: missing required "link" field — skipped`);
       continue;
     }
 
@@ -71,29 +71,29 @@ export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
       if (imageFiles.includes(data.cover as string)) {
         coverFile = data.cover as string;
       } else {
-        console.log(`[Storefront] Warning: bundles/${dir.name}: cover "${data.cover}" not found — falling back to first image`);
+        console.log(`[Storefront] Warning: listings/${dir.name}: cover "${data.cover}" not found — falling back to first image`);
         coverFile = imageFiles[0];
       }
     } else {
       coverFile = imageFiles[0];
     }
 
-    // Copy images to public/bundles/<dirname>/
+    // Copy images to public/listings/<dirname>/
     if (imageFiles.length > 0) {
       try {
-        const outDir = join(BUNDLES_PUBLIC_DIR, dir.name);
+        const outDir = join(LISTINGS_PUBLIC_DIR, dir.name);
         await mkdir(outDir, { recursive: true });
         for (const img of imageFiles) {
           await copyFile(join(dirPath, img), join(outDir, img));
         }
       } catch (err: unknown) {
-        console.log(`[Storefront] Warning: bundles/${dir.name}: failed to copy images — ${getErrorMessage(err)}`);
+        console.log(`[Storefront] Warning: listings/${dir.name}: failed to copy images — ${getErrorMessage(err)}`);
       }
     }
 
-    const resolvedImage = coverFile ? `/bundles/${dir.name}/${coverFile}` : undefined;
+    const resolvedImage = coverFile ? `/listings/${dir.name}/${coverFile}` : undefined;
 
-    const config: BundleConfig = {
+    const config: ListingConfig = {
       link: data.link as string,
       ...(typeof data.title === 'string' && data.title ? { title: data.title } : {}),
       ...(typeof data.description === 'string' && data.description ? { description: data.description } : {}),
@@ -102,7 +102,7 @@ export async function loadBundleConfigs(): Promise<Map<string, BundleConfig>> {
     };
 
     if (configs.has(config.link)) {
-      console.log(`[Storefront] Warning: bundles/${dir.name}/${mdFile}: duplicate link — already configured, skipping`);
+      console.log(`[Storefront] Warning: listings/${dir.name}/${mdFile}: duplicate link — already configured, skipping`);
       continue;
     }
 

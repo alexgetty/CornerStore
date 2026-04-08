@@ -17,7 +17,7 @@ vi.mock('stripe', () => {
   return { default: MockStripe };
 });
 
-// Mock node:fs/promises for bundle config tests
+// Mock node:fs/promises for listing config tests
 vi.mock('node:fs/promises', () => ({
   readdir: vi.fn(),
   readFile: vi.fn(),
@@ -35,7 +35,7 @@ describe('getListings', () => {
   beforeEach(async () => {
     vi.resetModules();
     vi.unstubAllEnvs();
-    // Default: no bundle config directory
+    // Default: no listing config directory
     const { readdirMock } = await getFsMock();
     readdirMock.mockRejectedValue(
       Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
@@ -1153,7 +1153,7 @@ describe('getListings', () => {
     expect(names).toContain('Bundle a3f9 2');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('display name collision');
+    expect(allLogCalls).toContain('auto-generated name collision');
   });
 
   it('sorts by link ID for deterministic collision resolution', async () => {
@@ -1369,11 +1369,11 @@ describe('getListings', () => {
     expect(bundleB!.name).toBe('Holiday Set 2');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('duplicate bundle title');
+    expect(allLogCalls).toContain('listing config title collision');
     // Winner (bare name) should not appear in any collision warning
     const collisionWarnings = logSpy.mock.calls
       .map((c) => c[0] as string)
-      .filter((line) => line.includes('duplicate bundle title') || line.includes('collision'));
+      .filter((line) => line.includes('listing config title collision') || line.includes('collision'));
     for (const w of collisionWarnings) {
       expect(w).not.toContain('buy.stripe.com/aaa');
     }
@@ -1431,7 +1431,7 @@ describe('getListings', () => {
     expect(auto!.name).toBe('Bundle a3f9 2');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('collides with configured title');
+    expect(allLogCalls).toContain('matches a configured listing title');
   });
 
   it('skips suffix numbers already taken by existing names', async () => {
@@ -1518,9 +1518,9 @@ describe('getListings', () => {
     await getListings();
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('no bundle config');
+    expect(allLogCalls).toContain('no listing config');
     expect(allLogCalls).toContain('customers will see "Bundle test"');
-    expect(allLogCalls).toContain('bundles/');
+    expect(allLogCalls).toContain('listings/');
   });
 
   it('uses final resolved name in no-config warning after collision', async () => {
@@ -1586,7 +1586,7 @@ describe('getListings', () => {
     await getListings();
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('bundle config has no title');
+    expect(allLogCalls).toContain('listing config has no title');
     expect(allLogCalls).toContain('customers will see "Bundle abcd"');
     expect(allLogCalls).toContain('Add a title field');
   });
@@ -1661,7 +1661,7 @@ describe('getListings', () => {
 
   // --- Bundle config integration ---
 
-  it('warns and continues when loadBundleConfigs throws non-ENOENT error', async () => {
+  it('warns and continues when loadListingConfigs throws non-ENOENT error', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -1685,11 +1685,11 @@ describe('getListings', () => {
     expect(listings[0]!.kind).toBe('single');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('bundle config');
+    expect(allLogCalls).toContain('listing configs');
     expect(allLogCalls).toContain('EACCES');
   });
 
-  it('warns with stringified value when loadBundleConfigs throws non-Error', async () => {
+  it('warns with stringified value when loadListingConfigs throws non-Error', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -1752,7 +1752,7 @@ describe('getListings', () => {
 
     expect(listings[0]!.name).toBe('Holiday Set');
     expect(listings[0]!.description).toBe('Cozy night essentials');
-    expect(listings[0]!.image).toBe('/bundles/holiday-set/holiday.jpg');
+    expect(listings[0]!.image).toBe('/listings/holiday-set/holiday.jpg');
     expect(listings[0]!.imageAlt).toBe('A cozy holiday bundle');
   });
 
@@ -1907,6 +1907,74 @@ describe('getListings', () => {
     expect(allLogCalls).toContain('no matching');
   });
 
+  it('warns about orphaned configs even when only single-product links exist', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('orphan', true)]);
+      }
+      return Promise.resolve(['listing.md']);
+    }) as never);
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/nonexistent\ntitle: Ghost Listing\n---\n'
+    );
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([makePaymentLink()])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [makeLineItem()],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    await getListings();
+
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('buy.stripe.com/nonexistent');
+    expect(allLogCalls).toContain('no matching');
+  });
+
+  it('does not flag config as orphaned when it matches a single-product link', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock, mkdirMock, copyFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('my-product', true)]);
+      }
+      return Promise.resolve(['listing.md', 'hero.jpg']);
+    }) as never);
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/test_abc\ntitle: Custom Name\n---\n'
+    );
+    mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
+    copyFileMock.mockResolvedValue(undefined);
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([makePaymentLink()])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [makeLineItem()],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    await getListings();
+
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).not.toContain('no matching');
+    expect(allLogCalls).not.toContain('orphan');
+  });
+
   it('shows configured vs default counts in build summary', async () => {
     vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
     const mocks = await getStripeMock();
@@ -1947,5 +2015,145 @@ describe('getListings', () => {
     expect(allLogCalls).toContain('Bundle listings: 2');
     expect(allLogCalls).toContain('1 configured');
     expect(allLogCalls).toContain('1 default');
+  });
+
+  // --- Single listing config integration ---
+
+  it('applies listing config overrides to single-product listing', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock, mkdirMock, copyFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('my-candle', true)]);
+      }
+      return Promise.resolve(['listing.md', 'hero.jpg']);
+    }) as never);
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/test_abc\ntitle: Artisan Soy Candle\ndescription: Hand-poured with love\nimage_alt: A beautiful soy candle\n---\n'
+    );
+    mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
+    copyFileMock.mockResolvedValue(undefined);
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([makePaymentLink()])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [makeLineItem()],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    expect(listings).toHaveLength(1);
+    expect(listings[0]!.kind).toBe('single');
+    expect(listings[0]!.name).toBe('Artisan Soy Candle');
+    expect(listings[0]!.description).toBe('Hand-poured with love');
+    expect(listings[0]!.image).toBe('/listings/my-candle/hero.jpg');
+    expect(listings[0]!.imageAlt).toBe('A beautiful soy candle');
+  });
+
+  it('single listing uses Stripe data when no matching config', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    await setupDefaultMocks();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    expect(listings[0]!.kind).toBe('single');
+    expect(listings[0]!.name).toBe('Test Product');
+    expect(listings[0]!.description).toBe('A test product');
+  });
+
+  it('single listing partial config only overrides specified fields', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([makeDirent('my-product', true)]);
+      }
+      return Promise.resolve(['listing.md']);
+    }) as never);
+    readFileMock.mockResolvedValue(
+      '---\nlink: https://buy.stripe.com/test_abc\ntitle: Better Name\n---\n'
+    );
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([makePaymentLink()])
+    );
+    mocks.listLineItemsMock.mockResolvedValue({
+      data: [makeLineItem()],
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    expect(listings[0]!.name).toBe('Better Name');
+    expect(listings[0]!.description).toBe('A test product');
+    expect(listings[0]!.image).toBe('https://example.com/img.jpg');
+  });
+
+  it('applies configs to both a single and a bundle in the same build', async () => {
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
+    const mocks = await getStripeMock();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { readdirMock, readFileMock } = await getFsMock();
+
+    readdirMock.mockImplementation(((path: string, options?: unknown) => {
+      if (options && typeof options === 'object' && 'withFileTypes' in options) {
+        return Promise.resolve([
+          makeDirent('my-candle', true),
+          makeDirent('my-set', true),
+        ]);
+      }
+      return Promise.resolve(['listing.md']);
+    }) as never);
+    readFileMock.mockImplementation(((filePath: string) => {
+      if (String(filePath).includes('my-candle')) {
+        return Promise.resolve('---\nlink: https://buy.stripe.com/single\ntitle: Artisan Candle\n---\n');
+      }
+      return Promise.resolve('---\nlink: https://buy.stripe.com/bundle\ntitle: Holiday Set\n---\n');
+    }) as never);
+
+    mocks.paymentLinksListMock.mockReturnValue(
+      makeAsyncIterable([
+        makePaymentLink({ id: 'plink_single', url: 'https://buy.stripe.com/single' }),
+        makePaymentLink({ id: 'plink_bundle', url: 'https://buy.stripe.com/bundle' }),
+      ])
+    );
+    mocks.listLineItemsMock.mockImplementation((linkId: string) => {
+      if (linkId === 'plink_single') {
+        return Promise.resolve({ data: [makeLineItem()] });
+      }
+      return Promise.resolve({
+        data: [
+          makeLineItem({ price: { id: 'price_a', unit_amount: 1000, currency: 'usd', product: { name: 'A', description: null, images: [], metadata: {} } } }),
+          makeLineItem({ price: { id: 'price_b', unit_amount: 500, currency: 'usd', product: { name: 'B', description: null, images: [], metadata: {} } } }),
+        ],
+      });
+    });
+
+    const { getListings } = await import(
+      '../../../src/lib/storefront/index.js'
+    );
+    const listings = await getListings();
+
+    expect(listings).toHaveLength(2);
+    const single = listings.find((l) => l.kind === 'single');
+    const bundle = listings.find((l) => l.kind === 'bundle');
+    expect(single!.name).toBe('Artisan Candle');
+    expect(bundle!.name).toBe('Holiday Set');
   });
 });

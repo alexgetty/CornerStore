@@ -15,7 +15,7 @@ vi.mock('gray-matter', async (importOriginal) => {
   return { default: vi.fn(original.default) };
 });
 
-describe('loadBundleConfigs', () => {
+describe('loadListingConfigs', () => {
   beforeEach(() => {
     vi.resetModules();
   });
@@ -27,11 +27,11 @@ describe('loadBundleConfigs', () => {
     const permErr = new Error('EACCES: permission denied');
     readdirMock.mockRejectedValue(permErr);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
 
-    await expect(loadBundleConfigs()).rejects.toBe(permErr);
+    await expect(loadListingConfigs()).rejects.toBe(permErr);
   });
 
   it('returns empty map when directory does not exist', async () => {
@@ -40,10 +40,10 @@ describe('loadBundleConfigs', () => {
       Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     );
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(0);
   });
@@ -62,16 +62,16 @@ describe('loadBundleConfigs', () => {
     mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
     copyFileMock.mockResolvedValue(undefined);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.has('https://buy.stripe.com/abc')).toBe(true);
     const config = result.get('https://buy.stripe.com/abc')!;
     expect(config.title).toBe('Holiday Set');
     expect(config.description).toBe('A cozy set');
-    expect(config.image).toBe('/bundles/holiday-set/photo.jpg');
+    expect(config.image).toBe('/listings/holiday-set/photo.jpg');
     expect(config.image_alt).toBe('Cozy holiday bundle');
   });
 
@@ -84,15 +84,15 @@ describe('loadBundleConfigs', () => {
       return Promise.resolve(['photo1.jpg', 'photo2.png']);
     }) as never);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(0);
   });
 
-  it('skips non-directory entries in bundles dir', async () => {
+  it('skips non-directory entries in listings dir', async () => {
     const { readdirMock, readFileMock, mkdirMock, copyFileMock } = await getFsMock();
     readdirMock.mockImplementation(((path: string, options?: unknown) => {
       if (options && typeof options === 'object' && 'withFileTypes' in options) {
@@ -109,10 +109,10 @@ describe('loadBundleConfigs', () => {
     mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
     copyFileMock.mockResolvedValue(undefined);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
   });
@@ -132,10 +132,10 @@ describe('loadBundleConfigs', () => {
     mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
     copyFileMock.mockResolvedValue(undefined);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
@@ -158,13 +158,13 @@ describe('loadBundleConfigs', () => {
     mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
     copyFileMock.mockResolvedValue(undefined);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     const config = result.get('https://buy.stripe.com/test')!;
-    expect(config.image).toBe('/bundles/my-bundle/alpha.png');
+    expect(config.image).toBe('/listings/my-bundle/alpha.png');
   });
 
   it('uses cover frontmatter field to select cover image', async () => {
@@ -181,13 +181,13 @@ describe('loadBundleConfigs', () => {
     mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
     copyFileMock.mockResolvedValue(undefined);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     const config = result.get('https://buy.stripe.com/test')!;
-    expect(config.image).toBe('/bundles/my-bundle/hero.png');
+    expect(config.image).toBe('/listings/my-bundle/hero.png');
   });
 
   it('warns and falls back when cover references non-existent file', async () => {
@@ -205,13 +205,13 @@ describe('loadBundleConfigs', () => {
     mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
     copyFileMock.mockResolvedValue(undefined);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     const config = result.get('https://buy.stripe.com/test')!;
-    expect(config.image).toBe('/bundles/my-bundle/actual.jpg');
+    expect(config.image).toBe('/listings/my-bundle/actual.jpg');
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
     expect(allLogCalls).toContain('cover "missing.png" not found');
@@ -229,16 +229,16 @@ describe('loadBundleConfigs', () => {
       '---\nlink: https://buy.stripe.com/test\ntitle: Text Only\n---\n'
     );
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     const config = result.get('https://buy.stripe.com/test')!;
     expect(config.image).toBeUndefined();
   });
 
-  it('copies images to public/bundles/<dirname>/', async () => {
+  it('copies images to public/listings/<dirname>/', async () => {
     const { readdirMock, readFileMock, mkdirMock, copyFileMock } = await getFsMock();
     readdirMock.mockImplementation(((path: string, options?: unknown) => {
       if (options && typeof options === 'object' && 'withFileTypes' in options) {
@@ -252,23 +252,23 @@ describe('loadBundleConfigs', () => {
     mkdirMock.mockResolvedValue(undefined as unknown as Awaited<ReturnType<typeof mkdirMock>>);
     copyFileMock.mockResolvedValue(undefined);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    await loadBundleConfigs();
+    await loadListingConfigs();
 
     expect(mkdirMock).toHaveBeenCalledWith(
-      expect.stringContaining('public/bundles/holiday-set'),
+      expect.stringContaining('public/listings/holiday-set'),
       { recursive: true }
     );
     expect(copyFileMock).toHaveBeenCalledTimes(2);
     expect(copyFileMock).toHaveBeenCalledWith(
-      expect.stringContaining('bundles/holiday-set/photo1.jpg'),
-      expect.stringContaining('public/bundles/holiday-set/photo1.jpg')
+      expect.stringContaining('listings/holiday-set/photo1.jpg'),
+      expect.stringContaining('public/listings/holiday-set/photo1.jpg')
     );
     expect(copyFileMock).toHaveBeenCalledWith(
-      expect.stringContaining('bundles/holiday-set/photo2.png'),
-      expect.stringContaining('public/bundles/holiday-set/photo2.png')
+      expect.stringContaining('listings/holiday-set/photo2.png'),
+      expect.stringContaining('public/listings/holiday-set/photo2.png')
     );
   });
 
@@ -286,10 +286,10 @@ describe('loadBundleConfigs', () => {
     );
     mkdirMock.mockRejectedValue(new Error('EACCES: permission denied'));
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
@@ -307,10 +307,10 @@ describe('loadBundleConfigs', () => {
     }) as never);
     readFileMock.mockResolvedValue('---\ntitle: No Link\n---\n');
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(0);
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
@@ -329,10 +329,10 @@ describe('loadBundleConfigs', () => {
     }) as never);
     readFileMock.mockResolvedValue('---\nlink: 42\ntitle: Bad Link\n---\n');
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(0);
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
@@ -352,10 +352,10 @@ describe('loadBundleConfigs', () => {
       '---\nlink: https://buy.stripe.com/test\ntitle: Just a Title\n---\n'
     );
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     const config = result.get('https://buy.stripe.com/test')!;
     expect(config.title).toBe('Just a Title');
@@ -385,16 +385,16 @@ describe('loadBundleConfigs', () => {
       );
     }) as never);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
     expect(result.has('https://buy.stripe.com/valid')).toBe(true);
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('[Storefront] Warning: bundles/broken/bundle.md:');
+    expect(allLogCalls).toContain('[Storefront] Warning: listings/broken/bundle.md:');
   });
 
   it('warns and skips when readFile throws non-Error value', async () => {
@@ -418,16 +418,16 @@ describe('loadBundleConfigs', () => {
       );
     }) as never);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
     expect(result.has('https://buy.stripe.com/ok')).toBe(true);
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('[Storefront] Warning: bundles/weird/bundle.md:');
+    expect(allLogCalls).toContain('[Storefront] Warning: listings/weird/bundle.md:');
     expect(allLogCalls).toContain('string error, not Error instance');
   });
 
@@ -452,16 +452,16 @@ describe('loadBundleConfigs', () => {
       );
     }) as never);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
     expect(result.has('https://buy.stripe.com/good')).toBe(true);
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('[Storefront] Warning: bundles/malformed/bundle.md:');
+    expect(allLogCalls).toContain('[Storefront] Warning: listings/malformed/bundle.md:');
   });
 
   it('warns and skips when frontmatter parser throws non-Error value', async () => {
@@ -490,16 +490,16 @@ describe('loadBundleConfigs', () => {
     }) as never);
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
     expect(result.has('https://buy.stripe.com/fine')).toBe(true);
 
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('[Storefront] Warning: bundles/cursed/bundle.md:');
+    expect(allLogCalls).toContain('[Storefront] Warning: listings/cursed/bundle.md:');
     expect(allLogCalls).toContain('42');
   });
 
@@ -526,10 +526,10 @@ describe('loadBundleConfigs', () => {
       );
     }) as never);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     const config = result.get('https://buy.stripe.com/test')!;
     expect(config.title).toBe('Alpha Title');
@@ -548,14 +548,14 @@ describe('loadBundleConfigs', () => {
       return Promise.reject(new Error('EACCES: permission denied'));
     }) as never);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(0);
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
-    expect(allLogCalls).toContain('bundles/bad-dir');
+    expect(allLogCalls).toContain('listings/bad-dir');
     expect(allLogCalls).toContain('failed to read');
   });
 
@@ -569,10 +569,10 @@ describe('loadBundleConfigs', () => {
       return Promise.reject('non-error string');
     }) as never);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(0);
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
@@ -593,10 +593,10 @@ describe('loadBundleConfigs', () => {
     );
     mkdirMock.mockRejectedValue(99);
 
-    const { loadBundleConfigs } = await import(
-      '../../../src/lib/storefront/bundles.js'
+    const { loadListingConfigs } = await import(
+      '../../../src/lib/storefront/listing-configs.js'
     );
-    const result = await loadBundleConfigs();
+    const result = await loadListingConfigs();
 
     expect(result.size).toBe(1);
     const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');

@@ -1,21 +1,21 @@
-import type { Listing, SingleListing, LinkWarning, PendingBundle, BundleConfig } from './types.js';
+import type { Listing, SingleListing, LinkWarning, PendingBundle, ListingConfig } from './types.js';
 import { getErrorMessage } from './utils.js';
-import { loadBundleConfigs } from './bundles.js';
+import { loadListingConfigs } from './listing-configs.js';
 import { getStripeClient } from '../stripe/client.js';
 import { StripeSetupError } from '../stripe/errors.js';
 import { listActivePaymentLinks, listLinkLineItems } from '../stripe/api.js';
 import { toProductData, toPaymentLink } from './stripe-adapter.js';
-import { buildSingleListing, buildBundleListing } from './listing-builders.js';
+import { buildListing, buildBundleListing } from './listing-builders.js';
 import { resolveBundleNames } from './name-collisions.js';
 
 export async function getListings(): Promise<Listing[]> {
   const stripe = getStripeClient();
-  let bundleConfigs: Map<string, BundleConfig>;
+  let listingConfigs: Map<string, ListingConfig>;
   try {
-    bundleConfigs = await loadBundleConfigs();
+    listingConfigs = await loadListingConfigs();
   } catch (err: unknown) {
-    console.log(`[Storefront] Warning: failed to load bundle config — ${getErrorMessage(err)}`);
-    bundleConfigs = new Map();
+    console.log(`[Storefront] Warning: failed to load listing configs — ${getErrorMessage(err)}`);
+    listingConfigs = new Map();
   }
 
   // Step 1: Fetch active payment links
@@ -68,10 +68,11 @@ export async function getListings(): Promise<Listing[]> {
     }
 
     if (productDataItems.length === 1) {
-      singleListings.push(buildSingleListing(productDataItems[0]!, link));
+      const config = listingConfigs.get(link.url);
+      singleListings.push(buildListing(productDataItems[0]!, link, config));
     } else {
       // Multi-product link → bundle
-      const config = bundleConfigs.get(link.url);
+      const config = listingConfigs.get(link.url);
       const result = buildBundleListing(productDataItems, link, config);
       pendingBundles.push(result.bundle);
       warnings.push(...result.warnings);
@@ -88,19 +89,19 @@ export async function getListings(): Promise<Listing[]> {
     if (!pending.config) {
       warnings.push({
         linkUrl: pending.paymentLink,
-        reason: `no bundle config — customers will see "${resolved.name}". Create a bundles/ directory with a markdown file to configure this bundle`,
+        reason: `no listing config — customers will see "${resolved.name}". Create a listings/ directory with a markdown file to configure this listing`,
       });
     } else if (!pending.config.title) {
       warnings.push({
         linkUrl: pending.paymentLink,
-        reason: `bundle config has no title — customers will see "${resolved.name}". Add a title field to your frontmatter`,
+        reason: `listing config has no title — customers will see "${resolved.name}". Add a title field to your frontmatter`,
       });
     }
   }
 
   // Detect orphaned configs
   const activeLinkUrls = new Set(links.map((l) => l.url));
-  for (const [url] of bundleConfigs) {
+  for (const [url] of listingConfigs) {
     if (!activeLinkUrls.has(url)) {
       warnings.push({
         linkUrl: url,

@@ -29,7 +29,7 @@ Each active payment link becomes a card on your storefront. Create them in [Stri
 
 **Single-product links** inherit everything from the product: name, description, image, price.
 
-**Multi-product links** (bundles) auto-generate display metadata or use a config file — see [Bundle Configuration](#bundle-configuration) below.
+**Multi-product links** (bundles) auto-generate display metadata. **Any listing** (single or bundle) can be customized with a local config directory — see [Listing Configuration](#listing-configuration) below.
 
 ### Products
 
@@ -49,7 +49,7 @@ Add descriptive alt text for product images via Stripe metadata:
 
 If no `image_alt` metadata is set, the product name is used as the alt text.
 
-## Bundle Configuration
+## Listing Configuration
 
 Multi-product payment links automatically get a card with generated metadata:
 
@@ -58,12 +58,12 @@ Multi-product payment links automatically get a card with generated metadata:
 - **Image:** First product's image (alphabetically by name)
 - **Price:** Sum of product prices if all use the same currency; omitted if currencies differ
 
-To customize a bundle's appearance, create a subdirectory in `/bundles/` with a markdown config file and any images:
+To customize any listing's appearance, create a subdirectory in `/listings/` with a markdown config file and any images:
 
 ```
-bundles/
+listings/
   holiday-set/
-    bundle.md
+    listing.md
     photo1.jpg
     photo2.jpg
   starter-kit/
@@ -84,12 +84,12 @@ image_alt: A cozy holiday candle set
 ```
 
 - **`link`** (required): Full payment link URL — copy from Stripe dashboard
-- **`title`**: Overrides auto-generated name
-- **`description`**: Overrides auto-generated product list
+- **`title`**: Overrides the listing name
+- **`description`**: Overrides the listing description
 - **`cover`**: Filename of an image in the same directory to use as the card image. Falls back to first image file alphabetically if not specified
-- **`image_alt`**: Alt text for the bundle image; falls back to `title` if not specified
+- **`image_alt`**: Alt text for the listing image
 
-Each subdirectory in `/bundles/` is a bundle. The `.md` filename is arbitrary — the `link` URL is the identifier. If a directory contains multiple `.md` files, the first alphabetically is used and the build warns about the rest. If multiple bundles reference the same link, the first directory alphabetically wins and the build warns about duplicates.
+Each subdirectory in `/listings/` is a listing config. The `.md` filename is arbitrary — the `link` URL is the identifier. If a directory contains multiple `.md` files, the first alphabetically is used and the build warns about the rest. If multiple configs reference the same link, the first directory alphabetically wins and the build warns about duplicates.
 
 All image files in the directory are copied to the build output at build time. Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.avif`, `.svg`.
 
@@ -123,8 +123,8 @@ A successful build logs a summary:
 ```
 [Storefront] Build complete:
   Payment links found: 5
-  Single-product cards: 3
-  Bundle cards: 2 (1 configured, 1 default)
+  Single-product listings: 3
+  Bundle listings: 2 (1 configured, 1 default)
 ```
 
 If any links couldn't be built into cards, warnings appear above the summary:
@@ -132,14 +132,14 @@ If any links couldn't be built into cards, warnings appear above the summary:
 ```
 [Storefront] Warnings:
   - https://buy.stripe.com/xyz: failed to fetch line items
-  - https://buy.stripe.com/abc: 3 products, no bundle config — using defaults
+  - https://buy.stripe.com/abc: 3 products, no listing config — using defaults
 
 [Storefront] Build complete:
   ...
   Links skipped: 1
 ```
 
-Warnings about unconfigured bundles are informational — the bundle still gets a card with auto-generated metadata. Links that are skipped (e.g., failed to fetch) don't get cards but the build still succeeds if at least one card was built.
+Warnings about unconfigured listings are informational — the bundle still gets a card with auto-generated metadata. Links that are skipped (e.g., failed to fetch) don't get cards but the build still succeeds if at least one card was built.
 
 ## Deployment
 
@@ -281,7 +281,7 @@ At build time, the storefront:
 1. Fetches all active payment links from Stripe
 2. For each link, fetches line items with expanded product data
 3. Single-product links become cards that inherit product metadata
-4. Multi-product links become bundle cards (auto-generated or configured via `/bundles/<name>/`)
+4. Multi-product links become bundle cards (auto-generated or configured via `/listings/<name>/`)
 5. Renders all cards as static HTML with "Buy" links
 
 No client-side JavaScript. No database. No API server. Just static HTML + CSS served from anywhere.

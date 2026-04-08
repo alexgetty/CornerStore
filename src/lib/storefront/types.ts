@@ -33,7 +33,7 @@ export interface BundleListing {
 
 export type Listing = SingleListing | BundleListing;
 
-export interface BundleConfig {
+export interface ListingConfig {
   link: string;
   title?: string;
   description?: string;
@@ -53,7 +53,7 @@ export interface PaymentLink {
 
 export type PendingBundle = Omit<BundleListing, 'name'> & {
   suffix: string;
-  config: BundleConfig | undefined;
+  config: ListingConfig | undefined;
   linkId: string;
 };
 
