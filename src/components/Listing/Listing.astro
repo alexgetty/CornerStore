@@ -1,7 +1,7 @@
 ---
 import "./Listing.css";
 import type { Listing } from "../../lib/storefront";
-import { listingHasPrice, rawPriceToDecimal, getListings } from "../../lib/storefront";
+import { rawPriceToDecimal, getListings } from "../../lib/storefront";
 
 interface Props {
   listing?: Listing;
@@ -17,11 +17,11 @@ if (!listing && product) {
   const needle = product.toLowerCase();
   listing = allListings.find((l) => {
     const slugified = l.name.toLowerCase().replace(/\s+/g, '-');
-    return slugified === needle || l.name.toLowerCase() === needle;
+    return l.sku.toLowerCase() === needle
+      || slugified === needle
+      || l.name.toLowerCase() === needle;
   });
 }
-
-const hasPrice = listing ? listingHasPrice(listing) : false;
 ---
 
 {listing ? (
@@ -38,13 +38,15 @@ const hasPrice = listing ? listingHasPrice(listing) : false;
     <div class="cs-listing-details">
       <h2 class="cs-listing-name" itemprop="name">{listing.name}</h2>
       {listing.description && <p class="cs-listing-description" itemprop="description">{listing.description}</p>}
-      {hasPrice && (
-        <p class="cs-listing-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-          <data value={String(rawPriceToDecimal(listing.rawPrice!, listing.currency!))} itemprop="price" aria-label={"Price: " + listing.price}>{listing.price}</data>
-          <meta itemprop="priceCurrency" content={listing.currency!.toUpperCase()} />
-        </p>
-      )}
-      <a href={listing.paymentLink} class="cs-listing-buy" aria-label={`Buy ${listing.name} on Stripe`} itemprop="url">Buy</a>
+      <p class="cs-listing-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+        <data value={String(rawPriceToDecimal(listing.rawPrice, listing.currency))} itemprop="price" aria-label={"Price: " + listing.price}>{listing.price}</data>
+        <meta itemprop="priceCurrency" content={listing.currency.toUpperCase()} />
+      </p>
+      {listing.status ? (
+        <span class="cs-listing-status">{listing.status}</span>
+      ) : listing.paymentLink ? (
+        <a href={listing.paymentLink} class="cs-listing-buy" aria-label={`Buy ${listing.name} on Stripe`} itemprop="url">Buy</a>
+      ) : null}
     </div>
   </article>
 ) : null}
