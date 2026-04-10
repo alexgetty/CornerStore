@@ -8,64 +8,76 @@ export const CATALOG_PATH = join(process.cwd(), 'catalog.csv');
 const SKU_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const MAX_NAME_LENGTH = 250;
 
-export function validateRows(
-  records: Record<string, string>[],
-): { products: CatalogProduct[]; errors: CatalogValidationError[] } {
+function parseRow(
+  row: Record<string, string>,
+  rowNum: number,
+  seenSkus: Set<string>,
+): { errors: CatalogValidationError[]; product: CatalogProduct } {
   const errors: CatalogValidationError[] = [];
-  const seenSkus = new Set<string>();
 
-  for (let i = 0; i < records.length; i++) {
-    const row = records[i]!;
-    const rowNum = i + 2;
+  const sku = (row['SKU'] ?? '').trim();
+  const name = (row['Name'] ?? '').trim();
+  const priceStr = (row['Price'] ?? '').trim();
 
-    const sku = (row['SKU'] ?? '').trim();
-    const name = (row['Name'] ?? '').trim();
-    const priceStr = (row['Price'] ?? '').trim();
+  if (!sku) {
+    errors.push({ row: rowNum, field: 'SKU', message: 'required' });
+  } else if (!SKU_PATTERN.test(sku)) {
+    errors.push({ row: rowNum, field: 'SKU', message: 'must contain only alphanumeric characters, hyphens, and underscores' });
+  } else if (seenSkus.has(sku)) {
+    errors.push({ row: rowNum, field: 'SKU', message: `duplicate SKU "${sku}"` });
+  }
+  if (sku) seenSkus.add(sku);
 
-    if (!sku) {
-      errors.push({ row: rowNum, field: 'SKU', message: 'required' });
-    } else if (!SKU_PATTERN.test(sku)) {
-      errors.push({ row: rowNum, field: 'SKU', message: 'must contain only alphanumeric characters, hyphens, and underscores' });
-    } else if (seenSkus.has(sku)) {
-      errors.push({ row: rowNum, field: 'SKU', message: `duplicate SKU "${sku}"` });
-    }
-    if (sku) seenSkus.add(sku);
+  if (!name) {
+    errors.push({ row: rowNum, field: 'Name', message: 'required' });
+  } else if (name.length > MAX_NAME_LENGTH) {
+    errors.push({ row: rowNum, field: 'Name', message: `exceeds ${MAX_NAME_LENGTH} characters` });
+  }
 
-    if (!name) {
-      errors.push({ row: rowNum, field: 'Name', message: 'required' });
-    } else if (name.length > MAX_NAME_LENGTH) {
-      errors.push({ row: rowNum, field: 'Name', message: `exceeds ${MAX_NAME_LENGTH} characters` });
-    }
-
-    if (!priceStr) {
-      errors.push({ row: rowNum, field: 'Price', message: 'required' });
-    } else {
-      const price = parseFloat(priceStr);
-      if (isNaN(price) || price <= 0) {
-        errors.push({ row: rowNum, field: 'Price', message: 'must be a positive number' });
-      }
+  let price = 0;
+  if (!priceStr) {
+    errors.push({ row: rowNum, field: 'Price', message: 'required' });
+  } else {
+    price = parseFloat(priceStr);
+    if (isNaN(price) || price <= 0) {
+      errors.push({ row: rowNum, field: 'Price', message: 'must be a positive number' });
     }
   }
 
-  if (errors.length > 0) return { products: [], errors };
+  const storefrontVal = (row['Storefront'] ?? '').trim().toLowerCase();
+  const orderSheetVal = (row['Order Sheet'] ?? '').trim().toLowerCase();
 
-  const products: CatalogProduct[] = records.map((row) => {
-    const storefrontVal = (row['Storefront'] ?? '').trim().toLowerCase();
-    const orderSheetVal = (row['Order Sheet'] ?? '').trim().toLowerCase();
-    return {
-      sku: row['SKU']!.trim(),
-      name: row['Name']!.trim(),
-      price: parseFloat(row['Price']!.trim()),
-      category: row['Category']?.trim() || null,
-      status: row['Status']?.trim() || null,
-      storefront: storefrontVal !== 'no',
-      orderSheet: orderSheetVal !== 'no',
-      description: row['Description']?.trim() || null,
-      paymentLink: row['Payment Link']?.trim() || null,
-    };
-  });
+  const product: CatalogProduct = {
+    sku,
+    name,
+    price,
+    category: row['Category']?.trim() || null,
+    status: row['Status']?.trim() || null,
+    storefront: storefrontVal !== 'no',
+    orderSheet: orderSheetVal !== 'no',
+    description: row['Description']?.trim() || null,
+    paymentLink: row['Payment Link']?.trim() || null,
+  };
 
-  return { products, errors };
+  return { errors, product };
+}
+
+export function validateRows(
+  records: Record<string, string>[],
+): { products: CatalogProduct[]; errors: CatalogValidationError[] } {
+  const allErrors: CatalogValidationError[] = [];
+  const products: CatalogProduct[] = [];
+  const seenSkus = new Set<string>();
+
+  for (let i = 0; i < records.length; i++) {
+    const { errors, product } = parseRow(records[i]!, i + 2, seenSkus);
+    allErrors.push(...errors);
+    products.push(product);
+  }
+
+  if (allErrors.length > 0) return { products: [], errors: allErrors };
+
+  return { products, errors: [] };
 }
 
 export async function loadCatalog(path?: string): Promise<CatalogProduct[]> {
