@@ -161,6 +161,7 @@ export async function catalogUpdate(
         unit_amount: rawPrice,
         currency,
       });
+      await stripe.prices.update(entry.existing.priceId, { active: false });
       productUpdate.default_price = newPrice.id;
 
       if (entry.existing.paymentLinkId) {

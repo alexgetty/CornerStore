@@ -331,6 +331,7 @@ describe('catalogUpdate', () => {
   let catalogUpdate: typeof import('../../../src/lib/stripe/sync.js').catalogUpdate;
   let productsUpdateMock: ReturnType<typeof vi.fn>;
   let pricesCreateMock: ReturnType<typeof vi.fn>;
+  let pricesUpdateMock: ReturnType<typeof vi.fn>;
   let paymentLinksCreateMock: ReturnType<typeof vi.fn>;
   let paymentLinksUpdateMock: ReturnType<typeof vi.fn>;
   let stripe: unknown;
@@ -354,11 +355,12 @@ describe('catalogUpdate', () => {
     const Stripe = vi.mocked((await import('stripe')).default);
     productsUpdateMock = vi.fn().mockResolvedValue({});
     pricesCreateMock = vi.fn();
+    pricesUpdateMock = vi.fn().mockResolvedValue({});
     paymentLinksCreateMock = vi.fn();
     paymentLinksUpdateMock = vi.fn().mockResolvedValue({});
     Stripe.mockImplementation(() => ({
       products: { update: productsUpdateMock },
-      prices: { create: pricesCreateMock },
+      prices: { create: pricesCreateMock, update: pricesUpdateMock },
       paymentLinks: { create: paymentLinksCreateMock, update: paymentLinksUpdateMock },
     }) as unknown as InstanceType<typeof Stripe>);
     ({ catalogUpdate } = await import('../../../src/lib/stripe/sync.js'));
@@ -435,6 +437,23 @@ describe('catalogUpdate', () => {
     expect(productsUpdateMock).toHaveBeenCalledWith('prod_1', expect.objectContaining({
       description: '',
     }));
+  });
+
+  it('deactivates old price when price changes', async () => {
+    pricesCreateMock.mockResolvedValue({ id: 'price_new' });
+    paymentLinksCreateMock.mockResolvedValue({ id: 'plink_new', url: 'https://buy.stripe.com/new' });
+
+    const existing = makeExistingState({ priceId: 'price_old' });
+    const toUpdate = [{
+      sku: 'TEST-001',
+      product: makeCatalogProduct({ price: 29.99 }),
+      existing,
+      changes: ['price'],
+    }];
+
+    await catalogUpdate(stripe as any, toUpdate, 'usd');
+
+    expect(pricesUpdateMock).toHaveBeenCalledWith('price_old', { active: false });
   });
 
   it('returns empty map when nothing to update', async () => {
