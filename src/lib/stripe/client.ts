@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import { StripeSetupError } from './errors.js';
 
 export function getStripeClient(): Stripe {
-  const key = import.meta.env.STRIPE_SECRET_KEY;
+  const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
     throw new StripeSetupError(
       'STRIPE_SECRET_KEY is not set',

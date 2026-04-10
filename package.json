@@ -33,11 +33,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "ci": "npm run typecheck && npm run test:coverage && npm run build",
-    "catalog": "node bin/catalog.mjs",
-    "catalog:diff": "node bin/catalog.mjs diff",
-    "catalog:add": "node bin/catalog.mjs add",
-    "catalog:update": "node bin/catalog.mjs update",
-    "catalog:sync": "node bin/catalog.mjs sync"
+    "catalog": "tsx bin/catalog.ts",
+    "catalog:diff": "tsx bin/catalog.ts diff",
+    "catalog:add": "tsx bin/catalog.ts add",
+    "catalog:update": "tsx bin/catalog.ts update",
+    "catalog:sync": "tsx bin/catalog.ts sync"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",
@@ -53,6 +53,7 @@
     "@astrojs/check": "^0.9",
     "@types/node": "^25.4.0",
     "@vitest/coverage-v8": "^2",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^2"
   }
