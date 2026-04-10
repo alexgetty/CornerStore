@@ -1,4 +1,4 @@
-export type { CatalogProduct, CatalogValidationError, ProductOverride } from './types.js';
+export type { CatalogProduct, CatalogValidationError, ProductOverride, ProductImage } from './types.js';
 export { loadCatalog, validateRows, CATALOG_PATH } from './csv.js';
 export { loadProductImages, parseImageFilename } from './images.js';
 export { loadProductOverrides } from './overrides.js';

@@ -57,7 +57,10 @@ describe('getListings', () => {
   it('applies primary image from image map', async () => {
     loadCatalogMock.mockResolvedValue([makeCatalogProduct()]);
     loadProductImagesMock.mockResolvedValue(
-      new Map([['TEST-001', ['/product-images/TEST-001-1.jpg', '/product-images/TEST-001-2.jpg']]])
+      new Map([['TEST-001', [
+        { url: '/product-images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' },
+        { url: '/product-images/TEST-001-2.jpg', filename: 'TEST-001-2.jpg' },
+      ]]])
     );
     const listings = await getListings();
     expect(listings[0]!.image).toBe('/product-images/TEST-001-1.jpg');
@@ -143,8 +146,8 @@ describe('getListings', () => {
     ]);
     loadProductImagesMock.mockResolvedValue(
       new Map([
-        ['ONE', ['/product-images/ONE-1.jpg']],
-        ['TWO', ['/product-images/TWO-1.jpg']],
+        ['ONE', [{ url: '/product-images/ONE-1.jpg', filename: 'ONE-1.jpg' }]],
+        ['TWO', [{ url: '/product-images/TWO-1.jpg', filename: 'TWO-1.jpg' }]],
       ])
     );
     await getListings();

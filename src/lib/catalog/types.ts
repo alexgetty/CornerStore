@@ -21,3 +21,8 @@ export interface ProductOverride {
   description: string | null;
   imageAlt: string | null;
 }
+
+export interface ProductImage {
+  url: string;
+  filename: string;
+}
