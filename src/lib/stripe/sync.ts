@@ -1,6 +1,7 @@
 import type Stripe from 'stripe';
 import type { CatalogProduct } from '../catalog/types.js';
 import { decimalToRawPrice } from '../storefront/pricing.js';
+import { withRetry } from './retry.js';
 
 export interface StripeProductState {
   productId: string;
@@ -38,15 +39,24 @@ export interface CatalogDiffResult {
   orphaned: OrphanEntry[];
 }
 
-export async function readStripeState(stripe: Stripe): Promise<StripeState> {
+export interface ReadStripeResult {
+  state: StripeState;
+  incompleteSkus: Map<string, string>;
+}
+
+export async function readStripeState(stripe: Stripe): Promise<ReadStripeResult> {
   const state: StripeState = new Map();
+  const incompleteSkus = new Map<string, string>();
 
   for await (const product of stripe.products.list({ active: true, expand: ['data.default_price'] })) {
     const sku = product.metadata?.sku;
     if (!sku) continue;
 
     const defaultPrice = product.default_price as Stripe.Price | null;
-    if (!defaultPrice || typeof defaultPrice === 'string') continue;
+    if (!defaultPrice || typeof defaultPrice === 'string') {
+      incompleteSkus.set(sku, product.id);
+      continue;
+    }
 
     state.set(sku, {
       productId: product.id,
@@ -60,7 +70,7 @@ export async function readStripeState(stripe: Stripe): Promise<StripeState> {
     });
   }
 
-  return state;
+  return { state, incompleteSkus };
 }
 
 export function catalogDiff(
@@ -71,10 +81,9 @@ export function catalogDiff(
   const toAdd: DiffEntry[] = [];
   const toUpdate: UpdateEntry[] = [];
 
-  const storefrontProducts = catalog.filter((p) => p.storefront);
-  const catalogSkus = new Set(storefrontProducts.map((p) => p.sku));
+  const catalogSkus = new Set(catalog.map((p) => p.sku));
 
-  for (const product of storefrontProducts) {
+  for (const product of catalog) {
     const existing = stripeState.get(product.sku);
     if (!existing) {
       toAdd.push({ sku: product.sku, product });
@@ -106,34 +115,55 @@ export async function catalogAdd(
   stripe: Stripe,
   toAdd: DiffEntry[],
   currency: string,
+  incompleteSkus: Map<string, string> = new Map(),
 ): Promise<Map<string, string>> {
   const newLinks = new Map<string, string>();
 
   for (const entry of toAdd) {
-    const product = await stripe.products.create({
-      name: entry.product.name,
-      description: entry.product.description ?? undefined,
-      metadata: { sku: entry.sku },
-    });
+    try {
+      let productId: string;
 
-    const rawPrice = decimalToRawPrice(entry.product.price, currency);
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: rawPrice,
-      currency,
-    });
+      if (incompleteSkus.has(entry.sku)) {
+        productId = incompleteSkus.get(entry.sku)!;
+        console.log(`[Sync] Resuming incomplete product: ${entry.sku}`);
+      } else {
+        const product = await withRetry(() => stripe.products.create({
+          name: entry.product.name,
+          description: entry.product.description ?? undefined,
+          metadata: { sku: entry.sku },
+        }));
+        productId = product.id;
+      }
 
-    const link = await stripe.paymentLinks.create({
-      line_items: [{ price: price.id, quantity: 1 }],
-    });
+      const rawPrice = decimalToRawPrice(entry.product.price, currency);
+      const price = await withRetry(() => stripe.prices.create({
+        product: productId,
+        unit_amount: rawPrice,
+        currency,
+      }));
 
-    await stripe.products.update(product.id, {
-      metadata: { sku: entry.sku, payment_link_id: link.id, payment_link_url: link.url },
-      default_price: price.id,
-    });
+      const metadata: Record<string, string> = { sku: entry.sku };
 
-    newLinks.set(entry.sku, link.url);
-    console.log(`[Sync] Created: ${entry.sku} — ${entry.product.name}`);
+      if (entry.product.storefront) {
+        const link = await withRetry(() => stripe.paymentLinks.create({
+          line_items: [{ price: price.id, quantity: 1 }],
+        }));
+        metadata.payment_link_id = link.id;
+        metadata.payment_link_url = link.url;
+        newLinks.set(entry.sku, link.url);
+      }
+
+      await withRetry(() => stripe.products.update(productId, {
+        metadata,
+        default_price: price.id,
+      }));
+
+      console.log(`[Sync] Created: ${entry.sku} — ${entry.product.name}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[Sync] Failed to create ${entry.sku}: ${message}`);
+      throw err;
+    }
   }
 
   return newLinks;
@@ -156,36 +186,40 @@ export async function catalogUpdate(
 
     if (priceChanged) {
       const rawPrice = decimalToRawPrice(entry.product.price, currency);
-      const newPrice = await stripe.prices.create({
+      const newPrice = await withRetry(() => stripe.prices.create({
         product: entry.existing.productId,
         unit_amount: rawPrice,
         currency,
-      });
-      await stripe.prices.update(entry.existing.priceId, { active: false });
+      }));
+      await withRetry(() => stripe.prices.update(entry.existing.priceId, { active: false }));
       productUpdate.default_price = newPrice.id;
 
-      if (entry.existing.paymentLinkId) {
-        await stripe.paymentLinks.update(entry.existing.paymentLinkId, { active: false });
+      if (entry.product.storefront) {
+        if (entry.existing.paymentLinkId) {
+          await withRetry(() => stripe.paymentLinks.update(entry.existing.paymentLinkId!, { active: false }));
+        }
+
+        const newLink = await withRetry(() => stripe.paymentLinks.create({
+          line_items: [{ price: newPrice.id, quantity: 1 }],
+        }));
+
+        productUpdate.metadata = {
+          sku: entry.sku,
+          payment_link_id: newLink.id,
+          payment_link_url: newLink.url,
+        };
+
+        updatedLinks.set(entry.sku, newLink.url);
+        console.log(`[Sync] Updated: ${entry.sku} — price changed, new Payment Link created`);
+      } else {
+        console.log(`[Sync] Updated: ${entry.sku} — price changed`);
       }
-
-      const newLink = await stripe.paymentLinks.create({
-        line_items: [{ price: newPrice.id, quantity: 1 }],
-      });
-
-      productUpdate.metadata = {
-        sku: entry.sku,
-        payment_link_id: newLink.id,
-        payment_link_url: newLink.url,
-      };
-
-      updatedLinks.set(entry.sku, newLink.url);
-      console.log(`[Sync] Updated: ${entry.sku} — price changed, new Payment Link created`);
     } else {
       console.log(`[Sync] Updated: ${entry.sku} — ${entry.changes.join(', ')}`);
     }
 
     if (Object.keys(productUpdate).length > 0) {
-      await stripe.products.update(entry.existing.productId, productUpdate);
+      await withRetry(() => stripe.products.update(entry.existing.productId, productUpdate));
     }
   }
 

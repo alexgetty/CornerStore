@@ -44,32 +44,93 @@ describe('loadProductOverrides', () => {
     expect(result).toEqual(new Map());
   });
 
-  it('loads override with description from frontmatter', async () => {
+  it('uses markdown body as description (not frontmatter description)', async () => {
     const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
     mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
-    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\ndescription: A great widget\n---\n' as never);
+    mocks.readFile.mockResolvedValue(
+      '---\nsku: WIDGET-001\ndescription: frontmatter desc\n---\nThis is the **rich** body.' as never
+    );
 
     const result = await loadProductOverrides(catalog, '/fake/products');
 
-    expect(result.get('WIDGET-001')).toEqual({
+    expect(result.get('WIDGET-001')).toMatchObject({
       sku: 'WIDGET-001',
-      description: 'A great widget',
-      imageAlt: null,
+      description: 'This is the **rich** body.',
     });
   });
 
-  it('loads override with image_alt from frontmatter', async () => {
+  it('returns null description when markdown body is empty', async () => {
     const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
     mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
-    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\nimage_alt: A photo of the widget\n---\n' as never);
+    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\n---\n' as never);
 
     const result = await loadProductOverrides(catalog, '/fake/products');
 
-    expect(result.get('WIDGET-001')).toEqual({
+    expect(result.get('WIDGET-001')).toMatchObject({
       sku: 'WIDGET-001',
       description: null,
-      imageAlt: 'A photo of the widget',
     });
+  });
+
+  it('returns null description when markdown body is only whitespace', async () => {
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\n---\n\n   \n' as never);
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    expect(result.get('WIDGET-001')!.description).toBeNull();
+  });
+
+  it('parses image_alts frontmatter map into Map<string, string>', async () => {
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue(
+      '---\nsku: WIDGET-001\nimage_alts:\n  widget-001-1.jpg: Primary angle\n  widget-001-2.jpg: Side view\n---\n' as never
+    );
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    const override = result.get('WIDGET-001')!;
+    expect(override.imageAlts).toBeInstanceOf(Map);
+    expect(override.imageAlts.get('widget-001-1.jpg')).toBe('Primary angle');
+    expect(override.imageAlts.get('widget-001-2.jpg')).toBe('Side view');
+  });
+
+  it('defaults imageAlts to empty Map when image_alts is missing', async () => {
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\n---\n' as never);
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    const override = result.get('WIDGET-001')!;
+    expect(override.imageAlts).toBeInstanceOf(Map);
+    expect(override.imageAlts.size).toBe(0);
+  });
+
+  it('ignores non-object image_alts value (empty Map)', async () => {
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\nimage_alts: "not an object"\n---\n' as never);
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    const override = result.get('WIDGET-001')!;
+    expect(override.imageAlts).toBeInstanceOf(Map);
+    expect(override.imageAlts.size).toBe(0);
+  });
+
+  it('ignores array image_alts value (empty Map)', async () => {
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\nimage_alts:\n  - foo\n  - bar\n---\n' as never);
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    const override = result.get('WIDGET-001')!;
+    expect(override.imageAlts).toBeInstanceOf(Map);
+    expect(override.imageAlts.size).toBe(0);
   });
 
   it('warns and skips override with no sku in frontmatter', async () => {
@@ -100,30 +161,61 @@ describe('loadProductOverrides', () => {
     );
   });
 
-  it('ignores non-markdown files', async () => {
+  it('warns about duplicate SKU and uses the later file alphabetically', async () => {
+    const consoleSpy = vi.spyOn(console, 'log');
     const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
-    mocks.readdir.mockResolvedValue(['widget-001.md', 'notes.txt', 'image.jpg'] as never);
-    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\ndescription: A great widget\n---\n' as never);
+    mocks.readdir.mockResolvedValue(['widget-001-a.md', 'widget-001-b.md'] as never);
+    mocks.readFile
+      .mockResolvedValueOnce('---\nsku: WIDGET-001\n---\nFirst file body.' as never)
+      .mockResolvedValueOnce('---\nsku: WIDGET-001\n---\nSecond file body.' as never);
 
     const result = await loadProductOverrides(catalog, '/fake/products');
 
-    expect(result.size).toBe(1);
-    // readFile should only be called once (for the .md file)
-    expect(mocks.readFile).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('duplicate override for SKU "WIDGET-001"'),
+    );
+    expect(result.get('WIDGET-001')!.description).toBe('Second file body.');
   });
 
-  it('handles override with no optional fields (description and imageAlt both null)', async () => {
+  it('logs when rich description is present', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue(
+      '---\nsku: WIDGET-001\n---\nSome rich description content.' as never
+    );
+
+    await loadProductOverrides(catalog, '/fake/products');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('WIDGET-001: using rich description'),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('does not log rich description when body is empty', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
     mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
     mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\n---\n' as never);
 
+    await loadProductOverrides(catalog, '/fake/products');
+
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('using rich description'),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('ignores non-markdown files', async () => {
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md', 'notes.txt', 'image.jpg'] as never);
+    mocks.readFile.mockResolvedValue('---\nsku: WIDGET-001\n---\n' as never);
+
     const result = await loadProductOverrides(catalog, '/fake/products');
 
-    expect(result.get('WIDGET-001')).toEqual({
-      sku: 'WIDGET-001',
-      description: null,
-      imageAlt: null,
-    });
+    expect(result.size).toBe(1);
+    expect(mocks.readFile).toHaveBeenCalledTimes(1);
   });
 
   it('rethrows non-ENOENT readdir errors', async () => {

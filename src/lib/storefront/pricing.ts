@@ -1,3 +1,5 @@
+export const DEFAULT_CURRENCY = 'usd';
+
 function getCurrencyDecimalPlaces(currency: string): number {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() })
     .resolvedOptions().maximumFractionDigits /* v8 ignore next -- always defined for currency */ ?? 2;

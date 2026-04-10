@@ -42,6 +42,7 @@ describe('getListings', () => {
     expect(listings[0]!.name).toBe('Test Product');
     expect(listings[0]!.rawPrice).toBe(1999);
     expect(listings[0]!.currency).toBe('usd');
+    expect(listings[0]!.images).toEqual([]);
   });
 
   it('filters to storefront products only', async () => {
@@ -54,7 +55,7 @@ describe('getListings', () => {
     expect(listings[0]!.sku).toBe('SHOW');
   });
 
-  it('applies primary image from image map', async () => {
+  it('builds images with alt text from overrides', async () => {
     loadCatalogMock.mockResolvedValue([makeCatalogProduct()]);
     loadProductImagesMock.mockResolvedValue(
       new Map([['TEST-001', [
@@ -62,21 +63,35 @@ describe('getListings', () => {
         { url: '/product-images/TEST-001-2.jpg', filename: 'TEST-001-2.jpg' },
       ]]])
     );
+    loadProductOverridesMock.mockResolvedValue(
+      new Map([['TEST-001', {
+        sku: 'TEST-001',
+        description: null,
+        imageAlts: new Map([['TEST-001-1.jpg', 'Primary photo']]),
+      }]])
+    );
     const listings = await getListings();
-    expect(listings[0]!.image).toBe('/product-images/TEST-001-1.jpg');
+    expect(listings[0]!.images).toEqual([
+      { url: '/product-images/TEST-001-1.jpg', alt: 'Primary photo' },
+      { url: '/product-images/TEST-001-2.jpg', alt: '' },
+    ]);
   });
 
-  it('uses null image when no images exist for SKU', async () => {
+  it('defaults image alt to empty string when no override', async () => {
     loadCatalogMock.mockResolvedValue([makeCatalogProduct()]);
-    loadProductImagesMock.mockResolvedValue(new Map());
+    loadProductImagesMock.mockResolvedValue(
+      new Map([['TEST-001', [
+        { url: '/product-images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' },
+      ]]])
+    );
     const listings = await getListings();
-    expect(listings[0]!.image).toBeNull();
+    expect(listings[0]!.images[0]!.alt).toBe('');
   });
 
-  it('applies override description when present', async () => {
+  it('applies override description over CSV', async () => {
     loadCatalogMock.mockResolvedValue([makeCatalogProduct({ description: 'CSV desc' })]);
     loadProductOverridesMock.mockResolvedValue(
-      new Map([['TEST-001', { sku: 'TEST-001', description: 'Rich desc', imageAlt: null }]])
+      new Map([['TEST-001', { sku: 'TEST-001', description: 'Rich desc', imageAlts: new Map() }]])
     );
     const listings = await getListings();
     expect(listings[0]!.description).toBe('Rich desc');
@@ -86,21 +101,6 @@ describe('getListings', () => {
     loadCatalogMock.mockResolvedValue([makeCatalogProduct({ description: 'CSV desc' })]);
     const listings = await getListings();
     expect(listings[0]!.description).toBe('CSV desc');
-  });
-
-  it('applies override imageAlt when present', async () => {
-    loadCatalogMock.mockResolvedValue([makeCatalogProduct()]);
-    loadProductOverridesMock.mockResolvedValue(
-      new Map([['TEST-001', { sku: 'TEST-001', description: null, imageAlt: 'Custom alt' }]])
-    );
-    const listings = await getListings();
-    expect(listings[0]!.imageAlt).toBe('Custom alt');
-  });
-
-  it('defaults imageAlt to product name when no override', async () => {
-    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ name: 'Widget' })]);
-    const listings = await getListings();
-    expect(listings[0]!.imageAlt).toBe('Widget');
   });
 
   it('passes through status from CSV', async () => {

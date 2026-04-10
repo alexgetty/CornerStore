@@ -2,20 +2,22 @@ import { loadCatalog } from '../catalog/csv.js';
 import { updateCatalogPaymentLinks } from '../catalog/csv-writer.js';
 import { getStripeClient } from './client.js';
 import { readStripeState, catalogDiff, catalogAdd, catalogUpdate } from './sync.js';
+import { DEFAULT_CURRENCY } from '../storefront/pricing.js';
 
 export async function runCatalogSync(mode: 'diff' | 'add' | 'update' | 'sync'): Promise<void> {
   const catalog = await loadCatalog();
   const stripe = getStripeClient();
-  const currency = 'usd';
+  const currency = DEFAULT_CURRENCY;
 
-  const state = await readStripeState(stripe);
+  const { state, incompleteSkus } = await readStripeState(stripe);
   const diff = catalogDiff(catalog, state, currency);
 
   if (mode === 'diff') {
     if (diff.toAdd.length > 0) {
       console.log(`\nNew products (${diff.toAdd.length}):`);
       for (const entry of diff.toAdd) {
-        console.log(`  + ${entry.sku}: ${entry.product.name} — $${entry.product.price}`);
+        const type = entry.product.storefront ? 'storefront' : 'order sheet';
+        console.log(`  + ${entry.sku}: ${entry.product.name} — $${entry.product.price} (${type})`);
       }
     }
     if (diff.toUpdate.length > 0) {
@@ -40,7 +42,7 @@ export async function runCatalogSync(mode: 'diff' | 'add' | 'update' | 'sync'): 
 
   if (mode === 'add' || mode === 'sync') {
     if (diff.toAdd.length > 0) {
-      const newLinks = await catalogAdd(stripe, diff.toAdd, currency);
+      const newLinks = await catalogAdd(stripe, diff.toAdd, currency, incompleteSkus);
       for (const [sku, url] of newLinks) allUpdatedLinks.set(sku, url);
     } else {
       console.log('[Sync] No new products to add.');

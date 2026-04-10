@@ -2,8 +2,7 @@ export interface Listing {
   sku: string;
   name: string;
   description: string | null;
-  image: string | null;
-  imageAlt: string;
+  images: { url: string; alt: string }[];
   price: string;
   rawPrice: number;
   currency: string;

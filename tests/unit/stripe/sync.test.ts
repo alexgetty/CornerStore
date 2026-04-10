@@ -37,7 +37,7 @@ describe('readStripeState', () => {
     productsListMock.mockReturnValue(
       makeAsyncIterable([{ id: 'prod_1', name: 'No SKU', metadata: {}, default_price: null }])
     );
-    const state = await readStripeState(stripe as any);
+    const { state } = await readStripeState(stripe as any);
     expect(state.size).toBe(0);
   });
 
@@ -51,7 +51,7 @@ describe('readStripeState', () => {
         default_price: { id: 'price_1', unit_amount: 1999, currency: 'usd' },
       }])
     );
-    const state = await readStripeState(stripe as any);
+    const { state } = await readStripeState(stripe as any);
     expect(state.size).toBe(1);
     expect(state.get('WIDGET-001')).toEqual({
       productId: 'prod_1',
@@ -65,26 +65,28 @@ describe('readStripeState', () => {
     });
   });
 
-  it('skips products without a default price', async () => {
+  it('skips products without a default price (tracked as incomplete)', async () => {
     productsListMock.mockReturnValue(
       makeAsyncIterable([{
         id: 'prod_1', name: 'Widget', description: null,
         metadata: { sku: 'W' }, default_price: null,
       }])
     );
-    const state = await readStripeState(stripe as any);
+    const { state, incompleteSkus } = await readStripeState(stripe as any);
     expect(state.size).toBe(0);
+    expect(incompleteSkus.get('W')).toBe('prod_1');
   });
 
-  it('skips products where default_price is a string (not expanded)', async () => {
+  it('skips products where default_price is a string (tracked as incomplete)', async () => {
     productsListMock.mockReturnValue(
       makeAsyncIterable([{
         id: 'prod_1', name: 'Widget', description: null,
         metadata: { sku: 'W' }, default_price: 'price_123',
       }])
     );
-    const state = await readStripeState(stripe as any);
+    const { state, incompleteSkus } = await readStripeState(stripe as any);
     expect(state.size).toBe(0);
+    expect(incompleteSkus.get('W')).toBe('prod_1');
   });
 
   it('handles missing payment link metadata', async () => {
@@ -95,7 +97,7 @@ describe('readStripeState', () => {
         default_price: { id: 'price_1', unit_amount: 500, currency: 'usd' },
       }])
     );
-    const state = await readStripeState(stripe as any);
+    const { state } = await readStripeState(stripe as any);
     const entry = state.get('W')!;
     expect(entry.paymentLinkId).toBeNull();
     expect(entry.paymentLinkUrl).toBeNull();
@@ -109,14 +111,14 @@ describe('readStripeState', () => {
         default_price: { id: 'price_1', unit_amount: null, currency: 'usd' },
       }])
     );
-    const state = await readStripeState(stripe as any);
+    const { state } = await readStripeState(stripe as any);
     const entry = state.get('W')!;
     expect(entry.unitAmount).toBe(0);
   });
 
   it('returns empty map when Stripe has no active products', async () => {
     productsListMock.mockReturnValue(makeAsyncIterable([]));
-    const state = await readStripeState(stripe as any);
+    const { state } = await readStripeState(stripe as any);
     expect(state.size).toBe(0);
   });
 
@@ -130,8 +132,29 @@ describe('readStripeState', () => {
         default_price: { id: 'price_1', unit_amount: 1999, currency: 'usd' },
       }])
     );
-    const state = await readStripeState(stripe as any);
+    const { state } = await readStripeState(stripe as any);
     expect(state.get('W')!.description).toBeNull();
+  });
+
+  it('tracks products with SKU but no default_price as incomplete', async () => {
+    productsListMock.mockReturnValue(
+      makeAsyncIterable([
+        {
+          id: 'prod_orphan', name: 'Incomplete', description: null,
+          metadata: { sku: 'BROKEN-001' }, default_price: null,
+        },
+        {
+          id: 'prod_ok', name: 'Complete', description: null,
+          metadata: { sku: 'OK-001' },
+          default_price: { id: 'price_1', unit_amount: 1999, currency: 'usd' },
+        },
+      ])
+    );
+    const result = await readStripeState(stripe as any);
+    expect(result.state.size).toBe(1);
+    expect(result.state.has('OK-001')).toBe(true);
+    expect(result.incompleteSkus.size).toBe(1);
+    expect(result.incompleteSkus.get('BROKEN-001')).toBe('prod_orphan');
   });
 });
 
@@ -250,15 +273,16 @@ describe('catalogDiff', () => {
     expect(result.toUpdate[0]!.changes).toContain('description');
   });
 
-  it('only diffs storefront products (storefront: false skipped)', () => {
+  it('includes non-storefront products in diff', () => {
     const catalog = [
       makeCatalogProduct({ sku: 'STORE-001', storefront: true }),
       makeCatalogProduct({ sku: 'WHOLESALE-001', storefront: false }),
     ];
     const stripeState = new Map();
     const result = catalogDiff(catalog, stripeState, 'usd');
-    expect(result.toAdd).toHaveLength(1);
-    expect(result.toAdd[0]!.sku).toBe('STORE-001');
+    expect(result.toAdd).toHaveLength(2);
+    expect(result.toAdd.map((e) => e.sku)).toContain('STORE-001');
+    expect(result.toAdd.map((e) => e.sku)).toContain('WHOLESALE-001');
   });
 });
 
@@ -324,6 +348,77 @@ describe('catalogAdd', () => {
     const links = await catalogAdd(stripe as any, [], 'usd');
     expect(links.size).toBe(0);
     expect(productsCreateMock).not.toHaveBeenCalled();
+  });
+
+  it('skips Payment Link creation for non-storefront products', async () => {
+    productsCreateMock.mockResolvedValue({ id: 'prod_1' });
+    pricesCreateMock.mockResolvedValue({ id: 'price_1' });
+    productsUpdateMock.mockResolvedValue({});
+
+    const toAdd = [{
+      sku: 'BULK-001',
+      product: makeCatalogProduct({ sku: 'BULK-001', storefront: false }),
+    }];
+    const links = await catalogAdd(stripe as any, toAdd, 'usd');
+
+    expect(productsCreateMock).toHaveBeenCalledTimes(1);
+    expect(pricesCreateMock).toHaveBeenCalledTimes(1);
+    expect(paymentLinksCreateMock).not.toHaveBeenCalled();
+    expect(links.size).toBe(0);
+  });
+
+  it('reuses existing incomplete product instead of creating new one', async () => {
+    pricesCreateMock.mockResolvedValue({ id: 'price_1' });
+    paymentLinksCreateMock.mockResolvedValue({ id: 'plink_1', url: 'https://buy.stripe.com/test' });
+    productsUpdateMock.mockResolvedValue({});
+
+    const toAdd = [{ sku: 'RESUME-001', product: makeCatalogProduct({ sku: 'RESUME-001' }) }];
+    const incompleteSkus = new Map([['RESUME-001', 'prod_existing']]);
+
+    const links = await catalogAdd(stripe as any, toAdd, 'usd', incompleteSkus);
+
+    expect(productsCreateMock).not.toHaveBeenCalled();
+    expect(pricesCreateMock).toHaveBeenCalledWith(expect.objectContaining({
+      product: 'prod_existing',
+    }));
+    expect(links.get('RESUME-001')).toBe('https://buy.stripe.com/test');
+  });
+
+  it('logs error context with SKU when creation fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    productsCreateMock.mockRejectedValueOnce(new Error('Stripe API down'));
+
+    const toAdd = [{ sku: 'FAIL-001', product: makeCatalogProduct({ sku: 'FAIL-001' }) }];
+
+    // Override withRetry to be pass-through (no delays) so the rejection propagates cleanly
+    vi.doMock('../../../src/lib/stripe/retry.js', () => ({
+      withRetry: (fn: () => Promise<unknown>) => fn(),
+    }));
+    vi.resetModules();
+    const { catalogAdd: fastCatalogAdd } = await import('../../../src/lib/stripe/sync.js');
+
+    await expect(fastCatalogAdd(stripe as any, toAdd, 'usd')).rejects.toThrow('Stripe API down');
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('FAIL-001'));
+
+    consoleSpy.mockRestore();
+  });
+
+  it('logs non-Error throwables as string when creation fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    productsCreateMock.mockRejectedValueOnce('plain string error');
+
+    const toAdd = [{ sku: 'FAIL-002', product: makeCatalogProduct({ sku: 'FAIL-002' }) }];
+
+    vi.doMock('../../../src/lib/stripe/retry.js', () => ({
+      withRetry: (fn: () => Promise<unknown>) => fn(),
+    }));
+    vi.resetModules();
+    const { catalogAdd: fastCatalogAdd } = await import('../../../src/lib/stripe/sync.js');
+
+    await expect(fastCatalogAdd(stripe as any, toAdd, 'usd')).rejects.toBe('plain string error');
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('FAIL-002'));
+
+    consoleSpy.mockRestore();
   });
 });
 
@@ -460,5 +555,24 @@ describe('catalogUpdate', () => {
     const links = await catalogUpdate(stripe as any, [], 'usd');
     expect(links.size).toBe(0);
     expect(productsUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('skips Payment Link recreation for non-storefront product on price change', async () => {
+    pricesCreateMock.mockResolvedValue({ id: 'price_new' });
+
+    const existing = makeExistingState({ paymentLinkId: null, paymentLinkUrl: null });
+    const toUpdate = [{
+      sku: 'BULK-001',
+      product: makeCatalogProduct({ sku: 'BULK-001', storefront: false, price: 29.99 }),
+      existing,
+      changes: ['price'],
+    }];
+
+    const links = await catalogUpdate(stripe as any, toUpdate, 'usd');
+
+    expect(pricesCreateMock).toHaveBeenCalledTimes(1);
+    expect(paymentLinksCreateMock).not.toHaveBeenCalled();
+    expect(paymentLinksUpdateMock).not.toHaveBeenCalled();
+    expect(links.size).toBe(0);
   });
 });

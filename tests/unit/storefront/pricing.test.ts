@@ -116,3 +116,10 @@ describe('decimalToRawPrice', () => {
   });
 });
 
+describe('DEFAULT_CURRENCY', () => {
+  it('is usd', async () => {
+    const { DEFAULT_CURRENCY } = await import('../../../src/lib/storefront/pricing.js');
+    expect(DEFAULT_CURRENCY).toBe('usd');
+  });
+});
+

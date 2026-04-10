@@ -13,9 +13,13 @@ export async function getListings(): Promise<Listing[]> {
   const storefrontProducts = catalog.filter((p) => p.storefront);
 
   const listings: Listing[] = storefrontProducts.map((product) => {
-    const productImages = images.get(product.sku);
-    const primaryImage = productImages?.[0]?.url ?? null;
+    const productImages = images.get(product.sku) ?? [];
     const override = overrides.get(product.sku);
+
+    const listingImages = productImages.map((img) => ({
+      url: img.url,
+      alt: override?.imageAlts.get(img.filename) ?? '',
+    }));
 
     const rawPrice = decimalToRawPrice(product.price, DEFAULT_CURRENCY);
 
@@ -23,8 +27,7 @@ export async function getListings(): Promise<Listing[]> {
       sku: product.sku,
       name: product.name,
       description: override?.description ?? product.description,
-      image: primaryImage,
-      imageAlt: override?.imageAlt ?? product.name,
+      images: listingImages,
       price: formatPrice(rawPrice, DEFAULT_CURRENCY),
       rawPrice,
       currency: DEFAULT_CURRENCY,

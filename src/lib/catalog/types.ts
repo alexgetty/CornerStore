@@ -19,7 +19,7 @@ export interface CatalogValidationError {
 export interface ProductOverride {
   sku: string;
   description: string | null;
-  imageAlt: string | null;
+  imageAlts: Map<string, string>;
 }
 
 export interface ProductImage {
