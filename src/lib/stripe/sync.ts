@@ -51,7 +51,7 @@ export async function readStripeState(stripe: Stripe): Promise<StripeState> {
     state.set(sku, {
       productId: product.id,
       name: product.name,
-      description: product.description ?? null,
+      description: product.description || null,
       priceId: defaultPrice.id,
       unitAmount: defaultPrice.unit_amount ?? 0,
       currency: defaultPrice.currency,

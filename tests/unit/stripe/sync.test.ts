@@ -119,6 +119,20 @@ describe('readStripeState', () => {
     const state = await readStripeState(stripe as any);
     expect(state.size).toBe(0);
   });
+
+  it('normalizes empty description to null', async () => {
+    productsListMock.mockReturnValue(
+      makeAsyncIterable([{
+        id: 'prod_1',
+        name: 'Widget',
+        description: '',
+        metadata: { sku: 'W' },
+        default_price: { id: 'price_1', unit_amount: 1999, currency: 'usd' },
+      }])
+    );
+    const state = await readStripeState(stripe as any);
+    expect(state.get('W')!.description).toBeNull();
+  });
 });
 
 describe('catalogDiff', () => {
