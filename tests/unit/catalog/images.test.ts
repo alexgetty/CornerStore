@@ -181,4 +181,13 @@ describe('loadProductImages', () => {
 
     await expect(loadProductImages('/fake/product-images')).rejects.toThrow('EACCES');
   });
+
+  it('uses default product-images directory when no dir is provided', async () => {
+    mocks.readdir.mockResolvedValue([] as never);
+
+    const result = await loadProductImages();
+
+    expect(result).toEqual(new Map());
+    expect(mocks.readdir).toHaveBeenCalledWith(expect.stringContaining('product-images'));
+  });
 });

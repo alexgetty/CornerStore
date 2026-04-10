@@ -14,7 +14,7 @@ if (!command || !validCommands.includes(command)) {
 }
 
 try {
-  const { runCatalogSync } = await import('../src/lib/stripe/sync.js');
+  const { runCatalogSync } = await import('../src/lib/stripe/catalog-cli.js');
   await runCatalogSync(command);
 } catch (err) {
   console.error(err.message ?? err);

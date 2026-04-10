@@ -125,4 +125,84 @@ describe('loadProductOverrides', () => {
       imageAlt: null,
     });
   });
+
+  it('rethrows non-ENOENT readdir errors', async () => {
+    const err = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+    mocks.readdir.mockRejectedValue(err);
+
+    await expect(loadProductOverrides([], '/fake/products')).rejects.toThrow('EACCES');
+  });
+
+  it('uses default products directory when no dir is provided', async () => {
+    mocks.readdir.mockResolvedValue([] as never);
+
+    const result = await loadProductOverrides([]);
+
+    expect(result).toEqual(new Map());
+    expect(mocks.readdir).toHaveBeenCalledWith(expect.stringContaining('products'));
+  });
+
+  it('warns and skips when readFile fails with an Error', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockRejectedValue(new Error('disk error'));
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    expect(result.size).toBe(0);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('failed to read'),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('warns and skips when readFile fails with a non-Error value', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockRejectedValue('raw string error');
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    expect(result.size).toBe(0);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('failed to read'),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('warns and skips when frontmatter parsing fails with an Error', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const matterMock = await getMatterMock();
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue('some content' as never);
+    matterMock.mockImplementationOnce(() => { throw new Error('parse error'); });
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    expect(result.size).toBe(0);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('failed to parse frontmatter'),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('warns and skips when frontmatter parsing fails with a non-Error value', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const matterMock = await getMatterMock();
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    mocks.readFile.mockResolvedValue('some content' as never);
+    matterMock.mockImplementationOnce(() => { throw 'raw parse failure'; });
+
+    const result = await loadProductOverrides(catalog, '/fake/products');
+
+    expect(result.size).toBe(0);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('failed to parse frontmatter'),
+    );
+    consoleSpy.mockRestore();
+  });
 });

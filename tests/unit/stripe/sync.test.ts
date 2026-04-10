@@ -101,6 +101,19 @@ describe('readStripeState', () => {
     expect(entry.paymentLinkUrl).toBeNull();
   });
 
+  it('defaults unitAmount to 0 when unit_amount is null', async () => {
+    productsListMock.mockReturnValue(
+      makeAsyncIterable([{
+        id: 'prod_1', name: 'Widget', description: null,
+        metadata: { sku: 'W' },
+        default_price: { id: 'price_1', unit_amount: null, currency: 'usd' },
+      }])
+    );
+    const state = await readStripeState(stripe as any);
+    const entry = state.get('W')!;
+    expect(entry.unitAmount).toBe(0);
+  });
+
   it('returns empty map when Stripe has no active products', async () => {
     productsListMock.mockReturnValue(makeAsyncIterable([]));
     const state = await readStripeState(stripe as any);
@@ -202,6 +215,25 @@ describe('catalogDiff', () => {
     expect(result.toAdd).toHaveLength(0);
     expect(result.toUpdate).toHaveLength(0);
     expect(result.orphaned).toHaveLength(0);
+  });
+
+  it('identifies products needing description update', () => {
+    const catalog = [makeCatalogProduct({ sku: 'TEST-001', description: 'New desc' })];
+    const stripeState = new Map([
+      ['TEST-001', {
+        productId: 'prod_1',
+        name: 'Test Product',
+        description: 'Old desc',
+        priceId: 'price_1',
+        unitAmount: 1999,
+        currency: 'usd',
+        paymentLinkId: null,
+        paymentLinkUrl: null,
+      }],
+    ]);
+    const result = catalogDiff(catalog, stripeState, 'usd');
+    expect(result.toUpdate).toHaveLength(1);
+    expect(result.toUpdate[0]!.changes).toContain('description');
   });
 
   it('only diffs storefront products (storefront: false skipped)', () => {
@@ -373,6 +405,22 @@ describe('catalogUpdate', () => {
 
     expect(paymentLinksUpdateMock).not.toHaveBeenCalled();
     expect(paymentLinksCreateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates description with empty string when product description is null', async () => {
+    const existing = makeExistingState({ description: 'Old description' });
+    const toUpdate = [{
+      sku: 'TEST-001',
+      product: makeCatalogProduct({ description: null }),
+      existing,
+      changes: ['description'],
+    }];
+
+    await catalogUpdate(stripe as any, toUpdate, 'usd');
+
+    expect(productsUpdateMock).toHaveBeenCalledWith('prod_1', expect.objectContaining({
+      description: '',
+    }));
   });
 
   it('returns empty map when nothing to update', async () => {

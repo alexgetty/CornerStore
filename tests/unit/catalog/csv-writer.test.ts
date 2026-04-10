@@ -75,4 +75,20 @@ describe('updateCatalogPaymentLinks', () => {
     await updateCatalogPaymentLinks(new Map([['A', 'https://url']]), '/test/catalog.csv');
     expect(writeFileMock).not.toHaveBeenCalled();
   });
+
+  it('uses default CATALOG_PATH when no path is provided', async () => {
+    readFileMock.mockResolvedValue('SKU,Name,Price\nA,Widget,1\n');
+    await updateCatalogPaymentLinks(new Map([['A', 'https://url']]));
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips rows where SKU is missing from the record', async () => {
+    readFileMock.mockResolvedValue('Name,Price,Payment Link\nWidget,1,\n');
+    await updateCatalogPaymentLinks(
+      new Map([['Widget', 'https://should-not-appear']]),
+      '/test/catalog.csv',
+    );
+    const written = writeFileMock.mock.calls[0]![1] as string;
+    expect(written).not.toContain('https://should-not-appear');
+  });
 });

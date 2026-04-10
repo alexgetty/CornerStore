@@ -134,4 +134,23 @@ describe('getListings', () => {
     loadCatalogMock.mockRejectedValue(new Error('[Catalog] Validation failed'));
     await expect(getListings()).rejects.toThrow('[Catalog] Validation failed');
   });
+
+  it('logs plural "products" when multiple storefront products are found', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    loadCatalogMock.mockResolvedValue([
+      makeCatalogProduct({ sku: 'ONE' }),
+      makeCatalogProduct({ sku: 'TWO' }),
+    ]);
+    loadProductImagesMock.mockResolvedValue(
+      new Map([
+        ['ONE', ['/product-images/ONE-1.jpg']],
+        ['TWO', ['/product-images/TWO-1.jpg']],
+      ])
+    );
+    await getListings();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/Build complete: 2 storefront products$/),
+    );
+    consoleSpy.mockRestore();
+  });
 });
