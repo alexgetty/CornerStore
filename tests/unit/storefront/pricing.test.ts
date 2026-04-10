@@ -82,6 +82,40 @@ describe('rawPriceToDecimal', () => {
   });
 });
 
+describe('decimalToRawPrice', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('converts dollars to cents for USD', async () => {
+    const { decimalToRawPrice } = await import(
+      '../../../src/lib/storefront/pricing.js'
+    );
+    expect(decimalToRawPrice(19.99, 'usd')).toBe(1999);
+  });
+
+  it('converts whole dollar amount', async () => {
+    const { decimalToRawPrice } = await import(
+      '../../../src/lib/storefront/pricing.js'
+    );
+    expect(decimalToRawPrice(5, 'usd')).toBe(500);
+  });
+
+  it('handles zero-decimal currencies like JPY', async () => {
+    const { decimalToRawPrice } = await import(
+      '../../../src/lib/storefront/pricing.js'
+    );
+    expect(decimalToRawPrice(1000, 'jpy')).toBe(1000);
+  });
+
+  it('rounds to avoid floating point issues', async () => {
+    const { decimalToRawPrice } = await import(
+      '../../../src/lib/storefront/pricing.js'
+    );
+    expect(decimalToRawPrice(19.999, 'usd')).toBe(2000);
+  });
+});
+
 describe('listingHasPrice', () => {
   beforeEach(() => {
     vi.resetModules();

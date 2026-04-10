@@ -22,3 +22,8 @@ export function formatPrice(unitAmount: number | null, currency: string): string
     currency: currency.toUpperCase(),
   }).format(value);
 }
+
+export function decimalToRawPrice(decimalPrice: number, currency: string): number {
+  const decimals = getCurrencyDecimalPlaces(currency);
+  return Math.round(decimalPrice * (10 ** decimals));
+}

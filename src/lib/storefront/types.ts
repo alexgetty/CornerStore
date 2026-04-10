@@ -1,14 +1,5 @@
-export interface StripeProductData {
-  name: string;
-  description: string | null;
-  image: string | null;
-  imageAlt: string;
-  rawPrice: number;
-  currency: string;
-}
-
-export interface SingleListing {
-  kind: 'single';
+export interface Listing {
+  sku: string;
   name: string;
   description: string | null;
   image: string | null;
@@ -16,46 +7,10 @@ export interface SingleListing {
   price: string;
   rawPrice: number;
   currency: string;
-  paymentLink: string;
+  category: string | null;
+  status: string | null;
+  paymentLink: string | null;
 }
-
-export interface BundleListing {
-  kind: 'bundle';
-  name: string;
-  description: string | null;
-  image: string | null;
-  imageAlt: string;
-  price: string | null;
-  rawPrice: number | null;
-  currency: string | null;
-  paymentLink: string;
-}
-
-export type Listing = SingleListing | BundleListing;
-
-export interface BundleConfig {
-  link: string;
-  title?: string;
-  description?: string;
-  image?: string;
-  image_alt?: string;
-}
-
-export interface LinkWarning {
-  linkUrl: string;
-  reason: string;
-}
-
-export interface PaymentLink {
-  id: string;
-  url: string;
-}
-
-export type PendingBundle = Omit<BundleListing, 'name'> & {
-  suffix: string;
-  config: BundleConfig | undefined;
-  linkId: string;
-};
 
 export interface NavItem {
   label: string;
@@ -73,10 +28,12 @@ export interface StoreConfig {
   home: string;
   nav: NavItem[];
   footerNav: NavItem[];
+  contact?: string;
 }
 
 export interface PageData {
   slug: string;
   title: string;
   hasExplicitTitle: boolean;
+  description: string | undefined;
 }
