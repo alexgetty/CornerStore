@@ -1,0 +1,78 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('node:fs/promises', () => ({
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
+}));
+
+describe('updateCatalogPaymentLinks', () => {
+  let updateCatalogPaymentLinks: typeof import('../../../src/lib/catalog/csv-writer.js').updateCatalogPaymentLinks;
+  let readFileMock: ReturnType<typeof vi.fn>;
+  let writeFileMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const fs = await import('node:fs/promises');
+    readFileMock = vi.mocked(fs.readFile);
+    writeFileMock = vi.mocked(fs.writeFile);
+    readFileMock.mockReset();
+    writeFileMock.mockReset();
+    writeFileMock.mockResolvedValue(undefined);
+    ({ updateCatalogPaymentLinks } = await import('../../../src/lib/catalog/csv-writer.js'));
+  });
+
+  it('updates Payment Link column for matching SKUs', async () => {
+    readFileMock.mockResolvedValue('SKU,Name,Price,Payment Link\nA,Widget,1,\n');
+    await updateCatalogPaymentLinks(
+      new Map([['A', 'https://buy.stripe.com/new']]),
+      '/test/catalog.csv',
+    );
+    const written = writeFileMock.mock.calls[0]![1] as string;
+    expect(written).toContain('https://buy.stripe.com/new');
+  });
+
+  it('adds Payment Link column if it does not exist', async () => {
+    readFileMock.mockResolvedValue('SKU,Name,Price\nA,Widget,1\n');
+    await updateCatalogPaymentLinks(
+      new Map([['A', 'https://buy.stripe.com/new']]),
+      '/test/catalog.csv',
+    );
+    const written = writeFileMock.mock.calls[0]![1] as string;
+    expect(written).toContain('Payment Link');
+    expect(written).toContain('https://buy.stripe.com/new');
+  });
+
+  it('preserves custom columns', async () => {
+    readFileMock.mockResolvedValue('SKU,Name,Price,Custom Col,Payment Link\nA,Widget,1,my-data,\n');
+    await updateCatalogPaymentLinks(
+      new Map([['A', 'https://buy.stripe.com/new']]),
+      '/test/catalog.csv',
+    );
+    const written = writeFileMock.mock.calls[0]![1] as string;
+    expect(written).toContain('Custom Col');
+    expect(written).toContain('my-data');
+  });
+
+  it('does not modify rows without matching SKU', async () => {
+    readFileMock.mockResolvedValue('SKU,Name,Price,Payment Link\nA,Widget,1,https://old\nB,Other,2,https://keep\n');
+    await updateCatalogPaymentLinks(
+      new Map([['A', 'https://new']]),
+      '/test/catalog.csv',
+    );
+    const written = writeFileMock.mock.calls[0]![1] as string;
+    expect(written).toContain('https://new');
+    expect(written).toContain('https://keep');
+  });
+
+  it('writes to the provided path', async () => {
+    readFileMock.mockResolvedValue('SKU,Name,Price\nA,W,1\n');
+    await updateCatalogPaymentLinks(new Map(), '/custom/path.csv');
+    expect(writeFileMock).toHaveBeenCalledWith('/custom/path.csv', expect.any(String));
+  });
+
+  it('does nothing for empty CSV', async () => {
+    readFileMock.mockResolvedValue('SKU,Name,Price\n');
+    await updateCatalogPaymentLinks(new Map([['A', 'https://url']]), '/test/catalog.csv');
+    expect(writeFileMock).not.toHaveBeenCalled();
+  });
+});
