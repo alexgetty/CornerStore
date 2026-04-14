@@ -97,4 +97,90 @@ describe('withRetry (real timers, 0ms delay)', () => {
     expect(Date.now() - start).toBeLessThan(100);
     expect(fn).toHaveBeenCalledTimes(2);
   });
+
+  it('throws meaningful error when maxAttempts < 1', async () => {
+    const fn = vi.fn().mockResolvedValue('ok');
+    let thrown: unknown;
+    try {
+      await withRetry(fn, 0, 0);
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toBe('maxAttempts must be >= 1');
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('does not retry StripeAuthenticationError', async () => {
+    const err = new Error('auth failed');
+    (err as unknown as { type: string }).type = 'StripeAuthenticationError';
+    const fn = vi.fn().mockRejectedValue(err);
+
+    await expect(withRetry(fn, 3, 0)).rejects.toThrow('auth failed');
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry StripeInvalidRequestError', async () => {
+    const err = new Error('invalid request');
+    (err as unknown as { type: string }).type = 'StripeInvalidRequestError';
+    const fn = vi.fn().mockRejectedValue(err);
+
+    await expect(withRetry(fn, 3, 0)).rejects.toThrow('invalid request');
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry StripePermissionError', async () => {
+    const err = new Error('no permission');
+    (err as unknown as { type: string }).type = 'StripePermissionError';
+    const fn = vi.fn().mockRejectedValue(err);
+
+    await expect(withRetry(fn, 3, 0)).rejects.toThrow('no permission');
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries StripeConnectionError then succeeds', async () => {
+    const err = new Error('connection lost');
+    (err as unknown as { type: string }).type = 'StripeConnectionError';
+    const fn = vi.fn()
+      .mockRejectedValueOnce(err)
+      .mockResolvedValue('recovered');
+
+    const result = await withRetry(fn, 3, 0);
+    expect(result).toBe('recovered');
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries StripeRateLimitError then succeeds', async () => {
+    const err = new Error('rate limited');
+    (err as unknown as { type: string }).type = 'StripeRateLimitError';
+    const fn = vi.fn()
+      .mockRejectedValueOnce(err)
+      .mockResolvedValue('recovered');
+
+    const result = await withRetry(fn, 3, 0);
+    expect(result).toBe('recovered');
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries StripeAPIError then succeeds', async () => {
+    const err = new Error('stripe internal');
+    (err as unknown as { type: string }).type = 'StripeAPIError';
+    const fn = vi.fn()
+      .mockRejectedValueOnce(err)
+      .mockResolvedValue('recovered');
+
+    const result = await withRetry(fn, 3, 0);
+    expect(result).toBe('recovered');
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries generic error without type property then succeeds', async () => {
+    const fn = vi.fn()
+      .mockRejectedValueOnce(new Error('network blip'))
+      .mockResolvedValue('recovered');
+
+    const result = await withRetry(fn, 3, 0);
+    expect(result).toBe('recovered');
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
 });

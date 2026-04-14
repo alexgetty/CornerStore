@@ -91,4 +91,20 @@ describe('updateCatalogPaymentLinks', () => {
     const written = writeFileMock.mock.calls[0]![1] as string;
     expect(written).not.toContain('https://should-not-appear');
   });
+
+  it('preserves quoted fields containing commas through round-trip', async () => {
+    const inputCsv =
+      'SKU,Name,Description,Price,Payment Link\nSOAP-LAV,Lavender Soap,"Handmade soap, lavender scent",8,\n';
+    readFileMock.mockResolvedValue(inputCsv);
+    await updateCatalogPaymentLinks(
+      new Map([['SOAP-LAV', 'https://buy.stripe.com/soap']]),
+      '/test/catalog.csv',
+    );
+    const written = writeFileMock.mock.calls[0]![1] as string;
+    const { parse } = await import('csv-parse/sync');
+    const rows = parse(written, { columns: true }) as Record<string, string>[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!['Description']).toBe('Handmade soap, lavender scent');
+    expect(rows[0]!['Payment Link']).toBe('https://buy.stripe.com/soap');
+  });
 });

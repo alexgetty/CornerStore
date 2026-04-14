@@ -211,6 +211,64 @@ describe('validateRows', () => {
     expect(errors[2]).toEqual({ row: 4, field: 'Price', message: 'required' });
   });
 
+  // ── Description length ──────────────────────────────────────────────────
+
+  it('accepts description of exactly 500 characters', () => {
+    const desc = 'D'.repeat(500);
+    const { products, errors } = validateRows([makeCSVRow({ Description: desc })]);
+    expect(errors).toEqual([]);
+    expect(products[0]!.description).toBe(desc);
+  });
+
+  it('returns error for description exceeding 500 characters', () => {
+    const desc = 'D'.repeat(501);
+    const { products, errors } = validateRows([makeCSVRow({ Description: desc })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'Description', message: 'exceeds 500 characters' }]);
+  });
+
+  // ── Price upper bound ──────────────────────────────────────────────────
+
+  it('accepts price of 999999.99', () => {
+    const { products, errors } = validateRows([makeCSVRow({ Price: '999999.99' })]);
+    expect(errors).toEqual([]);
+    expect(products[0]!.price).toBe(999999.99);
+  });
+
+  it('returns error for price of 1000000.00', () => {
+    const { products, errors } = validateRows([makeCSVRow({ Price: '1000000.00' })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'Price', message: 'exceeds maximum of 999999.99' }]);
+  });
+
+  // ── Price floor (rounds to zero cents) ─────────────────────────────────
+
+  it('accepts price of 0.01 (minimum 1 cent)', () => {
+    const { products, errors } = validateRows([makeCSVRow({ Price: '0.01' })]);
+    expect(errors).toEqual([]);
+    expect(products[0]!.price).toBe(0.01);
+  });
+
+  it('returns error for price of 0.004 (rounds to 0 cents)', () => {
+    const { products, errors } = validateRows([makeCSVRow({ Price: '0.004' })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be at least 0.01' }]);
+  });
+
+  // ── Strict number parsing ──────────────────────────────────────────────
+
+  it('returns error for price with trailing non-numeric characters', () => {
+    const { products, errors } = validateRows([makeCSVRow({ Price: '19.99abc' })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be a positive number' }]);
+  });
+
+  it('returns error for price with leading non-numeric characters', () => {
+    const { products, errors } = validateRows([makeCSVRow({ Price: 'abc19.99' })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be a positive number' }]);
+  });
+
   it('returns empty products and no errors for empty records', () => {
     const { products, errors } = validateRows([]);
     expect(products).toEqual([]);

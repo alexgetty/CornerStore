@@ -10,6 +10,10 @@ vi.mock('../../../src/lib/stripe/sync.js', () => ({
   catalogAdd: vi.fn(),
   catalogUpdate: vi.fn(),
 }));
+vi.mock('../../../src/lib/storefront/pricing.js', async () => {
+  const actual = await vi.importActual<typeof import('../../../src/lib/storefront/pricing.js')>('../../../src/lib/storefront/pricing.js');
+  return { ...actual };
+});
 
 describe('runCatalogSync', () => {
   let runCatalogSync: typeof import('../../../src/lib/stripe/catalog-cli.js').runCatalogSync;
@@ -38,12 +42,16 @@ describe('runCatalogSync', () => {
     ({ readStripeState, catalogDiff, catalogAdd, catalogUpdate } = await import('../../../src/lib/stripe/sync.js') as any);
     ({ updateCatalogPaymentLinks } = await import('../../../src/lib/catalog/csv-writer.js') as any);
 
+    // Ensure DEFAULT_CURRENCY is reset to 'usd' for each test
+    const pricingModule = await import('../../../src/lib/storefront/pricing.js') as any;
+    pricingModule.DEFAULT_CURRENCY = 'usd';
+
     loadCatalog.mockResolvedValue(fakeCatalog);
     getStripeClient.mockReturnValue(fakeStripe);
     readStripeState.mockResolvedValue({ state: new Map(), incompleteSkus: fakeIncompleteSkus });
     catalogDiff.mockReturnValue(emptyDiff);
-    catalogAdd.mockResolvedValue(new Map());
-    catalogUpdate.mockResolvedValue(new Map());
+    catalogAdd.mockResolvedValue({ links: new Map(), errors: [] });
+    catalogUpdate.mockResolvedValue({ links: new Map(), errors: [] });
     updateCatalogPaymentLinks.mockResolvedValue(undefined);
 
     consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -109,6 +117,33 @@ describe('runCatalogSync', () => {
       expect(consoleSpy).toHaveBeenCalledWith('  ? OLD-001: Discontinued');
     });
 
+    it('formats price using formatPrice instead of hardcoded dollar sign', async () => {
+      // Reset modules so we get fresh instances where we control DEFAULT_CURRENCY
+      vi.resetModules();
+
+      // Import the mocked pricing module and override DEFAULT_CURRENCY before catalog-cli loads it
+      const pricingMock = await import('../../../src/lib/storefront/pricing.js') as any;
+      pricingMock.DEFAULT_CURRENCY = 'eur';
+
+      const { runCatalogSync: run } = await import('../../../src/lib/stripe/catalog-cli.js');
+      const { loadCatalog: lc } = await import('../../../src/lib/catalog/csv.js') as any;
+      const { getStripeClient: gsc } = await import('../../../src/lib/stripe/client.js') as any;
+      const { readStripeState: rss, catalogDiff: cd } = await import('../../../src/lib/stripe/sync.js') as any;
+
+      lc.mockResolvedValue(fakeCatalog);
+      gsc.mockReturnValue(fakeStripe);
+      rss.mockResolvedValue({ state: new Map(), incompleteSkus: fakeIncompleteSkus });
+
+      const product = makeCatalogProduct({ sku: 'EUR-001', name: 'Euro Widget', price: 19.99, storefront: true });
+      cd.mockReturnValue({ toAdd: [{ sku: 'EUR-001', product }], toUpdate: [], orphaned: [] });
+
+      await run('diff');
+
+      // formatPrice(decimalToRawPrice(19.99, 'eur'), 'eur') produces the euro symbol, not $
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('\u20AC19.99'));
+      expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('$19.99'));
+    });
+
     it('does not call catalogAdd or catalogUpdate in diff mode', async () => {
       catalogDiff.mockReturnValue({
         toAdd: [{ sku: 'X', product: makeCatalogProduct() }],
@@ -132,7 +167,7 @@ describe('runCatalogSync', () => {
       const incompleteSkus = new Map([['RESUME-001', 'prod_existing']]);
       readStripeState.mockResolvedValue({ state: new Map(), incompleteSkus });
       catalogDiff.mockReturnValue({ toAdd, toUpdate: [], orphaned: [] });
-      catalogAdd.mockResolvedValue(new Map([['ADD-001', 'https://buy.stripe.com/add']]));
+      catalogAdd.mockResolvedValue({ links: new Map([['ADD-001', 'https://buy.stripe.com/add']]), errors: [] });
 
       await runCatalogSync('add');
 
@@ -143,7 +178,7 @@ describe('runCatalogSync', () => {
     it('writes payment links when catalogAdd returns links', async () => {
       const toAdd = [{ sku: 'ADD-001', product: makeCatalogProduct() }];
       catalogDiff.mockReturnValue({ toAdd, toUpdate: [], orphaned: [] });
-      catalogAdd.mockResolvedValue(new Map([['ADD-001', 'https://buy.stripe.com/add']]));
+      catalogAdd.mockResolvedValue({ links: new Map([['ADD-001', 'https://buy.stripe.com/add']]), errors: [] });
 
       await runCatalogSync('add');
 
@@ -172,7 +207,7 @@ describe('runCatalogSync', () => {
     it('does not write payment links when catalogAdd returns no links', async () => {
       const toAdd = [{ sku: 'ADD-001', product: makeCatalogProduct() }];
       catalogDiff.mockReturnValue({ toAdd, toUpdate: [], orphaned: [] });
-      catalogAdd.mockResolvedValue(new Map());
+      catalogAdd.mockResolvedValue({ links: new Map(), errors: [] });
 
       await runCatalogSync('add');
 
@@ -186,7 +221,7 @@ describe('runCatalogSync', () => {
     it('calls catalogUpdate with diff.toUpdate when there are updates', async () => {
       const toUpdate = [{ sku: 'UPD-001', changes: ['price'], existing: {} }];
       catalogDiff.mockReturnValue({ toAdd: [], toUpdate, orphaned: [] });
-      catalogUpdate.mockResolvedValue(new Map([['UPD-001', 'https://buy.stripe.com/upd']]));
+      catalogUpdate.mockResolvedValue({ links: new Map([['UPD-001', 'https://buy.stripe.com/upd']]), errors: [] });
 
       await runCatalogSync('update');
 
@@ -197,7 +232,7 @@ describe('runCatalogSync', () => {
     it('writes payment links when catalogUpdate returns links', async () => {
       const toUpdate = [{ sku: 'UPD-001', changes: ['price'], existing: {} }];
       catalogDiff.mockReturnValue({ toAdd: [], toUpdate, orphaned: [] });
-      catalogUpdate.mockResolvedValue(new Map([['UPD-001', 'https://buy.stripe.com/u1'], ['UPD-002', 'https://buy.stripe.com/u2']]));
+      catalogUpdate.mockResolvedValue({ links: new Map([['UPD-001', 'https://buy.stripe.com/u1'], ['UPD-002', 'https://buy.stripe.com/u2']]), errors: [] });
 
       await runCatalogSync('update');
 
@@ -231,8 +266,8 @@ describe('runCatalogSync', () => {
       const toAdd = [{ sku: 'ADD-001', product: makeCatalogProduct() }];
       const toUpdate = [{ sku: 'UPD-001', changes: ['name'], existing: {} }];
       catalogDiff.mockReturnValue({ toAdd, toUpdate, orphaned: [] });
-      catalogAdd.mockResolvedValue(new Map());
-      catalogUpdate.mockResolvedValue(new Map());
+      catalogAdd.mockResolvedValue({ links: new Map(), errors: [] });
+      catalogUpdate.mockResolvedValue({ links: new Map(), errors: [] });
 
       await runCatalogSync('sync');
 
@@ -244,8 +279,8 @@ describe('runCatalogSync', () => {
       const toAdd = [{ sku: 'ADD-001', product: makeCatalogProduct() }];
       const toUpdate = [{ sku: 'UPD-001', changes: ['price'], existing: {} }];
       catalogDiff.mockReturnValue({ toAdd, toUpdate, orphaned: [] });
-      catalogAdd.mockResolvedValue(new Map([['ADD-001', 'https://buy.stripe.com/add']]));
-      catalogUpdate.mockResolvedValue(new Map([['UPD-001', 'https://buy.stripe.com/upd']]));
+      catalogAdd.mockResolvedValue({ links: new Map([['ADD-001', 'https://buy.stripe.com/add']]), errors: [] });
+      catalogUpdate.mockResolvedValue({ links: new Map([['UPD-001', 'https://buy.stripe.com/upd']]), errors: [] });
 
       await runCatalogSync('sync');
 
@@ -280,7 +315,7 @@ describe('runCatalogSync', () => {
     it('uses singular "URL" for exactly 1 link', async () => {
       const toAdd = [{ sku: 'ADD-001', product: makeCatalogProduct() }];
       catalogDiff.mockReturnValue({ toAdd, toUpdate: [], orphaned: [] });
-      catalogAdd.mockResolvedValue(new Map([['ADD-001', 'https://buy.stripe.com/one']]));
+      catalogAdd.mockResolvedValue({ links: new Map([['ADD-001', 'https://buy.stripe.com/one']]), errors: [] });
 
       await runCatalogSync('add');
 
@@ -293,10 +328,10 @@ describe('runCatalogSync', () => {
         { sku: 'A2', product: makeCatalogProduct({ sku: 'A2' }) },
       ];
       catalogDiff.mockReturnValue({ toAdd, toUpdate: [], orphaned: [] });
-      catalogAdd.mockResolvedValue(new Map([
+      catalogAdd.mockResolvedValue({ links: new Map([
         ['A1', 'https://buy.stripe.com/a1'],
         ['A2', 'https://buy.stripe.com/a2'],
-      ]));
+      ]), errors: [] });
 
       await runCatalogSync('add');
 
@@ -335,6 +370,62 @@ describe('runCatalogSync', () => {
       expect(consoleSpy).toHaveBeenCalledWith('[Sync] Warning: 2 Stripe products not in catalog:');
       expect(consoleSpy).toHaveBeenCalledWith('  ? OLD-001: Discontinued A');
       expect(consoleSpy).toHaveBeenCalledWith('  ? OLD-002: Discontinued B');
+    });
+  });
+
+  // ─── partial failure handling ─────────────────────────────────────────────────
+
+  describe('partial failure handling', () => {
+    it('writes successful links to CSV and throws error summary when catalogAdd has partial failures', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const toAdd = [
+        { sku: 'OK-001', product: makeCatalogProduct({ sku: 'OK-001' }) },
+        { sku: 'FAIL-002', product: makeCatalogProduct({ sku: 'FAIL-002' }) },
+      ];
+      catalogDiff.mockReturnValue({ toAdd, toUpdate: [], orphaned: [] });
+      catalogAdd.mockResolvedValue({
+        links: new Map([['OK-001', 'https://buy.stripe.com/ok']]),
+        errors: [{ sku: 'FAIL-002', error: new Error('Stripe API down') }],
+      });
+
+      await expect(runCatalogSync('add')).rejects.toThrow();
+
+      // Successful links should still be written back
+      expect(updateCatalogPaymentLinks).toHaveBeenCalledWith(
+        new Map([['OK-001', 'https://buy.stripe.com/ok']])
+      );
+
+      errorSpy.mockRestore();
+    });
+
+    it('combines errors from both catalogAdd and catalogUpdate in sync mode', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const toAdd = [{ sku: 'ADD-001', product: makeCatalogProduct({ sku: 'ADD-001' }) }];
+      const toUpdate = [{ sku: 'UPD-001', changes: ['price'], existing: {} }];
+      catalogDiff.mockReturnValue({ toAdd, toUpdate, orphaned: [] });
+      catalogAdd.mockResolvedValue({
+        links: new Map(),
+        errors: [{ sku: 'ADD-001', error: new Error('fail add') }],
+      });
+      catalogUpdate.mockResolvedValue({
+        links: new Map(),
+        errors: [{ sku: 'UPD-001', error: new Error('fail update') }],
+      });
+
+      await expect(runCatalogSync('sync')).rejects.toThrow(/2 SKUs failed/);
+
+      errorSpy.mockRestore();
+    });
+
+    it('does not throw when there are no errors', async () => {
+      const toAdd = [{ sku: 'OK-001', product: makeCatalogProduct({ sku: 'OK-001' }) }];
+      catalogDiff.mockReturnValue({ toAdd, toUpdate: [], orphaned: [] });
+      catalogAdd.mockResolvedValue({
+        links: new Map([['OK-001', 'https://buy.stripe.com/ok']]),
+        errors: [],
+      });
+
+      await expect(runCatalogSync('add')).resolves.toBeUndefined();
     });
   });
 });

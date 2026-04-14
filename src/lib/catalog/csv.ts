@@ -6,7 +6,11 @@ import type { CatalogProduct, CatalogValidationError } from './types.js';
 export const CATALOG_PATH = join(process.cwd(), 'catalog.csv');
 
 const SKU_PATTERN = /^[a-zA-Z0-9_-]+$/;
+const PRICE_PATTERN = /^\d+(\.\d+)?$/;
 const MAX_NAME_LENGTH = 250;
+const MAX_DESCRIPTION_LENGTH = 500;
+const MAX_PRICE = 999999.99;
+const MIN_PRICE = 0.01;
 
 function parseRow(
   row: Record<string, string>,
@@ -37,11 +41,22 @@ function parseRow(
   let price = 0;
   if (!priceStr) {
     errors.push({ row: rowNum, field: 'Price', message: 'required' });
+  } else if (!PRICE_PATTERN.test(priceStr)) {
+    errors.push({ row: rowNum, field: 'Price', message: 'must be a positive number' });
   } else {
     price = parseFloat(priceStr);
     if (isNaN(price) || price <= 0) {
       errors.push({ row: rowNum, field: 'Price', message: 'must be a positive number' });
+    } else if (price < MIN_PRICE) {
+      errors.push({ row: rowNum, field: 'Price', message: `must be at least ${MIN_PRICE}` });
+    } else if (price > MAX_PRICE) {
+      errors.push({ row: rowNum, field: 'Price', message: `exceeds maximum of ${MAX_PRICE}` });
     }
+  }
+
+  const description = row['Description']?.trim() || null;
+  if (description && description.length > MAX_DESCRIPTION_LENGTH) {
+    errors.push({ row: rowNum, field: 'Description', message: `exceeds ${MAX_DESCRIPTION_LENGTH} characters` });
   }
 
   const storefrontVal = (row['Storefront'] ?? '').trim().toLowerCase();
@@ -55,7 +70,7 @@ function parseRow(
     status: row['Status']?.trim() || null,
     storefront: storefrontVal !== 'no',
     orderSheet: orderSheetVal !== 'no',
-    description: row['Description']?.trim() || null,
+    description,
     paymentLink: row['Payment Link']?.trim() || null,
   };
 
