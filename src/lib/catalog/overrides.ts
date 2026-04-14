@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../frontmatter.js';
 import type { CatalogProduct, ProductOverride } from './types.js';
 
 const PRODUCTS_DIR = join(process.cwd(), 'products');
@@ -38,7 +38,7 @@ export async function loadProductOverrides(
     let data: Record<string, unknown>;
     let content: string;
     try {
-      ({ data, content } = matter(raw));
+      ({ data, content } = parseFrontmatter(raw));
     } catch (err: unknown) {
       console.log(`[Catalog] Warning: products/${file}: failed to parse frontmatter — ${err instanceof Error ? err.message : String(err)}`);
       continue;

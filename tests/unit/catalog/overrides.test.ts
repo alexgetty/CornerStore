@@ -6,22 +6,12 @@ vi.mock('node:fs/promises', () => ({
   readFile: vi.fn(),
 }));
 
-vi.mock('gray-matter', async (importOriginal) => {
-  const original = (await importOriginal()) as { default: (...args: unknown[]) => unknown };
-  return { default: vi.fn(original.default) };
-});
-
 async function getFsMocks() {
   const fs = await import('node:fs/promises');
   return {
     readdir: vi.mocked(fs.readdir),
     readFile: vi.mocked(fs.readFile),
   };
-}
-
-async function getMatterMock() {
-  const m = await import('gray-matter');
-  return vi.mocked(m.default);
 }
 
 describe('loadProductOverrides', () => {
@@ -266,11 +256,9 @@ describe('loadProductOverrides', () => {
 
   it('warns and skips when frontmatter parsing fails with an Error', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const matterMock = await getMatterMock();
     const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
     mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
-    mocks.readFile.mockResolvedValue('some content' as never);
-    matterMock.mockImplementationOnce(() => { throw new Error('parse error'); });
+    mocks.readFile.mockResolvedValue('---\ntitle: [\n---\n' as never);
 
     const result = await loadProductOverrides(catalog, '/fake/products');
 
@@ -282,14 +270,19 @@ describe('loadProductOverrides', () => {
   });
 
   it('warns and skips when frontmatter parsing fails with a non-Error value', async () => {
+    vi.resetModules();
+    vi.doMock('../../../src/lib/frontmatter.js', () => ({
+      parseFrontmatter: () => { throw 'raw parse failure'; },
+    }));
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const matterMock = await getMatterMock();
-    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
-    mocks.readdir.mockResolvedValue(['widget-001.md'] as never);
-    mocks.readFile.mockResolvedValue('some content' as never);
-    matterMock.mockImplementationOnce(() => { throw 'raw parse failure'; });
+    const localMocks = await getFsMocks();
+    const { loadProductOverrides: localLoad } = await import('../../../src/lib/catalog/overrides.js');
 
-    const result = await loadProductOverrides(catalog, '/fake/products');
+    const catalog = [makeCatalogProduct({ sku: 'WIDGET-001' })];
+    localMocks.readdir.mockResolvedValue(['widget-001.md'] as never);
+    localMocks.readFile.mockResolvedValue('some content' as never);
+
+    const result = await localLoad(catalog, '/fake/products');
 
     expect(result.size).toBe(0);
     expect(consoleSpy).toHaveBeenCalledWith(
