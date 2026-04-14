@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "corner-store": "./bin/init.mjs"
+    "corner-store": "./bin/init.mjs",
+    "corner-store-catalog": "./bin/catalog.mjs"
   },
   "exports": {
     ".": "./src/lib/storefront/index.ts",
@@ -36,7 +37,9 @@
     "catalog:diff": "tsx bin/catalog.ts diff",
     "catalog:add": "tsx bin/catalog.ts add",
     "catalog:update": "tsx bin/catalog.ts update",
-    "catalog:sync": "tsx bin/catalog.ts sync"
+    "catalog:sync": "tsx bin/catalog.ts sync",
+    "build:cli": "esbuild bin/catalog.ts --bundle --format=esm --platform=node --target=node18 --outfile=bin/catalog.mjs --packages=external --banner:js='#!/usr/bin/env node'",
+    "prepublishOnly": "npm run build:cli"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",
@@ -53,6 +56,7 @@
     "@astrojs/check": "^0.9",
     "@types/node": "^25.4.0",
     "@vitest/coverage-v8": "^2",
+    "esbuild": "^0.28.0",
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^2"
