@@ -4,9 +4,9 @@
 
 - Mission: empower indie makers to sell direct without platform fees eating their margins.
 - Seller experience comes first. The product serves makers, not developers.
-- Stripe is the core product data model — shared across all sales channels.
-- The storefront is one channel. Local configuration is channel-specific presentation that layers on top of Stripe data.
-- Zero config works. Stripe data alone produces a functional storefront. Local config is optional enrichment or override.
+- The product catalog (catalog.csv) is the single source of truth. Stripe is a downstream consumer for checkout.
+- The storefront is one channel. The CSV drives the storefront directly. Stripe sync is a separate operation for enabling checkout.
+- Zero config works. A CSV with SKU, Name, and Price produces a functional storefront. Images, overrides, and Stripe sync are optional enrichment.
 - Static site + Stripe Checkout for single-product transactions. No backend needed.
 - Multi-product cart is the one serverless function requirement.
 - Storefront components will be built on BigSmall Blocks (shared component library, currently "The Construct"). Not integrated yet — will be introduced when moving from prototype to launch-ready.

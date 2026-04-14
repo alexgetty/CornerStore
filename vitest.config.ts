@@ -4,8 +4,8 @@ export default defineConfig({
   test: {
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts'],
-      exclude: ['src/env.d.ts', 'src/lib/storefront/types.ts', 'src/components/index.ts'],
+      include: ['src/**/*.ts', 'bin/**/*.ts'],
+      exclude: ['src/env.d.ts', 'src/lib/storefront/types.ts', 'src/components/index.ts', 'src/lib/catalog/types.ts', 'src/lib/catalog/index.ts', 'src/lib/storefront/index.ts'],
       thresholds: {
         lines: 100,
         functions: 100,

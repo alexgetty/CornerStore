@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/lib/storefront/index.ts",
     "./stripe": "./src/lib/stripe/index.ts",
+    "./catalog": "./src/lib/catalog/index.ts",
     "./components": "./src/components/index.ts",
     "./layouts/Base": "./src/layouts/Base.astro",
     "./layouts/ContentPage": "./src/layouts/ContentPage.astro",
@@ -30,10 +31,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "ci": "npm run typecheck && npm run test:coverage && npm run build"
+    "ci": "npm run typecheck && npm run test:coverage && npm run build",
+    "catalog": "tsx bin/catalog.ts",
+    "catalog:diff": "tsx bin/catalog.ts diff",
+    "catalog:add": "tsx bin/catalog.ts add",
+    "catalog:update": "tsx bin/catalog.ts update",
+    "catalog:sync": "tsx bin/catalog.ts sync"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",
+    "csv-parse": "^6.2.1",
+    "csv-stringify": "^6.7.0",
     "gray-matter": "^4.0.3",
     "stripe": "^20",
     "zod": "^3.25.76"
@@ -45,6 +53,7 @@
     "@astrojs/check": "^0.9",
     "@types/node": "^25.4.0",
     "@vitest/coverage-v8": "^2",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^2"
   }

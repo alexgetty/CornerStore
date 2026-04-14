@@ -1,7 +1,7 @@
 ---
 import "./Listing.css";
 import type { Listing } from "../../lib/storefront";
-import { listingHasPrice, rawPriceToDecimal, getListings } from "../../lib/storefront";
+import { rawPriceToDecimal, getListings } from "../../lib/storefront";
 
 interface Props {
   listing?: Listing;
@@ -17,44 +17,36 @@ if (!listing && product) {
   const needle = product.toLowerCase();
   listing = allListings.find((l) => {
     const slugified = l.name.toLowerCase().replace(/\s+/g, '-');
-    return slugified === needle || l.name.toLowerCase() === needle;
+    return l.sku.toLowerCase() === needle
+      || slugified === needle
+      || l.name.toLowerCase() === needle;
   });
-}
-
-const hasPrice = listing ? listingHasPrice(listing) : false;
-
-let currencySymbol = '';
-let decimalValue = '';
-let currencyCode = '';
-let formattedPrice = '';
-
-if (listing && hasPrice) {
-  const rawPrice = listing.rawPrice!;
-  const currency = listing.currency!;
-  currencyCode = currency.toUpperCase();
-  const decimal = rawPriceToDecimal(rawPrice, currency);
-  decimalValue = decimal.toFixed(2);
-  formattedPrice = listing.price!;
-  currencySymbol = formattedPrice.replace(/[\d.,\s]/g, '');
 }
 ---
 
 {listing ? (
   <article class="cs-listing" itemscope itemtype="https://schema.org/Product">
-    <h2 class="cs-listing-name" itemprop="name">{listing.name}</h2>
-    {listing.image ? (
-      <div class="cs-image-frame">
-        <img src={listing.image} alt={listing.imageAlt} itemprop="image" />
-      </div>
-    ) : (
-      <div class="cs-image-placeholder" aria-hidden="true"></div>
-    )}
-    {listing.description && <p class="cs-listing-description" itemprop="description">{listing.description}</p>}
-    {hasPrice && (
-      <div class="cs-listing-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-        <span itemprop="priceCurrency" {...{ content: currencyCode }}>{currencySymbol}</span><data value={decimalValue} itemprop="price">{decimalValue}</data>
-      </div>
-    )}
-    <a href={listing.paymentLink} class="cs-listing-buy" aria-label={hasPrice ? `Buy ${listing.name} — ${formattedPrice}` : `Buy ${listing.name}`} itemprop="url">Buy</a>
+    <figure class="cs-listing-image">
+      {
+        listing.image ? (
+          <img src={listing.image} alt={listing.imageAlt} itemprop="image" />
+        ) : (
+          <div class="cs-listing-placeholder" aria-label={listing.imageAlt} />
+        )
+      }
+    </figure>
+    <div class="cs-listing-details">
+      <h2 class="cs-listing-name" itemprop="name">{listing.name}</h2>
+      {listing.description && <p class="cs-listing-description" itemprop="description">{listing.description}</p>}
+      <p class="cs-listing-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+        <data value={String(rawPriceToDecimal(listing.rawPrice, listing.currency))} itemprop="price" aria-label={"Price: " + listing.price}>{listing.price}</data>
+        <meta itemprop="priceCurrency" content={listing.currency.toUpperCase()} />
+      </p>
+      {listing.status ? (
+        <span class="cs-listing-status">{listing.status}</span>
+      ) : listing.paymentLink ? (
+        <a href={listing.paymentLink} class="cs-listing-buy" aria-label={`Buy ${listing.name} on Stripe`} itemprop="url">Buy</a>
+      ) : null}
+    </div>
   </article>
 ) : null}

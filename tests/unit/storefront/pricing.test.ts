@@ -82,59 +82,44 @@ describe('rawPriceToDecimal', () => {
   });
 });
 
-describe('listingHasPrice', () => {
+describe('decimalToRawPrice', () => {
   beforeEach(() => {
     vi.resetModules();
   });
 
-  it('returns true for SingleListing', async () => {
-    const { listingHasPrice } = await import(
+  it('converts dollars to cents for USD', async () => {
+    const { decimalToRawPrice } = await import(
       '../../../src/lib/storefront/pricing.js'
     );
-    expect(listingHasPrice({
-      kind: 'single',
-      name: 'Test',
-      description: null,
-      image: null,
-      imageAlt: 'Test',
-      price: '$19.99',
-      rawPrice: 1999,
-      currency: 'usd',
-      paymentLink: 'https://buy.stripe.com/test',
-    })).toBe(true);
+    expect(decimalToRawPrice(19.99, 'usd')).toBe(1999);
   });
 
-  it('returns true for BundleListing with price', async () => {
-    const { listingHasPrice } = await import(
+  it('converts whole dollar amount', async () => {
+    const { decimalToRawPrice } = await import(
       '../../../src/lib/storefront/pricing.js'
     );
-    expect(listingHasPrice({
-      kind: 'bundle',
-      name: 'Bundle',
-      description: null,
-      image: null,
-      imageAlt: 'Bundle',
-      price: '$15.00',
-      rawPrice: 1500,
-      currency: 'usd',
-      paymentLink: 'https://buy.stripe.com/test',
-    })).toBe(true);
+    expect(decimalToRawPrice(5, 'usd')).toBe(500);
   });
 
-  it('returns false for BundleListing with null price fields', async () => {
-    const { listingHasPrice } = await import(
+  it('handles zero-decimal currencies like JPY', async () => {
+    const { decimalToRawPrice } = await import(
       '../../../src/lib/storefront/pricing.js'
     );
-    expect(listingHasPrice({
-      kind: 'bundle',
-      name: 'Bundle',
-      description: null,
-      image: null,
-      imageAlt: 'Bundle',
-      price: null,
-      rawPrice: null,
-      currency: null,
-      paymentLink: 'https://buy.stripe.com/test',
-    })).toBe(false);
+    expect(decimalToRawPrice(1000, 'jpy')).toBe(1000);
+  });
+
+  it('rounds to avoid floating point issues', async () => {
+    const { decimalToRawPrice } = await import(
+      '../../../src/lib/storefront/pricing.js'
+    );
+    expect(decimalToRawPrice(19.999, 'usd')).toBe(2000);
   });
 });
+
+describe('DEFAULT_CURRENCY', () => {
+  it('is usd', async () => {
+    const { DEFAULT_CURRENCY } = await import('../../../src/lib/storefront/pricing.js');
+    expect(DEFAULT_CURRENCY).toBe('usd');
+  });
+});
+

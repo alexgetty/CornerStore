@@ -1,12 +1,8 @@
-import type { Listing } from './types.js';
+export const DEFAULT_CURRENCY = 'usd';
 
 function getCurrencyDecimalPlaces(currency: string): number {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() })
     .resolvedOptions().maximumFractionDigits /* v8 ignore next -- always defined for currency */ ?? 2;
-}
-
-export function listingHasPrice(listing: Listing): boolean {
-  return listing.price !== null && listing.rawPrice !== null && listing.currency !== null;
 }
 
 export function rawPriceToDecimal(rawPrice: number, currency: string): number {
@@ -21,4 +17,9 @@ export function formatPrice(unitAmount: number | null, currency: string): string
     style: 'currency',
     currency: currency.toUpperCase(),
   }).format(value);
+}
+
+export function decimalToRawPrice(decimalPrice: number, currency: string): number {
+  const decimals = getCurrencyDecimalPlaces(currency);
+  return Math.round(decimalPrice * (10 ** decimals));
 }
