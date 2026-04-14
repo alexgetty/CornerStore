@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getFsMock, getMatterMock } from './helpers.js';
+import { getFsMock } from './helpers.js';
 import type { StoreConfig } from '../../../src/lib/storefront/types.js';
 
 vi.mock('node:fs/promises', () => ({
@@ -8,11 +8,6 @@ vi.mock('node:fs/promises', () => ({
   copyFile: vi.fn(),
   mkdir: vi.fn(),
 }));
-
-vi.mock('gray-matter', async (importOriginal) => {
-  const original = (await importOriginal()) as { default: (...args: unknown[]) => unknown };
-  return { default: vi.fn(original.default) };
-});
 
 const baseConfig: StoreConfig = {
   name: 'Test Store',
@@ -380,7 +375,7 @@ describe('loadPages', () => {
     readdirMock.mockResolvedValue(['malformed.mdx', 'valid.mdx']);
     readFileMock.mockImplementation(((path: string) => {
       if (path.includes('malformed')) {
-        return Promise.resolve('---\n: invalid: yaml:\n---\n');
+        return Promise.resolve('---\ntitle: [\n---\n');
       }
       return Promise.resolve('---\ntitle: Valid\n---\n');
     }) as never);
@@ -441,19 +436,22 @@ describe('loadPages', () => {
   });
 
   it('warns and skips when frontmatter parser throws non-Error value', async () => {
+    let callCount = 0;
+    vi.doMock('../../../src/lib/frontmatter.js', async () => {
+      const real = await vi.importActual<typeof import('../../../src/lib/frontmatter.js')>('../../../src/lib/frontmatter.js');
+      return {
+        parseFrontmatter: (...args: unknown[]) => {
+          callCount++;
+          if (callCount === 1) throw 42;
+          return real.parseFrontmatter(...(args as [string]));
+        },
+      };
+    });
+
     const { readdirMock, readFileMock } = await getFsMock();
-    const matterMock = await getMatterMock();
     readdirMock.mockResolvedValue(['cursed.mdx', 'fine.mdx']);
     readFileMock.mockResolvedValue('---\ntitle: Fine\n---\n');
-    const realMatter = ((await vi.importActual('gray-matter')) as { default: (...args: unknown[]) => unknown }).default;
-    let callCount = 0;
-    matterMock.mockImplementation(((...args: unknown[]) => {
-      callCount++;
-      if (callCount === 1) {
-        throw 42;
-      }
-      return realMatter(...args);
-    }) as never);
+
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     const { loadPages } = await import('../../../src/lib/storefront/pages.js');

@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../frontmatter.js';
 import { z } from 'zod';
 import type { PageData, StoreConfig } from './types.js';
 import { getErrorMessage } from './utils.js';
@@ -66,7 +66,7 @@ export async function loadPages(config: StoreConfig): Promise<Map<string, PageDa
 
     let rawData: Record<string, unknown>;
     try {
-      ({ data: rawData } = matter(raw));
+      ({ data: rawData } = parseFrontmatter(raw));
     } catch (err: unknown) {
       console.log(`[Storefront] Warning: pages/${file}: failed to parse frontmatter — ${getErrorMessage(err)}`);
       continue;

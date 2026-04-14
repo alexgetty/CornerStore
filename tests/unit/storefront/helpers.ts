@@ -33,8 +33,3 @@ export async function getFsMock() {
     mkdirMock: vi.mocked(fs.mkdir),
   };
 }
-
-export async function getMatterMock() {
-  const matterModule = await import('gray-matter');
-  return vi.mocked(matterModule.default);
-}
