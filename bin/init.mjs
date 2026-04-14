@@ -53,6 +53,23 @@ footerNav.push({ label: 'Terms of Service', page: 'terms-of-service' });
 await mkdir(join(dir, 'src', 'pages'), { recursive: true });
 await mkdir(join(dir, 'pages'), { recursive: true });
 await mkdir(join(dir, 'theme'), { recursive: true });
+await mkdir(join(dir, 'products'), { recursive: true });
+await mkdir(join(dir, 'product-images'), { recursive: true });
+
+// catalog.csv — the product catalog, source of truth for all product data
+await writeFile(join(dir, 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,Payment Link
+SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,yes,no,
+`);
+
+// products/SAMPLE-001.md — example rich description override
+await writeFile(join(dir, 'products', 'SAMPLE-001.md'), `---
+sku: SAMPLE-001
+---
+
+This is a **rich description** for your sample product. Edit this file or delete it and use the Description column in catalog.csv instead.
+
+Markdown here overrides the CSV description on your storefront, while the CSV description is still used for Stripe.
+`);
 
 // package.json
 await writeFile(join(dir, 'package.json'), JSON.stringify({
@@ -62,6 +79,10 @@ await writeFile(join(dir, 'package.json'), JSON.stringify({
     dev: 'astro dev',
     build: 'astro build',
     preview: 'astro preview',
+    'catalog:diff': 'corner-store-catalog diff',
+    'catalog:add': 'corner-store-catalog add',
+    'catalog:update': 'corner-store-catalog update',
+    'catalog:sync': 'corner-store-catalog sync',
   },
   dependencies: {
     '@astrojs/mdx': '^4',
