@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CatalogProduct, CatalogValidationError } from './types.js';
 
-export const CATALOG_PATH = join(process.cwd(), 'catalog.csv');
+export const CATALOG_PATH = join(process.cwd(), 'products', 'catalog.csv');
 
 const SKU_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const PRICE_PATTERN = /^\d+(\.\d+)?$/;

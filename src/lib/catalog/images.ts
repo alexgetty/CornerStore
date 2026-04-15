@@ -3,7 +3,7 @@ import { join, extname } from 'node:path';
 import type { ProductImage } from './types.js';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg']);
-const PUBLIC_IMAGES_DIR = join(process.cwd(), 'public', 'product-images');
+const PUBLIC_IMAGES_DIR = join(process.cwd(), 'public', 'products', 'images');
 
 export function parseImageFilename(
   filename: string,
@@ -44,7 +44,7 @@ export async function loadProductImages(
   catalogSkus: Set<string>,
   dir?: string,
 ): Promise<Map<string, ProductImage[]>> {
-  const imagesDir = dir ?? join(process.cwd(), 'product-images');
+  const imagesDir = dir ?? join(process.cwd(), 'products', 'images');
   const imageMap = new Map<string, { order: number | null; url: string; filename: string }[]>();
 
   let files: string[];
@@ -62,7 +62,7 @@ export async function loadProductImages(
     if (!parsed) {
       const ext = extname(filename).toLowerCase();
       if (IMAGE_EXTENSIONS.has(ext)) {
-        console.log(`[Catalog] Warning: product-images/${filename}: no matching SKU in catalog — skipped`);
+        console.log(`[Catalog] Warning: products/images/${filename}: no matching SKU in catalog — skipped`);
       }
       continue;
     }
@@ -70,7 +70,7 @@ export async function loadProductImages(
     const entries = imageMap.get(parsed.sku) ?? [];
     entries.push({
       order: parsed.order,
-      url: `/product-images/${filename}`,
+      url: `/products/images/${filename}`,
       filename,
     });
     imageMap.set(parsed.sku, entries);

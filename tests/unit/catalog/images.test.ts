@@ -119,11 +119,11 @@ describe('loadProductImages', () => {
     const result = await loadProductImages(skus, '/fake/product-images');
 
     expect(result.get('WIDGET')).toEqual([
-      { url: '/product-images/WIDGET-1.jpg', filename: 'WIDGET-1.jpg' },
-      { url: '/product-images/WIDGET-2.jpg', filename: 'WIDGET-2.jpg' },
+      { url: '/products/images/WIDGET-1.jpg', filename: 'WIDGET-1.jpg' },
+      { url: '/products/images/WIDGET-2.jpg', filename: 'WIDGET-2.jpg' },
     ]);
     expect(result.get('GADGET')).toEqual([
-      { url: '/product-images/GADGET-1.png', filename: 'GADGET-1.png' },
+      { url: '/products/images/GADGET-1.png', filename: 'GADGET-1.png' },
     ]);
   });
 
@@ -135,9 +135,9 @@ describe('loadProductImages', () => {
     const result = await loadProductImages(skus, '/fake/product-images');
 
     expect(result.get('WIDGET')).toEqual([
-      { url: '/product-images/WIDGET-1.jpg', filename: 'WIDGET-1.jpg' },
-      { url: '/product-images/WIDGET-detail.jpg', filename: 'WIDGET-detail.jpg' },
-      { url: '/product-images/WIDGET-lifestyle.jpg', filename: 'WIDGET-lifestyle.jpg' },
+      { url: '/products/images/WIDGET-1.jpg', filename: 'WIDGET-1.jpg' },
+      { url: '/products/images/WIDGET-detail.jpg', filename: 'WIDGET-detail.jpg' },
+      { url: '/products/images/WIDGET-lifestyle.jpg', filename: 'WIDGET-lifestyle.jpg' },
     ]);
   });
 
@@ -150,9 +150,9 @@ describe('loadProductImages', () => {
     const result = await loadProductImages(skus, '/fake/product-images');
 
     expect(result.get('WIDGET')).toEqual([
-      { url: '/product-images/WIDGET-1.jpg', filename: 'WIDGET-1.jpg' },
-      { url: '/product-images/WIDGET-2.jpg', filename: 'WIDGET-2.jpg' },
-      { url: '/product-images/WIDGET-hero.jpg', filename: 'WIDGET-hero.jpg' },
+      { url: '/products/images/WIDGET-1.jpg', filename: 'WIDGET-1.jpg' },
+      { url: '/products/images/WIDGET-2.jpg', filename: 'WIDGET-2.jpg' },
+      { url: '/products/images/WIDGET-hero.jpg', filename: 'WIDGET-hero.jpg' },
     ]);
   });
 
@@ -164,7 +164,7 @@ describe('loadProductImages', () => {
     const result = await loadProductImages(skus, '/fake/product-images');
 
     expect(result.get('ABC-123')).toEqual([
-      { url: '/product-images/ABC-123.jpg', filename: 'ABC-123.jpg' },
+      { url: '/products/images/ABC-123.jpg', filename: 'ABC-123.jpg' },
     ]);
   });
 
@@ -204,7 +204,7 @@ describe('loadProductImages', () => {
     await loadProductImages(skus, '/fake/product-images');
 
     expect(mocks.mkdir).toHaveBeenCalledWith(
-      expect.stringContaining('product-images'),
+      expect.stringContaining('products'),
       { recursive: true },
     );
     expect(mocks.copyFile).toHaveBeenCalledWith(
@@ -229,12 +229,12 @@ describe('loadProductImages', () => {
     await expect(loadProductImages(skus, '/fake/product-images')).rejects.toThrow('EACCES');
   });
 
-  it('uses default product-images directory when no dir is provided', async () => {
+  it('uses default products/images directory when no dir is provided', async () => {
     mocks.readdir.mockResolvedValue([] as never);
 
     const result = await loadProductImages(skus);
 
     expect(result).toEqual(new Map());
-    expect(mocks.readdir).toHaveBeenCalledWith(expect.stringContaining('product-images'));
+    expect(mocks.readdir).toHaveBeenCalledWith(expect.stringContaining('products'));
   });
 });

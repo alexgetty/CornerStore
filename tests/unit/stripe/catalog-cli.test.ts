@@ -183,7 +183,7 @@ describe('runCatalogSync', () => {
       await runCatalogSync('add');
 
       expect(updateCatalogPaymentLinks).toHaveBeenCalledWith(new Map([['ADD-001', 'https://buy.stripe.com/add']]));
-      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 1 Payment Link URL back to catalog.csv');
+      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 1 Payment Link URL back to products/catalog.csv');
     });
 
     it('logs "No new products to add." when toAdd is empty', async () => {
@@ -237,7 +237,7 @@ describe('runCatalogSync', () => {
       await runCatalogSync('update');
 
       expect(updateCatalogPaymentLinks).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 2 Payment Link URLs back to catalog.csv');
+      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 2 Payment Link URLs back to products/catalog.csv');
     });
 
     it('logs "No products to update." when toUpdate is empty', async () => {
@@ -289,7 +289,7 @@ describe('runCatalogSync', () => {
         ['UPD-001', 'https://buy.stripe.com/upd'],
       ]);
       expect(updateCatalogPaymentLinks).toHaveBeenCalledWith(expectedLinks);
-      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 2 Payment Link URLs back to catalog.csv');
+      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 2 Payment Link URLs back to products/catalog.csv');
     });
 
     it('logs "No new products to add." when toAdd is empty in sync mode', async () => {
@@ -319,7 +319,7 @@ describe('runCatalogSync', () => {
 
       await runCatalogSync('add');
 
-      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 1 Payment Link URL back to catalog.csv');
+      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 1 Payment Link URL back to products/catalog.csv');
     });
 
     it('uses plural "URLs" for 2+ links', async () => {
@@ -335,7 +335,7 @@ describe('runCatalogSync', () => {
 
       await runCatalogSync('add');
 
-      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 2 Payment Link URLs back to catalog.csv');
+      expect(consoleSpy).toHaveBeenCalledWith('[Sync] Wrote 2 Payment Link URLs back to products/catalog.csv');
     });
   });
 

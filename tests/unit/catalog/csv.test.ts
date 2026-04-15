@@ -363,7 +363,7 @@ describe('loadCatalog', () => {
     readFileMock.mockResolvedValue(csv);
     await loadCatalog();
     expect(readFileMock).toHaveBeenCalledWith(
-      expect.stringContaining('catalog.csv'),
+      expect.stringContaining('products/catalog.csv'),
       'utf-8'
     );
   });

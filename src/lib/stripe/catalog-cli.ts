@@ -63,7 +63,7 @@ export async function runCatalogSync(mode: 'diff' | 'add' | 'update' | 'sync'): 
 
   if (allUpdatedLinks.size > 0) {
     await updateCatalogPaymentLinks(allUpdatedLinks);
-    console.log(`[Sync] Wrote ${allUpdatedLinks.size} Payment Link URL${allUpdatedLinks.size === 1 ? '' : 's'} back to catalog.csv`);
+    console.log(`[Sync] Wrote ${allUpdatedLinks.size} Payment Link URL${allUpdatedLinks.size === 1 ? '' : 's'} back to products/catalog.csv`);
   }
 
   if (diff.orphaned.length > 0) {

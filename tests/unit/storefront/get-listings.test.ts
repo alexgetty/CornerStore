@@ -59,8 +59,8 @@ describe('getListings', () => {
     loadCatalogMock.mockResolvedValue([makeCatalogProduct()]);
     loadProductImagesMock.mockResolvedValue(
       new Map([['TEST-001', [
-        { url: '/product-images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' },
-        { url: '/product-images/TEST-001-2.jpg', filename: 'TEST-001-2.jpg' },
+        { url: '/products/images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' },
+        { url: '/products/images/TEST-001-2.jpg', filename: 'TEST-001-2.jpg' },
       ]]])
     );
     loadProductOverridesMock.mockResolvedValue(
@@ -72,8 +72,8 @@ describe('getListings', () => {
     );
     const listings = await getListings();
     expect(listings[0]!.images).toEqual([
-      { url: '/product-images/TEST-001-1.jpg', alt: 'Primary photo' },
-      { url: '/product-images/TEST-001-2.jpg', alt: '' },
+      { url: '/products/images/TEST-001-1.jpg', alt: 'Primary photo' },
+      { url: '/products/images/TEST-001-2.jpg', alt: '' },
     ]);
   });
 
@@ -81,7 +81,7 @@ describe('getListings', () => {
     loadCatalogMock.mockResolvedValue([makeCatalogProduct()]);
     loadProductImagesMock.mockResolvedValue(
       new Map([['TEST-001', [
-        { url: '/product-images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' },
+        { url: '/products/images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' },
       ]]])
     );
     const listings = await getListings();
@@ -146,8 +146,8 @@ describe('getListings', () => {
     ]);
     loadProductImagesMock.mockResolvedValue(
       new Map([
-        ['ONE', [{ url: '/product-images/ONE-1.jpg', filename: 'ONE-1.jpg' }]],
-        ['TWO', [{ url: '/product-images/TWO-1.jpg', filename: 'TWO-1.jpg' }]],
+        ['ONE', [{ url: '/products/images/ONE-1.jpg', filename: 'ONE-1.jpg' }]],
+        ['TWO', [{ url: '/products/images/TWO-1.jpg', filename: 'TWO-1.jpg' }]],
       ])
     );
     await getListings();

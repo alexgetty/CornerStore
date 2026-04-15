@@ -99,7 +99,7 @@ var CATALOG_PATH, SKU_PATTERN, PRICE_PATTERN, MAX_NAME_LENGTH, MAX_DESCRIPTION_L
 var init_csv = __esm({
   "src/lib/catalog/csv.ts"() {
     "use strict";
-    CATALOG_PATH = join(process.cwd(), "catalog.csv");
+    CATALOG_PATH = join(process.cwd(), "products", "catalog.csv");
     SKU_PATTERN = /^[a-zA-Z0-9_-]+$/;
     PRICE_PATTERN = /^\d+(\.\d+)?$/;
     MAX_NAME_LENGTH = 250;
@@ -477,7 +477,7 @@ Orphaned in Stripe (${diff.orphaned.length}):`);
   }
   if (allUpdatedLinks.size > 0) {
     await updateCatalogPaymentLinks(allUpdatedLinks);
-    console.log(`[Sync] Wrote ${allUpdatedLinks.size} Payment Link URL${allUpdatedLinks.size === 1 ? "" : "s"} back to catalog.csv`);
+    console.log(`[Sync] Wrote ${allUpdatedLinks.size} Payment Link URL${allUpdatedLinks.size === 1 ? "" : "s"} back to products/catalog.csv`);
   }
   if (diff.orphaned.length > 0) {
     console.log(`[Sync] Warning: ${diff.orphaned.length} Stripe product${diff.orphaned.length === 1 ? "" : "s"} not in catalog:`);

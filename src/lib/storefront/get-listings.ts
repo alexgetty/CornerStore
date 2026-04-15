@@ -39,7 +39,7 @@ export async function getListings(): Promise<Listing[]> {
 
   for (const product of storefrontProducts) {
     if (!images.has(product.sku)) {
-      console.log(`[Catalog] Warning: ${product.sku} has no images in product-images/`);
+      console.log(`[Catalog] Warning: ${product.sku} has no images in products/images/`);
     }
   }
 

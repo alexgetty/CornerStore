@@ -54,10 +54,10 @@ await mkdir(join(dir, 'src', 'pages'), { recursive: true });
 await mkdir(join(dir, 'pages'), { recursive: true });
 await mkdir(join(dir, 'theme'), { recursive: true });
 await mkdir(join(dir, 'products'), { recursive: true });
-await mkdir(join(dir, 'product-images'), { recursive: true });
+await mkdir(join(dir, 'products', 'images'), { recursive: true });
 
 // catalog.csv — the product catalog, source of truth for all product data
-await writeFile(join(dir, 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,Payment Link
+await writeFile(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,Payment Link
 SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,yes,no,
 `);
 
