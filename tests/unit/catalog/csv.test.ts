@@ -298,6 +298,51 @@ describe('validateRows', () => {
     expect(products[0]!.price).toBe(9.99);
   });
 
+  // ── MOQ parsing ───────────────────────────────────────────────────────
+
+  it('parses MOQ as integer when present', () => {
+    const { products } = validateRows([makeCSVRow({ MOQ: '6' })]);
+    expect(products[0]!.moq).toBe(6);
+  });
+
+  it('defaults moq to null when MOQ column is absent', () => {
+    const { products } = validateRows([makeCSVRow()]);
+    expect(products[0]!.moq).toBeNull();
+  });
+
+  it('defaults moq to null when MOQ is empty string', () => {
+    const { products } = validateRows([makeCSVRow({ MOQ: '' })]);
+    expect(products[0]!.moq).toBeNull();
+  });
+
+  it('defaults moq to null when MOQ is zero', () => {
+    const { products } = validateRows([makeCSVRow({ MOQ: '0' })]);
+    expect(products[0]!.moq).toBeNull();
+  });
+
+  it('returns error for non-integer MOQ', () => {
+    const { products, errors } = validateRows([makeCSVRow({ MOQ: '2.5' })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'MOQ', message: 'must be a positive whole number' }]);
+  });
+
+  it('returns error for negative MOQ', () => {
+    const { products, errors } = validateRows([makeCSVRow({ MOQ: '-3' })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'MOQ', message: 'must be a positive whole number' }]);
+  });
+
+  it('returns error for non-numeric MOQ', () => {
+    const { products, errors } = validateRows([makeCSVRow({ MOQ: 'abc' })]);
+    expect(products).toEqual([]);
+    expect(errors).toEqual([{ row: 2, field: 'MOQ', message: 'must be a positive whole number' }]);
+  });
+
+  it('trims whitespace from MOQ', () => {
+    const { products } = validateRows([makeCSVRow({ MOQ: ' 12 ' })]);
+    expect(products[0]!.moq).toBe(12);
+  });
+
   it('trims whitespace from SKU, Name, and Price', () => {
     const rows = [makeCSVRow({ SKU: ' TEST-001 ', Name: ' Test Product ', Price: ' 19.99 ' })];
     const { products, errors } = validateRows(rows);

@@ -11,6 +11,7 @@ export function makeCatalogProduct(overrides: Partial<CatalogProduct> = {}): Cat
     orderSheet: true,
     description: null,
     paymentLink: null,
+    moq: null,
     ...overrides,
   };
 }

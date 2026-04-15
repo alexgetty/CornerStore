@@ -8,6 +8,7 @@ export interface CatalogProduct {
   orderSheet: boolean;
   description: string | null;
   paymentLink: string | null;
+  moq: number | null;
 }
 
 export interface CatalogValidationError {
