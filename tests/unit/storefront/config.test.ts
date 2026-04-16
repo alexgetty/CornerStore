@@ -184,6 +184,82 @@ describe('parseConfig', () => {
     const config = parseConfig({ contact: '' });
     expect(config.contact).toBeUndefined();
   });
+
+  // ── logo ──────────────────────────────────────────────────────────────
+
+  it('extracts logo when valid string', () => {
+    const config = parseConfig({ logo: '/logo.png' });
+    expect(config.logo).toBe('/logo.png');
+  });
+
+  it('logo is undefined when missing', () => {
+    const config = parseConfig({});
+    expect(config.logo).toBeUndefined();
+  });
+
+  it('logo is undefined when empty string', () => {
+    const config = parseConfig({ logo: '' });
+    expect(config.logo).toBeUndefined();
+  });
+
+  it('logo is undefined when non-string', () => {
+    const config = parseConfig({ logo: 42 });
+    expect(config.logo).toBeUndefined();
+  });
+
+  // ── orderSheet ────────────────────────────────────────────────────────
+
+  it('extracts orderSheet when true', () => {
+    const config = parseConfig({ orderSheet: true });
+    expect(config.orderSheet).toBe(true);
+  });
+
+  it('extracts orderSheet when false', () => {
+    const config = parseConfig({ orderSheet: false });
+    expect(config.orderSheet).toBe(false);
+  });
+
+  it('orderSheet is undefined when missing', () => {
+    const config = parseConfig({});
+    expect(config.orderSheet).toBeUndefined();
+  });
+
+  it('orderSheet is undefined when non-boolean', () => {
+    const config = parseConfig({ orderSheet: 'yes' });
+    expect(config.orderSheet).toBeUndefined();
+  });
+
+  // ── minCartSize ───────────────────────────────────────────────────────
+
+  it('extracts minCartSize when positive number', () => {
+    const config = parseConfig({ minCartSize: 150 });
+    expect(config.minCartSize).toBe(150);
+  });
+
+  it('extracts minCartSize when decimal', () => {
+    const config = parseConfig({ minCartSize: 99.50 });
+    expect(config.minCartSize).toBe(99.50);
+  });
+
+  it('minCartSize is undefined when missing', () => {
+    const config = parseConfig({});
+    expect(config.minCartSize).toBeUndefined();
+  });
+
+  it('minCartSize is undefined when non-number', () => {
+    const config = parseConfig({ minCartSize: '150' });
+    expect(config.minCartSize).toBeUndefined();
+  });
+
+  it('minCartSize is undefined when zero', () => {
+    const config = parseConfig({ minCartSize: 0 });
+    expect(config.minCartSize).toBeUndefined();
+  });
+
+  it('minCartSize is undefined when negative', () => {
+    const config = parseConfig({ minCartSize: -50 });
+    expect(config.minCartSize).toBeUndefined();
+  });
 });
 
 // ─── resolveNavItem ─────────────────────────────────────────────────────────

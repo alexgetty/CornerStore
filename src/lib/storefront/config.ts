@@ -20,6 +20,18 @@ export function parseConfig(raw: unknown): StoreConfig {
     config.contact = obj.contact;
   }
 
+  if (typeof obj.logo === 'string' && obj.logo) {
+    config.logo = obj.logo;
+  }
+
+  if (typeof obj.orderSheet === 'boolean') {
+    config.orderSheet = obj.orderSheet;
+  }
+
+  if (typeof obj.minCartSize === 'number' && obj.minCartSize > 0) {
+    config.minCartSize = obj.minCartSize;
+  }
+
   return config;
 }
 

@@ -9,6 +9,7 @@ export interface Listing {
   category: string | null;
   status: string | null;
   paymentLink: string | null;
+  moq: number | null;
 }
 
 export interface NavItem {
@@ -28,6 +29,9 @@ export interface StoreConfig {
   nav: NavItem[];
   footerNav: NavItem[];
   contact?: string;
+  logo?: string;
+  orderSheet?: boolean;
+  minCartSize?: number;
 }
 
 export interface PageData {
