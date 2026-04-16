@@ -1,0 +1,290 @@
+@layer package {
+  .cs-order-sheet-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .cs-order-sheet-logo {
+    height: 3rem;
+    width: auto;
+  }
+
+  .cs-order-sheet-header h1 {
+    margin: 0;
+  }
+
+  .cs-order-sheet-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+  }
+
+  .cs-order-sheet-table th,
+  .cs-order-sheet-table td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--cs-border-color);
+  }
+
+  .cs-order-sheet-table thead th {
+    font-size: var(--cs-font-size-small);
+    font-weight: 600;
+    color: var(--cs-body-text-color);
+    border-bottom-width: 2px;
+  }
+
+  .cs-category-row td {
+    font-weight: var(--cs-heading-font-weight);
+    font-size: var(--cs-font-size-larger);
+    padding-top: 1.5rem;
+    border-bottom: none;
+  }
+
+  .cs-col-price,
+  .cs-col-moq,
+  .cs-col-total {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .cs-col-image { width: 80px; }
+  .cs-col-qty { width: 160px; }
+  .cs-col-total { width: 100px; }
+  .cs-col-remove { width: 40px; }
+
+  .cs-thumb-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .cs-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  .cs-col-product strong {
+    display: block;
+  }
+
+  .cs-order-desc {
+    display: block;
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-body-text-color);
+    opacity: 0.7;
+    margin-top: 0.25rem;
+  }
+
+  .cs-qty-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .cs-qty-btn {
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--cs-border-color);
+    background: var(--cs-surface-color, #fff);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cs-qty-down { border-radius: 4px 0 0 4px; }
+  .cs-qty-up { border-radius: 0 4px 4px 0; }
+
+  .cs-qty-input {
+    width: 3.5rem;
+    height: 2rem;
+    text-align: center;
+    border: 1px solid var(--cs-border-color);
+    border-left: none;
+    border-right: none;
+    font-size: var(--cs-font-size-small);
+    -moz-appearance: textfield;
+  }
+
+  .cs-qty-input::-webkit-inner-spin-button,
+  .cs-qty-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .cs-qty-input.cs-invalid {
+    border-color: var(--cs-error-color, #c00);
+    background-color: var(--cs-error-bg, #fff0f0);
+  }
+
+  .cs-col-moq {
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-body-text-color);
+    opacity: 0.7;
+  }
+
+  .cs-remove-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--cs-body-text-color);
+    opacity: 0.5;
+    padding: 0.25rem;
+  }
+
+  .cs-remove-btn:hover {
+    opacity: 1;
+    color: var(--cs-error-color, #c00);
+  }
+
+  .cs-subtotal-label {
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .cs-subtotal-value {
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .cs-min-cart-notice {
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-body-text-color);
+    opacity: 0.7;
+  }
+
+  .cs-order-errors {
+    color: var(--cs-error-color, #c00);
+    margin-bottom: 1rem;
+    font-size: var(--cs-font-size-small);
+  }
+
+  .cs-order-errors ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  .cs-buyer-info {
+    display: grid;
+    gap: 1rem;
+    max-width: 30rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .cs-field span {
+    display: block;
+    font-size: var(--cs-font-size-small);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .cs-field input,
+  .cs-field textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--cs-border-color);
+    border-radius: 4px;
+    font: inherit;
+  }
+
+  .cs-order-actions {
+    margin-bottom: 1.5rem;
+  }
+
+  .cs-submit-btn {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background-color: var(--cs-heading-text-color);
+    color: var(--cs-surface-color, #fff);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .cs-submit-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .cs-mailto-section {
+    padding: 1.5rem;
+    background: var(--cs-surface-color, #f9f9f9);
+    border: 1px solid var(--cs-border-color);
+    border-radius: 4px;
+  }
+
+  .cs-mailto-link {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .cs-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cs-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .cs-lightbox-img {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  @media print {
+    .cs-col-image,
+    .cs-col-remove,
+    .cs-remove-btn,
+    .cs-qty-btn,
+    .cs-order-actions,
+    .cs-mailto-section,
+    .cs-lightbox,
+    .cs-order-errors,
+    .cs-min-cart-notice {
+      display: none !important;
+    }
+
+    .cs-qty-input {
+      border: none;
+      background: none;
+      text-align: right;
+      width: auto;
+    }
+
+    .cs-order-sheet-table {
+      font-size: 11pt;
+    }
+
+    .cs-buyer-info input,
+    .cs-buyer-info textarea {
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    .cs-order-sheet-header {
+      border-bottom: 2px solid #000;
+      padding-bottom: 0.5rem;
+    }
+  }
+}

@@ -1,0 +1,164 @@
+---
+import "./OrderSheet.css";
+import type { Listing } from "../../lib/storefront";
+
+interface Props {
+  storeName: string;
+  contact: string;
+  logo?: string;
+  listings: Listing[];
+  minCartSize?: number;
+  minCartSizeRaw: number | null;
+  currency: string;
+}
+
+const { storeName, contact, logo, listings, minCartSize, minCartSizeRaw, currency } = Astro.props;
+
+type CategoryGroup = { category: string; items: Listing[] };
+
+function groupByCategory(items: Listing[]): CategoryGroup[] {
+  const groups = new Map<string, Listing[]>();
+  for (const item of items) {
+    const cat = item.category ?? '';
+    const list = groups.get(cat) ?? [];
+    list.push(item);
+    groups.set(cat, list);
+  }
+  const sorted = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+  return sorted.map(([category, items]) => ({ category, items }));
+}
+
+const groups = groupByCategory(listings);
+const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.category !== '');
+---
+
+<div
+  class="cs-order-sheet"
+  data-currency={currency}
+  data-min-cart-size-raw={minCartSizeRaw ?? ''}
+  data-contact={contact}
+  data-store-name={storeName}
+>
+  <div class="cs-order-sheet-header">
+    {logo && <img src={logo} alt="" class="cs-order-sheet-logo" />}
+    <h1>{storeName} Order Sheet</h1>
+  </div>
+
+  <table class="cs-order-sheet-table">
+    <thead>
+      <tr>
+        <th class="cs-col-image">Image</th>
+        <th class="cs-col-product">Product</th>
+        <th class="cs-col-price">Unit Price</th>
+        <th class="cs-col-moq">MOQ</th>
+        <th class="cs-col-qty">Qty</th>
+        <th class="cs-col-total">Line Total</th>
+        <th class="cs-col-remove"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {groups.map((group) => (
+        <>
+          {hasCategories && group.category && (
+            <tr class="cs-category-row">
+              <td colspan="7">{group.category}</td>
+            </tr>
+          )}
+          {group.items.map((listing) => {
+            const thumb = listing.images[0];
+            return (
+              <tr
+                class="cs-order-row"
+                data-sku={listing.sku}
+                data-raw-price={listing.rawPrice}
+                data-moq={listing.moq ?? ''}
+              >
+                <td class="cs-col-image">
+                  {thumb ? (
+                    <button type="button" class="cs-thumb-btn" data-full-src={thumb.url} data-alt={thumb.alt || listing.name}>
+                      <img src={thumb.url} alt={thumb.alt || listing.name} class="cs-thumb" loading="lazy" />
+                    </button>
+                  ) : (
+                    <span class="cs-no-image"></span>
+                  )}
+                </td>
+                <td class="cs-col-product">
+                  <strong>{listing.name}</strong>
+                  {listing.description && <span class="cs-order-desc">{listing.description}</span>}
+                </td>
+                <td class="cs-col-price">{listing.price}</td>
+                <td class="cs-col-moq">{listing.moq ? `Min ${listing.moq}` : ''}</td>
+                <td class="cs-col-qty">
+                  <div class="cs-qty-control">
+                    <button type="button" class="cs-qty-btn cs-qty-down" aria-label="Decrease quantity">-</button>
+                    <input
+                      type="number"
+                      class="cs-qty-input"
+                      min="0"
+                      step={listing.moq ?? 1}
+                      value="0"
+                      aria-label={`Quantity for ${listing.name}`}
+                    />
+                    <button type="button" class="cs-qty-btn cs-qty-up" aria-label="Increase quantity">+</button>
+                  </div>
+                </td>
+                <td class="cs-col-total">
+                  <span class="cs-line-total">$0.00</span>
+                </td>
+                <td class="cs-col-remove">
+                  <button type="button" class="cs-remove-btn" aria-label={`Remove ${listing.name}`} hidden>&times;</button>
+                </td>
+              </tr>
+            );
+          })}
+        </>
+      ))}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" class="cs-subtotal-label">Subtotal</td>
+        <td class="cs-subtotal-value">$0.00</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  {minCartSize != null && (
+    <p class="cs-min-cart-notice">Minimum order: ${minCartSize.toFixed(2)}</p>
+  )}
+
+  <div class="cs-order-errors" hidden></div>
+
+  <div class="cs-buyer-info">
+    <label class="cs-field">
+      <span>Name *</span>
+      <input type="text" class="cs-buyer-name" required />
+    </label>
+    <label class="cs-field">
+      <span>Email *</span>
+      <input type="email" class="cs-buyer-email" required />
+    </label>
+    <label class="cs-field">
+      <span>Notes</span>
+      <textarea class="cs-buyer-notes" rows="3"></textarea>
+    </label>
+  </div>
+
+  <div class="cs-order-actions">
+    <button type="button" class="cs-submit-btn" disabled>Submit Order</button>
+  </div>
+
+  <div class="cs-mailto-section" hidden>
+    <p>Your order has been downloaded.</p>
+    <a class="cs-mailto-link" href="#">Email your order</a>
+  </div>
+
+  <div class="cs-lightbox" hidden>
+    <div class="cs-lightbox-backdrop"></div>
+    <img class="cs-lightbox-img" src="" alt="" />
+  </div>
+</div>
+
+<script>
+  import './order-sheet.ts';
+</script>
