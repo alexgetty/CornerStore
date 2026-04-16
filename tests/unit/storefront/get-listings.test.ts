@@ -156,4 +156,71 @@ describe('getListings', () => {
     );
     consoleSpy.mockRestore();
   });
+
+  it('passes through moq from catalog product', async () => {
+    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ moq: 6 })]);
+    const listings = await getListings();
+    expect(listings[0]!.moq).toBe(6);
+  });
+
+  it('passes through null moq when not set', async () => {
+    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ moq: null })]);
+    const listings = await getListings();
+    expect(listings[0]!.moq).toBeNull();
+  });
+});
+
+describe('getOrderSheetListings', () => {
+  let getOrderSheetListings: typeof import('../../../src/lib/storefront/get-listings.js').getOrderSheetListings;
+  let loadCatalogMock: ReturnType<typeof vi.fn>;
+  let loadProductImagesMock: ReturnType<typeof vi.fn>;
+  let loadProductOverridesMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const csv = await import('../../../src/lib/catalog/csv.js');
+    const images = await import('../../../src/lib/catalog/images.js');
+    const overrides = await import('../../../src/lib/catalog/overrides.js');
+    loadCatalogMock = vi.mocked(csv.loadCatalog);
+    loadProductImagesMock = vi.mocked(images.loadProductImages);
+    loadProductOverridesMock = vi.mocked(overrides.loadProductOverrides);
+    loadProductImagesMock.mockResolvedValue(new Map());
+    loadProductOverridesMock.mockResolvedValue(new Map());
+    ({ getOrderSheetListings } = await import('../../../src/lib/storefront/get-listings.js'));
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('filters to orderSheet products only', async () => {
+    loadCatalogMock.mockResolvedValue([
+      makeCatalogProduct({ sku: 'SHEET', orderSheet: true, storefront: false }),
+      makeCatalogProduct({ sku: 'STORE', orderSheet: false, storefront: true }),
+    ]);
+    const listings = await getOrderSheetListings();
+    expect(listings).toHaveLength(1);
+    expect(listings[0]!.sku).toBe('SHEET');
+  });
+
+  it('includes moq on order sheet listings', async () => {
+    loadCatalogMock.mockResolvedValue([
+      makeCatalogProduct({ sku: 'BULK', orderSheet: true, moq: 12 }),
+    ]);
+    const listings = await getOrderSheetListings();
+    expect(listings[0]!.moq).toBe(12);
+  });
+
+  it('includes images on order sheet listings', async () => {
+    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ orderSheet: true })]);
+    loadProductImagesMock.mockResolvedValue(
+      new Map([['TEST-001', [{ url: '/products/images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' }]]])
+    );
+    const listings = await getOrderSheetListings();
+    expect(listings[0]!.images).toHaveLength(1);
+  });
+
+  it('returns empty array when no order sheet products', async () => {
+    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ orderSheet: false })]);
+    const listings = await getOrderSheetListings();
+    expect(listings).toEqual([]);
+  });
 });
