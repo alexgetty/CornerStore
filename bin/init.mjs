@@ -26,6 +26,15 @@ const wantAbout = (await rl.question('  About page? (Y/n): ')).trim().toLowerCas
 const wantShipping = (await rl.question('  Shipping Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
 const wantReturns = (await rl.question('  Returns Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
 const wantFaq = (await rl.question('  FAQ? (Y/n): ')).trim().toLowerCase() !== 'n';
+const wantOrderSheet = (await rl.question('  Order Sheet? (Y/n): ')).trim().toLowerCase() !== 'n';
+
+let minCartSize = null;
+if (wantOrderSheet) {
+  const minCartStr = (await rl.question('  Minimum order amount in dollars (press Enter to skip): ')).trim();
+  if (minCartStr && !isNaN(Number(minCartStr)) && Number(minCartStr) > 0) {
+    minCartSize = Number(minCartStr);
+  }
+}
 
 // Contact email
 console.log('');
@@ -43,6 +52,7 @@ const nav = [{ label: 'Shop', page: 'home' }];
 const footerNav = [];
 
 if (wantAbout) nav.push({ label: 'About', page: 'about' });
+if (wantOrderSheet) nav.push({ label: 'Order Sheet', page: 'order-sheet', path: '/order-sheet' });
 if (wantShipping) footerNav.push({ label: 'Shipping Policy', page: 'shipping-policy' });
 if (wantReturns) footerNav.push({ label: 'Returns Policy', page: 'returns-policy' });
 if (wantFaq) footerNav.push({ label: 'FAQ', page: 'faq' });
@@ -57,8 +67,8 @@ await mkdir(join(dir, 'products'), { recursive: true });
 await mkdir(join(dir, 'products', 'images'), { recursive: true });
 
 // catalog.csv — the product catalog, source of truth for all product data
-await writeFile(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,Payment Link
-SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,yes,no,
+await writeFile(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,MOQ,Payment Link
+SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,yes,no,,
 `);
 
 // products/SAMPLE-001.md — example rich description override
@@ -150,6 +160,12 @@ const configLines = [
 if (contactEmail) {
   configLines.push(`  contact: ${JSON.stringify(contactEmail)},`);
 }
+if (wantOrderSheet) {
+  configLines.push(`  orderSheet: true,`);
+  if (minCartSize !== null) {
+    configLines.push(`  minCartSize: ${minCartSize},`);
+  }
+}
 configLines.push(`}\n`);
 await writeFile(join(dir, 'cornerstore.config.js'), configLines.join('\n'));
 
@@ -190,6 +206,33 @@ await writeFile(join(dir, 'pages', 'privacy-policy.mdx'), privacyStub);
 
 const tosStub = await readFile(join(stubsDir, 'terms-of-service.mdx'), 'utf-8');
 await writeFile(join(dir, 'pages', 'terms-of-service.mdx'), tosStub);
+
+if (wantOrderSheet) {
+  await writeFile(join(dir, 'src', 'pages', 'order-sheet.astro'), `---
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { OrderSheet } from 'corner-store/components';
+import { loadConfig, getOrderSheetListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
+
+const config = await loadConfig();
+const listings = await getOrderSheetListings();
+const minCartSizeRaw = config.minCartSize != null
+  ? decimalToRawPrice(config.minCartSize, DEFAULT_CURRENCY)
+  : null;
+---
+
+<ContentPage title="Order Sheet" hasExplicitTitle>
+  <OrderSheet
+    storeName={config.name}
+    contact={config.contact ?? ''}
+    logo={config.logo}
+    listings={listings}
+    minCartSize={config.minCartSize}
+    minCartSizeRaw={minCartSizeRaw}
+    currency={DEFAULT_CURRENCY}
+  />
+</ContentPage>
+`);
+}
 
 // src/pages/index.astro
 await writeFile(join(dir, 'src', 'pages', 'index.astro'), `---

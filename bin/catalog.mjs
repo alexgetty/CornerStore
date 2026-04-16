@@ -52,6 +52,16 @@ function parseRow(row, rowNum, seenSkus) {
   }
   const storefrontVal = (row["Storefront"] ?? "").trim().toLowerCase();
   const orderSheetVal = (row["Order Sheet"] ?? "").trim().toLowerCase();
+  const moqStr = (row["MOQ"] ?? "").trim();
+  let moq = null;
+  if (moqStr && moqStr !== "0") {
+    const moqNum = Number(moqStr);
+    if (!Number.isInteger(moqNum) || moqNum < 1) {
+      errors.push({ row: rowNum, field: "MOQ", message: "must be a positive whole number" });
+    } else {
+      moq = moqNum;
+    }
+  }
   const product = {
     sku,
     name,
@@ -61,7 +71,8 @@ function parseRow(row, rowNum, seenSkus) {
     storefront: storefrontVal !== "no",
     orderSheet: orderSheetVal !== "no",
     description,
-    paymentLink: row["Payment Link"]?.trim() || null
+    paymentLink: row["Payment Link"]?.trim() || null,
+    moq
   };
   return { errors, product };
 }
