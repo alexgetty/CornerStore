@@ -24,6 +24,13 @@
     color: var(--cs-highlight-text-color);
   }
 
+  .cs-logo {
+    height: 2rem;
+    width: auto;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+  }
+
   .cs-nav-links {
     display: flex;
     gap: 1.5rem;

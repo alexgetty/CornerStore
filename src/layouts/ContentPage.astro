@@ -18,7 +18,7 @@ const { nav, footerNav } = getNav(config, pages);
 ---
 
 <Base title={`${title} — ${config.name}`} description={description}>
-  <Nav storeName={config.name} nav={nav} currentPath={Astro.url.pathname} />
+  <Nav storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} />
   <main id="main-content">
     <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
     <slot />
