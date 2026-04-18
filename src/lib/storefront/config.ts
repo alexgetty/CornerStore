@@ -32,6 +32,18 @@ export function parseConfig(raw: unknown): StoreConfig {
     config.minCartSize = obj.minCartSize;
   }
 
+  if (typeof obj.wholesaleMargin === 'number' && obj.wholesaleMargin > 0 && obj.wholesaleMargin < 1) {
+    config.wholesaleMargin = obj.wholesaleMargin;
+  }
+
+  if (typeof obj.shippingFlat === 'number' && obj.shippingFlat > 0) {
+    config.shippingFlat = obj.shippingFlat;
+  }
+
+  if (typeof obj.shippingFreeThreshold === 'number' && obj.shippingFreeThreshold > 0) {
+    config.shippingFreeThreshold = obj.shippingFreeThreshold;
+  }
+
   return config;
 }
 

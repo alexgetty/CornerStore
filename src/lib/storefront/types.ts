@@ -32,6 +32,9 @@ export interface StoreConfig {
   logo?: string;
   orderSheet?: boolean;
   minCartSize?: number;
+  wholesaleMargin?: number;
+  shippingFlat?: number;
+  shippingFreeThreshold?: number;
 }
 
 export interface PageData {

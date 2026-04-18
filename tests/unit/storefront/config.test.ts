@@ -260,6 +260,92 @@ describe('parseConfig', () => {
     const config = parseConfig({ minCartSize: -50 });
     expect(config.minCartSize).toBeUndefined();
   });
+
+  // ── wholesaleMargin ───────────────────────────────────────────────────
+
+  it('extracts wholesaleMargin when valid fraction', () => {
+    const config = parseConfig({ wholesaleMargin: 0.5 });
+    expect(config.wholesaleMargin).toBe(0.5);
+  });
+
+  it('extracts wholesaleMargin at small value', () => {
+    const config = parseConfig({ wholesaleMargin: 0.1 });
+    expect(config.wholesaleMargin).toBe(0.1);
+  });
+
+  it('extracts wholesaleMargin at high value', () => {
+    const config = parseConfig({ wholesaleMargin: 0.99 });
+    expect(config.wholesaleMargin).toBe(0.99);
+  });
+
+  it('wholesaleMargin is undefined when missing', () => {
+    const config = parseConfig({});
+    expect(config.wholesaleMargin).toBeUndefined();
+  });
+
+  it('wholesaleMargin is undefined when non-number', () => {
+    const config = parseConfig({ wholesaleMargin: '0.5' });
+    expect(config.wholesaleMargin).toBeUndefined();
+  });
+
+  it('wholesaleMargin is undefined when zero', () => {
+    const config = parseConfig({ wholesaleMargin: 0 });
+    expect(config.wholesaleMargin).toBeUndefined();
+  });
+
+  it('wholesaleMargin is undefined when 1 or above', () => {
+    const config = parseConfig({ wholesaleMargin: 1 });
+    expect(config.wholesaleMargin).toBeUndefined();
+  });
+
+  it('wholesaleMargin is undefined when negative', () => {
+    const config = parseConfig({ wholesaleMargin: -0.5 });
+    expect(config.wholesaleMargin).toBeUndefined();
+  });
+
+  // ── shippingFlat ──────────────────────────────────────────────────────
+
+  describe('shipping config', () => {
+    it('parses shippingFlat when valid positive number', () => {
+      const config = parseConfig({ shippingFlat: 9.99 });
+      expect(config.shippingFlat).toBe(9.99);
+    });
+
+    it('omits shippingFlat when zero', () => {
+      const config = parseConfig({ shippingFlat: 0 });
+      expect(config.shippingFlat).toBeUndefined();
+    });
+
+    it('omits shippingFlat when negative', () => {
+      const config = parseConfig({ shippingFlat: -5 });
+      expect(config.shippingFlat).toBeUndefined();
+    });
+
+    it('omits shippingFlat when not a number', () => {
+      const config = parseConfig({ shippingFlat: '9.99' });
+      expect(config.shippingFlat).toBeUndefined();
+    });
+
+    it('parses shippingFreeThreshold when valid positive number', () => {
+      const config = parseConfig({ shippingFreeThreshold: 75 });
+      expect(config.shippingFreeThreshold).toBe(75);
+    });
+
+    it('omits shippingFreeThreshold when zero', () => {
+      const config = parseConfig({ shippingFreeThreshold: 0 });
+      expect(config.shippingFreeThreshold).toBeUndefined();
+    });
+
+    it('omits shippingFreeThreshold when negative', () => {
+      const config = parseConfig({ shippingFreeThreshold: -10 });
+      expect(config.shippingFreeThreshold).toBeUndefined();
+    });
+
+    it('omits shippingFreeThreshold when not a number', () => {
+      const config = parseConfig({ shippingFreeThreshold: '75' });
+      expect(config.shippingFreeThreshold).toBeUndefined();
+    });
+  });
 });
 
 // ─── resolveNavItem ─────────────────────────────────────────────────────────
