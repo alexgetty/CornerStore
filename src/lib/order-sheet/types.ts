@@ -1,18 +1,3 @@
-export interface OrderSheetItem {
-  sku: string;
-  name: string;
-  rawPrice: number;
-  moq: number | null;
-  quantity: number;
-}
-
-export interface OrderValidationError {
-  type: 'moq' | 'min-cart' | 'empty-cart' | 'missing-name' | 'missing-email';
-  message: string;
-  sku?: string;
-}
-
-export interface OrderValidation {
-  valid: boolean;
-  errors: OrderValidationError[];
-}
+export type { ValidationItem as OrderSheetItem } from '../validation/types.js';
+export type { ValidationError as OrderValidationError } from '../validation/types.js';
+export type { ValidationResult as OrderValidation } from '../validation/types.js';
