@@ -49,7 +49,7 @@ interface StripeLineItem {
 }
 
 type BuildResult =
-  | { ok: true; lineItems: StripeLineItem[] }
+  | { ok: true; lineItems: StripeLineItem[]; subtotal: number }
   | { ok: false; error: string };
 
 export function buildLineItems(
@@ -92,5 +92,5 @@ export function buildLineItems(
     return { ok: false, error: 'Minimum order total not met' };
   }
 
-  return { ok: true, lineItems };
+  return { ok: true, lineItems, subtotal };
 }

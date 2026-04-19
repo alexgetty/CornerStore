@@ -8,6 +8,7 @@ interface StoreDeps {
   dispatchEvent: (event: Event) => void;
 }
 
+/* v8 ignore next 5 -- browser-only defaults, tests inject deps */
 const defaultDeps: StoreDeps = {
   get storage() {
     return window.localStorage;

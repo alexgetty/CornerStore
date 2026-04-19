@@ -39,23 +39,28 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   const shippingOptions: Stripe.Checkout.SessionCreateParams.ShippingOption[] = [];
   if (config.shippingFlat != null) {
-    shippingOptions.push({
-      shipping_rate_data: {
-        type: 'fixed_amount',
-        fixed_amount: {
-          amount: decimalToRawPrice(config.shippingFlat, DEFAULT_CURRENCY),
-          currency: DEFAULT_CURRENCY,
-        },
-        display_name: 'Standard Shipping',
-      },
-    });
+    const freeThresholdRaw = config.shippingFreeThreshold != null
+      ? decimalToRawPrice(config.shippingFreeThreshold, DEFAULT_CURRENCY)
+      : null;
+    const qualifiesForFree = freeThresholdRaw != null && built.subtotal >= freeThresholdRaw;
 
-    if (config.shippingFreeThreshold != null) {
+    if (qualifiesForFree) {
       shippingOptions.push({
         shipping_rate_data: {
           type: 'fixed_amount',
           fixed_amount: { amount: 0, currency: DEFAULT_CURRENCY },
           display_name: 'Free Shipping',
+        },
+      });
+    } else {
+      shippingOptions.push({
+        shipping_rate_data: {
+          type: 'fixed_amount',
+          fixed_amount: {
+            amount: decimalToRawPrice(config.shippingFlat, DEFAULT_CURRENCY),
+            currency: DEFAULT_CURRENCY,
+          },
+          display_name: 'Standard Shipping',
         },
       });
     }

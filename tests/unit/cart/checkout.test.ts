@@ -125,6 +125,7 @@ describe('buildLineItems', () => {
 
     expect(result).toEqual({
       ok: true,
+      subtotal: 1500,
       lineItems: [
         {
           price_data: {
@@ -145,6 +146,7 @@ describe('buildLineItems', () => {
 
     expect(result).toEqual({
       ok: true,
+      subtotal: 2000,
       lineItems: [
         {
           price_data: {
@@ -200,6 +202,7 @@ describe('buildLineItems', () => {
 
     expect(result).toEqual({
       ok: true,
+      subtotal: 5000,
       lineItems: [
         {
           price_data: {
@@ -226,6 +229,7 @@ describe('buildLineItems', () => {
 
     expect(result).toEqual({
       ok: true,
+      subtotal: 2500,
       lineItems: [
         {
           price_data: {

@@ -134,6 +134,17 @@ describe('wholesaleRules', () => {
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0].type).toBe('empty-cart');
     });
+
+    it('ignores unknown items when calculating subtotal for min-cart', () => {
+      const rules = wholesaleRules.withMinCartSize(500);
+      const items: CartItem[] = [
+        { sku: 'KNOWN', quantity: 1 },
+        { sku: 'UNKNOWN', quantity: 100 },
+      ];
+      const products = [makeProduct({ sku: 'KNOWN', rawPrice: 1000, moq: null })];
+      const result = rules.validateCart(items, products);
+      expect(result.valid).toBe(true);
+    });
   });
 });
 

@@ -45,6 +45,11 @@ describe('snapToMoq', () => {
     expect(snapToMoq(6, 6, 'down')).toBe(0);
   });
 
+  it('snaps down to zero when result is between zero and MOQ', () => {
+    // e.g., current=8, moq=6, step=6, next=2 → 2 is between 0 and 6, snap to 0
+    expect(snapToMoq(8, 6, 'down')).toBe(0);
+  });
+
   it('increments by 1 when MOQ is null and direction is up', () => {
     expect(snapToMoq(0, null, 'up')).toBe(1);
     expect(snapToMoq(5, null, 'up')).toBe(6);

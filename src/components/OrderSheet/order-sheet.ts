@@ -6,7 +6,7 @@ import {
   validateOrder,
 } from '../../lib/validation/index.js';
 import type { ValidationItem } from '../../lib/validation/types.js';
-import { formatPrice } from '../../lib/storefront/pricing.js';
+import { formatPrice, decimalToRawPrice, DEFAULT_CURRENCY } from '../../lib/storefront/pricing.js';
 
 const root = document.querySelector('.cs-order-sheet') as HTMLElement;
 if (root) init(root);
@@ -200,23 +200,25 @@ function init(root: HTMLElement) {
     updateCartSummary(subtotal);
   }
 
+  const shippingFlatDecimal = root.dataset.shippingFlat ? Number(root.dataset.shippingFlat) : null;
+  const shippingFreeThresholdDecimal = root.dataset.shippingFreeThreshold ? Number(root.dataset.shippingFreeThreshold) : null;
+  const shippingFlatRaw = shippingFlatDecimal != null ? decimalToRawPrice(shippingFlatDecimal, DEFAULT_CURRENCY) : null;
+  const shippingFreeThresholdRaw = shippingFreeThresholdDecimal != null ? decimalToRawPrice(shippingFreeThresholdDecimal, DEFAULT_CURRENCY) : null;
+
   function updateCartSummary(subtotal: number) {
     if (!cartSummary) return;
-
-    const shippingFlat = root.dataset.shippingFlat ? Number(root.dataset.shippingFlat) : null;
-    const shippingFreeThreshold = root.dataset.shippingFreeThreshold ? Number(root.dataset.shippingFreeThreshold) : null;
 
     let hasContent = false;
 
     // Shipping status
-    if (shippingFlat != null && shippingStatus) {
-      if (shippingFreeThreshold != null && subtotal >= shippingFreeThreshold * 100) {
+    if (shippingFlatRaw != null && shippingStatus) {
+      if (shippingFreeThresholdRaw != null && subtotal >= shippingFreeThresholdRaw) {
         shippingStatus.textContent = 'Free shipping';
-      } else if (shippingFreeThreshold != null) {
-        const remaining = (shippingFreeThreshold * 100) - subtotal;
+      } else if (shippingFreeThresholdRaw != null) {
+        const remaining = shippingFreeThresholdRaw - subtotal;
         shippingStatus.textContent = `${formatPrice(remaining, currency)} more for free shipping`;
       } else {
-        shippingStatus.textContent = `${formatPrice(shippingFlat * 100, currency)} shipping`;
+        shippingStatus.textContent = `${formatPrice(shippingFlatRaw, currency)} shipping`;
       }
       shippingStatus.hidden = false;
       hasContent = true;
