@@ -1,6 +1,23 @@
-import { describe, it, expect } from 'vitest';
-import { parseCheckoutRequest, buildLineItems } from '../../../src/lib/cart/checkout.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { parseCheckoutRequest, buildLineItems, createCheckoutHandler } from '../../../src/lib/cart/checkout.js';
 import type { CatalogProduct } from '../../../src/lib/catalog/types.js';
+
+vi.mock('stripe', () => {
+  const mockCreate = vi.fn();
+  const MockStripe = vi.fn(() => ({
+    checkout: { sessions: { create: mockCreate } },
+  }));
+  (MockStripe as any).__mockCreate = mockCreate;
+  return { default: MockStripe };
+});
+
+vi.mock('../../../src/lib/storefront/config.js', () => ({
+  loadConfig: vi.fn(),
+}));
+
+vi.mock('../../../src/lib/catalog/csv.js', () => ({
+  loadCatalog: vi.fn(),
+}));
 
 function makeProduct(overrides: Partial<CatalogProduct> = {}): CatalogProduct {
   return {
@@ -249,5 +266,123 @@ describe('buildLineItems', () => {
         },
       ],
     });
+  });
+});
+
+describe('createCheckoutHandler', () => {
+  let mockCreate: ReturnType<typeof vi.fn>;
+  let mockLoadConfig: ReturnType<typeof vi.fn>;
+  let mockLoadCatalog: ReturnType<typeof vi.fn>;
+
+  const defaultCatalog: CatalogProduct[] = [
+    {
+      sku: 'WIDGET-001',
+      name: 'Widget',
+      price: 20.00,
+      category: null,
+      status: null,
+      storefront: true,
+      orderSheet: true,
+      description: null,
+      paymentLink: null,
+      moq: null,
+    },
+  ];
+
+  const defaultConfig = {
+    name: 'Test Store',
+    home: 'home',
+    nav: [],
+    footerNav: [],
+    wholesaleMargin: 0.5,
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    const Stripe = await import('stripe');
+    mockCreate = (Stripe.default as any).__mockCreate;
+
+    const configMod = await import('../../../src/lib/storefront/config.js');
+    mockLoadConfig = configMod.loadConfig as ReturnType<typeof vi.fn>;
+
+    const catalogMod = await import('../../../src/lib/catalog/csv.js');
+    mockLoadCatalog = catalogMod.loadCatalog as ReturnType<typeof vi.fn>;
+
+    mockLoadConfig.mockResolvedValue(defaultConfig);
+    mockLoadCatalog.mockResolvedValue(defaultCatalog);
+    mockCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session_abc' });
+  });
+
+  it('returns checkout URL on success', async () => {
+    const handler = createCheckoutHandler('sk_test_123');
+    const response = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 2 }] },
+      'https://mystore.com',
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({ url: 'https://checkout.stripe.com/session_abc' });
+  });
+
+  it('returns 400 for invalid request body', async () => {
+    const handler = createCheckoutHandler('sk_test_123');
+    const response = await handler(null, 'https://mystore.com');
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Invalid request body' });
+  });
+
+  it('returns 400 for unknown SKU', async () => {
+    const handler = createCheckoutHandler('sk_test_123');
+    const response = await handler(
+      { items: [{ sku: 'NOPE', quantity: 1 }] },
+      'https://mystore.com',
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Unknown SKU: NOPE' });
+  });
+
+  it('passes wholesale margin to line items', async () => {
+    const handler = createCheckoutHandler('sk_test_123');
+    await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+
+    expect(mockCreate).toHaveBeenCalledOnce();
+    const callArgs = mockCreate.mock.calls[0][0];
+    // price = 20.00 = 2000 raw, margin 0.5 => unit_amount = 1000
+    expect(callArgs.line_items[0].price_data.unit_amount).toBe(1000);
+  });
+
+  it('sets success and cancel URLs from origin', async () => {
+    const handler = createCheckoutHandler('sk_test_123');
+    await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://example.com',
+    );
+
+    const callArgs = mockCreate.mock.calls[0][0];
+    expect(callArgs.success_url).toBe('https://example.com/success');
+    expect(callArgs.cancel_url).toBe('https://example.com/cancel');
+  });
+
+  it('returns 500 when Stripe throws', async () => {
+    mockCreate.mockRejectedValue(new Error('Stripe is down'));
+
+    const handler = createCheckoutHandler('sk_test_123');
+    const response = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Stripe is down' });
   });
 });
