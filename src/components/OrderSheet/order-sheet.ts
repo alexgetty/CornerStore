@@ -4,8 +4,8 @@ import {
   calculateLineTotal,
   calculateSubtotal,
   validateOrder,
-} from '../../lib/order-sheet/validation.js';
-import type { OrderSheetItem } from '../../lib/order-sheet/types.js';
+} from '../../lib/validation/index.js';
+import type { ValidationItem } from '../../lib/validation/types.js';
 import { formatPrice } from '../../lib/storefront/pricing.js';
 
 const root = document.querySelector('.cs-order-sheet') as HTMLElement;
@@ -16,6 +16,7 @@ function init(root: HTMLElement) {
   const minCartSizeRaw = root.dataset.minCartSizeRaw ? Number(root.dataset.minCartSizeRaw) : null;
   const contact = root.dataset.contact ?? '';
   const storeName = root.dataset.storeName ?? '';
+  const checkoutEnabled = root.dataset.checkoutEnabled === 'true';
 
   const rows = root.querySelectorAll<HTMLElement>('.cs-order-row');
   const subtotalEl = root.querySelector('.cs-subtotal-value') as HTMLElement;
@@ -28,6 +29,60 @@ function init(root: HTMLElement) {
   const lightbox = root.querySelector('.cs-lightbox') as HTMLElement;
   const lightboxImg = root.querySelector('.cs-lightbox-img') as HTMLImageElement;
   const lightboxBackdrop = root.querySelector('.cs-lightbox-backdrop') as HTMLElement;
+  const checkoutError = root.querySelector('.cs-checkout-error') as HTMLElement;
+  const checkoutFallback = root.querySelector('.cs-checkout-fallback') as HTMLElement;
+  const retryBtn = root.querySelector('.cs-retry-btn') as HTMLButtonElement;
+  const pdfBtn = root.querySelector('.cs-pdf-btn') as HTMLButtonElement;
+  const cartSummary = root.querySelector('.cs-cart-summary') as HTMLElement;
+  const shippingStatus = root.querySelector('.cs-shipping-status') as HTMLElement;
+  const minimumStatus = root.querySelector('.cs-minimum-status') as HTMLElement;
+
+  // --- Cart integration (progressive enhancement) ---
+  let cartModule: typeof import('../../lib/cart/index.js') | null = null;
+  let cartAvailable = false;
+
+  async function initCart() {
+    try {
+      cartModule = await import('../../lib/cart/index.js');
+      cartAvailable = true;
+      hydrateFromCart();
+      window.addEventListener('storage', onStorageChange);
+      window.addEventListener(cartModule.CART_EVENT, onCartUpdate);
+    } catch {
+      // Cart module failed to load. Base behavior continues.
+    }
+  }
+
+  function hydrateFromCart() {
+    if (!cartModule) return;
+    const cart = cartModule.getCart('wholesale');
+    for (const row of rows) {
+      const sku = row.dataset.sku ?? '';
+      const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
+      const cartItem = cart.items.find((i) => i.sku === sku);
+      input.value = String(cartItem?.quantity ?? 0);
+      updateRow(row, currency);
+    }
+    updateTotals();
+  }
+
+  function syncToCart(sku: string, quantity: number) {
+    if (!cartModule) return;
+    cartModule.setItem(sku, quantity, 'wholesale');
+  }
+
+  function onStorageChange(e: StorageEvent) {
+    if (cartModule && e.key === cartModule.CART_STORAGE_KEY) {
+      hydrateFromCart();
+    }
+  }
+
+  function onCartUpdate() {
+    hydrateFromCart();
+  }
+
+  // Start cart initialization (non-blocking)
+  initCart();
 
   // --- Quantity controls ---
   rows.forEach((row) => {
@@ -36,32 +91,40 @@ function init(root: HTMLElement) {
     const upBtn = row.querySelector('.cs-qty-up') as HTMLButtonElement;
     const removeBtn = row.querySelector('.cs-remove-btn') as HTMLButtonElement;
     const moq = row.dataset.moq ? Number(row.dataset.moq) : null;
+    const sku = row.dataset.sku ?? '';
 
     downBtn.addEventListener('click', () => {
       const current = parseInt(input.value) || 0;
-      input.value = String(snapToMoq(current, moq, 'down'));
+      const next = snapToMoq(current, moq, 'down');
+      input.value = String(next);
       updateRow(row, currency);
       updateTotals();
+      syncToCart(sku, next);
     });
 
     upBtn.addEventListener('click', () => {
       const current = parseInt(input.value) || 0;
-      input.value = String(snapToMoq(current, moq, 'up'));
+      const next = snapToMoq(current, moq, 'up');
+      input.value = String(next);
       updateRow(row, currency);
       updateTotals();
+      syncToCart(sku, next);
     });
 
     input.addEventListener('change', () => {
       const val = parseInt(input.value) || 0;
-      input.value = String(Math.max(0, val));
+      const clamped = Math.max(0, val);
+      input.value = String(clamped);
       updateRow(row, currency);
       updateTotals();
+      syncToCart(sku, clamped);
     });
 
     removeBtn.addEventListener('click', () => {
       input.value = '0';
       updateRow(row, currency);
       updateTotals();
+      syncToCart(sku, 0);
     });
   });
 
@@ -99,7 +162,7 @@ function init(root: HTMLElement) {
     input.classList.toggle('cs-invalid', !isValid);
   }
 
-  function getItems(): OrderSheetItem[] {
+  function getItems(): ValidationItem[] {
     return Array.from(rows).map((row) => {
       const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
       return {
@@ -135,10 +198,116 @@ function init(root: HTMLElement) {
     }
 
     submitBtn.disabled = !result.valid;
+
+    // Update cart summary display
+    updateCartSummary(subtotal);
   }
 
-  // --- Submit: PDF generation + mailto ---
+  function updateCartSummary(subtotal: number) {
+    if (!cartSummary) return;
+
+    const shippingFlat = root.dataset.shippingFlat ? Number(root.dataset.shippingFlat) : null;
+    const shippingFreeThreshold = root.dataset.shippingFreeThreshold ? Number(root.dataset.shippingFreeThreshold) : null;
+
+    let hasContent = false;
+
+    // Shipping status
+    if (shippingFlat != null && shippingStatus) {
+      if (shippingFreeThreshold != null && subtotal >= shippingFreeThreshold * 100) {
+        shippingStatus.textContent = 'Free shipping';
+      } else if (shippingFreeThreshold != null) {
+        const remaining = (shippingFreeThreshold * 100) - subtotal;
+        shippingStatus.textContent = `${formatPrice(remaining, currency)} more for free shipping`;
+      } else {
+        shippingStatus.textContent = `${formatPrice(shippingFlat * 100, currency)} shipping`;
+      }
+      shippingStatus.hidden = false;
+      hasContent = true;
+    } else if (shippingStatus) {
+      shippingStatus.hidden = true;
+    }
+
+    // Minimum order status
+    if (minCartSizeRaw != null && minimumStatus) {
+      const remaining = minCartSizeRaw - subtotal;
+      if (remaining > 0) {
+        minimumStatus.textContent = `${formatPrice(remaining, currency)} away from minimum order`;
+        minimumStatus.hidden = false;
+        hasContent = true;
+      } else {
+        minimumStatus.hidden = true;
+      }
+    } else if (minimumStatus) {
+      minimumStatus.hidden = true;
+    }
+
+    cartSummary.hidden = !hasContent;
+  }
+
+  // --- Submit handler ---
   submitBtn.addEventListener('click', async () => {
+    if (checkoutEnabled) {
+      await attemptCheckout();
+    } else {
+      await generatePdf();
+    }
+  });
+
+  // Fallback buttons (shown after checkout failure)
+  if (retryBtn) {
+    retryBtn.addEventListener('click', async () => {
+      checkoutFallback.hidden = true;
+      checkoutError.hidden = true;
+      await attemptCheckout();
+    });
+  }
+
+  if (pdfBtn) {
+    pdfBtn.addEventListener('click', async () => {
+      await generatePdf();
+    });
+  }
+
+  async function attemptCheckout() {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    checkoutError.hidden = true;
+    checkoutFallback.hidden = true;
+
+    const items = getItems()
+      .filter((i) => i.quantity > 0)
+      .map((i) => ({ sku: i.sku, quantity: i.quantity }));
+
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ error: 'Checkout failed' }));
+        throw new Error(data.error ?? 'Checkout failed');
+      }
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      throw new Error('No checkout URL returned');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Checkout failed';
+      checkoutError.textContent = `Checkout unavailable: ${message}`;
+      checkoutError.hidden = false;
+      checkoutFallback.hidden = false;
+
+      submitBtn.textContent = 'Submit Order';
+      submitBtn.disabled = false;
+    }
+  }
+
+  async function generatePdf() {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Generating PDF...';
 
@@ -147,18 +316,15 @@ function init(root: HTMLElement) {
 
       const pdfContent = root.cloneNode(true) as HTMLElement;
 
-      // Remove elements not needed in PDF
       pdfContent.querySelectorAll(
-        '.cs-order-actions, .cs-mailto-section, .cs-lightbox, .cs-order-errors, .cs-col-image, .cs-col-remove, .cs-qty-btn, .cs-remove-btn, .cs-min-cart-notice'
+        '.cs-order-actions, .cs-mailto-section, .cs-lightbox, .cs-order-errors, .cs-col-image, .cs-col-remove, .cs-qty-btn, .cs-remove-btn, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary'
       ).forEach((el) => el.remove());
 
-      // Remove zero-quantity rows
       pdfContent.querySelectorAll('.cs-order-row').forEach((row) => {
         const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
         if (parseInt(input.value) === 0) row.remove();
       });
 
-      // Replace inputs with plain text spans
       pdfContent.querySelectorAll('.cs-qty-input').forEach((input) => {
         const val = (input as HTMLInputElement).value;
         const span = document.createElement('span');
@@ -173,10 +339,9 @@ function init(root: HTMLElement) {
         el.replaceWith(span);
       });
 
-      // Remove empty category rows
       pdfContent.querySelectorAll('.cs-category-row').forEach((catRow) => {
         const next = catRow.nextElementSibling;
-        if (!next || next.classList.contains('cs-category-row') || next.tagName === 'TFOOT') {
+        if (!next || next.classList.contains('.cs-category-row') || next.tagName === 'TFOOT') {
           catRow.remove();
         }
       });
@@ -195,7 +360,6 @@ function init(root: HTMLElement) {
         .from(pdfContent)
         .save();
 
-      // Show mailto link
       const buyerName = nameInput.value.trim();
       const buyerEmail = emailInput.value.trim();
       const subject = encodeURIComponent(`Order from ${buyerName} - ${storeName}`);
@@ -213,5 +377,5 @@ function init(root: HTMLElement) {
       submitBtn.textContent = 'Submit Order';
       submitBtn.disabled = false;
     }
-  });
+  }
 }
