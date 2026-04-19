@@ -17,7 +17,8 @@
     "./styles/palette.css": "./src/styles/palette.css",
     "./styles/defaults.css": "./src/styles/defaults.css",
     "./cart": "./src/lib/cart/index.ts",
-    "./validation": "./src/lib/validation/index.ts"
+    "./validation": "./src/lib/validation/index.ts",
+    "./checkout": "./src/lib/cart/checkout.ts"
   },
   "files": [
     "bin/",
