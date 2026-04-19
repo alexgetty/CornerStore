@@ -35,6 +35,7 @@ export interface StoreConfig {
   wholesaleMargin?: number;
   shippingFlat?: number;
   shippingFreeThreshold?: number;
+  checkoutUrl?: string;
 }
 
 export interface PageData {

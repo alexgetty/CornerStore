@@ -44,6 +44,10 @@ export function parseConfig(raw: unknown): StoreConfig {
     config.shippingFreeThreshold = obj.shippingFreeThreshold;
   }
 
+  if (typeof obj.checkoutUrl === 'string' && obj.checkoutUrl) {
+    config.checkoutUrl = obj.checkoutUrl;
+  }
+
   return config;
 }
 

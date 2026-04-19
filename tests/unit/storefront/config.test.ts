@@ -346,6 +346,25 @@ describe('parseConfig', () => {
       expect(config.shippingFreeThreshold).toBeUndefined();
     });
   });
+
+  // ── checkoutUrl ───────────────────────────────────────────────────────
+
+  describe('checkoutUrl config', () => {
+    it('parses checkoutUrl when valid string', () => {
+      const config = parseConfig({ name: 'Test', home: 'home', nav: [], footerNav: [], checkoutUrl: 'https://api.example.com/checkout' });
+      expect(config.checkoutUrl).toBe('https://api.example.com/checkout');
+    });
+
+    it('omits checkoutUrl when empty string', () => {
+      const config = parseConfig({ name: 'Test', home: 'home', nav: [], footerNav: [], checkoutUrl: '' });
+      expect(config.checkoutUrl).toBeUndefined();
+    });
+
+    it('omits checkoutUrl when not a string', () => {
+      const config = parseConfig({ name: 'Test', home: 'home', nav: [], footerNav: [], checkoutUrl: 123 });
+      expect(config.checkoutUrl).toBeUndefined();
+    });
+  });
 });
 
 // ─── resolveNavItem ─────────────────────────────────────────────────────────
