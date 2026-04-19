@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { parseCheckoutRequest, buildLineItems, createCheckoutHandler } from '../../../src/lib/cart/checkout.js';
+import { parseCheckoutRequest, buildLineItems } from '../../../src/lib/cart/checkout.js';
+import { createCheckoutHandler } from '../../../src/lib/cart/handler.js';
 import type { CatalogProduct } from '../../../src/lib/catalog/types.js';
 
 vi.mock('stripe', () => {

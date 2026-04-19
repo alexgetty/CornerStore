@@ -2,5 +2,5 @@ export type { CartItem, Cart, CartMode, CartRules, CartSummary, ShippingStatus }
 export { getCart, setItem, removeItem, clear, CART_STORAGE_KEY, CART_EVENT } from './store.js';
 export { wholesaleRules, dtcRules } from './rules.js';
 export { getSummary } from './summary.js';
-export { createCheckoutHandler, parseCheckoutRequest, buildLineItems } from './checkout.js';
+export { parseCheckoutRequest, buildLineItems } from './checkout.js';
 export type { CheckoutItem } from './checkout.js';

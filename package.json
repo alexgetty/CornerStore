@@ -7,21 +7,40 @@
     "corner-store-catalog": "./bin/catalog.mjs"
   },
   "exports": {
-    ".": "./src/lib/storefront/index.ts",
-    "./stripe": "./src/lib/stripe/index.ts",
-    "./catalog": "./src/lib/catalog/index.ts",
+    ".": {
+      "types": "./src/lib/storefront/index.ts",
+      "default": "./dist/storefront/index.js"
+    },
+    "./stripe": {
+      "types": "./src/lib/stripe/index.ts",
+      "default": "./dist/stripe/index.js"
+    },
+    "./catalog": {
+      "types": "./src/lib/catalog/index.ts",
+      "default": "./dist/catalog/index.js"
+    },
+    "./cart": {
+      "types": "./src/lib/cart/index.ts",
+      "default": "./dist/cart/index.js"
+    },
+    "./checkout": {
+      "types": "./src/lib/cart/handler.ts",
+      "default": "./dist/cart/handler.js"
+    },
+    "./validation": {
+      "types": "./src/lib/validation/index.ts",
+      "default": "./dist/validation/index.js"
+    },
     "./components": "./src/components/index.ts",
     "./layouts/Base": "./src/layouts/Base.astro",
     "./layouts/ContentPage": "./src/layouts/ContentPage.astro",
     "./styles/reset.css": "./src/styles/reset.css",
     "./styles/palette.css": "./src/styles/palette.css",
-    "./styles/defaults.css": "./src/styles/defaults.css",
-    "./cart": "./src/lib/cart/index.ts",
-    "./validation": "./src/lib/validation/index.ts",
-    "./checkout": "./src/lib/cart/checkout.ts"
+    "./styles/defaults.css": "./src/styles/defaults.css"
   },
   "files": [
     "bin/",
+    "dist/",
     "src/lib/",
     "src/components/",
     "src/layouts/",
@@ -41,8 +60,10 @@
     "catalog:add": "tsx bin/catalog.ts add",
     "catalog:update": "tsx bin/catalog.ts update",
     "catalog:sync": "tsx bin/catalog.ts sync",
+    "build:lib": "tsc -p tsconfig.lib.json",
     "build:cli": "esbuild bin/catalog.ts --bundle --format=esm --platform=node --target=node18 --outfile=bin/catalog.mjs --packages=external --banner:js='#!/usr/bin/env node'",
-    "prepublishOnly": "npm run build:cli"
+    "prepare": "npm run build:lib",
+    "prepublishOnly": "npm run build:lib && npm run build:cli"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",
