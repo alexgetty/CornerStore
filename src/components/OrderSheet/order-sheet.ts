@@ -39,12 +39,9 @@ function init(root: HTMLElement) {
 
   // --- Cart integration (progressive enhancement) ---
   let cartModule: typeof import('../../lib/cart/index.js') | null = null;
-  let cartAvailable = false;
-
   async function initCart() {
     try {
       cartModule = await import('../../lib/cart/index.js');
-      cartAvailable = true;
       hydrateFromCart();
       window.addEventListener('storage', onStorageChange);
       window.addEventListener(cartModule.CART_EVENT, onCartUpdate);
@@ -341,7 +338,7 @@ function init(root: HTMLElement) {
 
       pdfContent.querySelectorAll('.cs-category-row').forEach((catRow) => {
         const next = catRow.nextElementSibling;
-        if (!next || next.classList.contains('.cs-category-row') || next.tagName === 'TFOOT') {
+        if (!next || next.classList.contains('cs-category-row') || next.tagName === 'TFOOT') {
           catRow.remove();
         }
       });
