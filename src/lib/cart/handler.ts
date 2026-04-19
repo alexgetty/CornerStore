@@ -11,7 +11,12 @@ export interface CheckoutHandlerConfig {
 }
 
 export function createCheckoutHandler(options: CheckoutHandlerConfig) {
-  const stripe = new Stripe(options.stripeKey);
+  // Defer Stripe initialization to first request (env vars may not be loaded at import time)
+  let stripe: Stripe | null = null;
+  function getStripe(): Stripe {
+    if (!stripe) stripe = new Stripe(options.stripeKey);
+    return stripe;
+  }
 
   // Cache SKU -> { priceId, unitAmount } map from Stripe
   let skuMap: Map<string, { priceId: string; unitAmount: number; moq: number | null }> | null = null;
@@ -20,7 +25,7 @@ export function createCheckoutHandler(options: CheckoutHandlerConfig) {
     if (skuMap) return skuMap;
 
     skuMap = new Map();
-    for await (const product of stripe.products.list({ active: true, expand: ['data.default_price'] })) {
+    for await (const product of getStripe().products.list({ active: true, expand: ['data.default_price'] })) {
       const sku = product.metadata?.sku;
       if (!sku) continue;
 
@@ -120,7 +125,7 @@ export function createCheckoutHandler(options: CheckoutHandlerConfig) {
     }
 
     try {
-      const session = await stripe.checkout.sessions.create({
+      const session = await getStripe().checkout.sessions.create({
         mode: 'payment',
         line_items: lineItems,
         shipping_options: shippingOptions.length > 0 ? shippingOptions : undefined,
