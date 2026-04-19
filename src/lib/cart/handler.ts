@@ -1,6 +1,5 @@
 import { parseCheckoutRequest } from './checkout.js';
 import { decimalToRawPrice, DEFAULT_CURRENCY } from '../storefront/pricing.js';
-import type { StoreConfig } from '../storefront/types.js';
 import Stripe from 'stripe';
 
 export interface CheckoutHandlerConfig {
