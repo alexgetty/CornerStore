@@ -15,9 +15,10 @@ interface Props {
   checkoutEnabled?: boolean;
   shippingFlat?: number;
   shippingFreeThreshold?: number;
+  checkoutUrl?: string;
 }
 
-const { storeName, contact, logo, listings, minCartSize, minCartSizeRaw, currency, wholesaleMargin, checkoutEnabled, shippingFlat, shippingFreeThreshold } = Astro.props;
+const { storeName, contact, logo, listings, minCartSize, minCartSizeRaw, currency, wholesaleMargin, checkoutEnabled, shippingFlat, shippingFreeThreshold, checkoutUrl } = Astro.props;
 const hasWholesale = wholesaleMargin != null;
 
 type CategoryGroup = { category: string; items: Listing[] };
@@ -47,6 +48,7 @@ const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.ca
   data-checkout-enabled={checkoutEnabled ? 'true' : ''}
   data-shipping-flat={shippingFlat ?? ''}
   data-shipping-free-threshold={shippingFreeThreshold ?? ''}
+  data-checkout-url={checkoutUrl ?? ''}
 >
   <div class="cs-order-sheet-header">
     {logo && <img src={logo} alt="" class="cs-order-sheet-logo" />}

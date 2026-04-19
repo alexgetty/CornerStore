@@ -17,6 +17,7 @@ function init(root: HTMLElement) {
   const contact = root.dataset.contact ?? '';
   const storeName = root.dataset.storeName ?? '';
   const checkoutEnabled = root.dataset.checkoutEnabled === 'true';
+  const checkoutUrl = root.dataset.checkoutUrl || '/api/checkout';
 
   const rows = root.querySelectorAll<HTMLElement>('.cs-order-row');
   const subtotalEl = root.querySelector('.cs-subtotal-value') as HTMLElement;
@@ -278,7 +279,7 @@ function init(root: HTMLElement) {
       .map((i) => ({ sku: i.sku, quantity: i.quantity }));
 
     try {
-      const response = await fetch('/api/checkout', {
+      const response = await fetch(checkoutUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items }),
