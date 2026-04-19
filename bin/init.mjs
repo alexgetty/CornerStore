@@ -2,13 +2,23 @@
 
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(__dirname, '..');
+
+const skipped = [];
+async function safeWrite(path, content) {
+  try {
+    await access(path);
+    skipped.push(path);
+  } catch {
+    await writeFile(path, content);
+  }
+}
 
 const rl = createInterface({ input: stdin, output: stdout });
 
@@ -67,12 +77,12 @@ await mkdir(join(dir, 'products'), { recursive: true });
 await mkdir(join(dir, 'products', 'images'), { recursive: true });
 
 // catalog.csv — the product catalog, source of truth for all product data
-await writeFile(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,MOQ,Payment Link
+await safeWrite(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,MOQ,Payment Link
 SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,yes,no,,
 `);
 
 // products/SAMPLE-001.md — example rich description override
-await writeFile(join(dir, 'products', 'SAMPLE-001.md'), `---
+await safeWrite(join(dir, 'products', 'SAMPLE-001.md'), `---
 sku: SAMPLE-001
 ---
 
@@ -82,7 +92,7 @@ Markdown here overrides the CSV description on your storefront, while the CSV de
 `);
 
 // package.json
-await writeFile(join(dir, 'package.json'), JSON.stringify({
+await safeWrite(join(dir, 'package.json'), JSON.stringify({
   name: slug,
   type: 'module',
   scripts: {
@@ -102,7 +112,7 @@ await writeFile(join(dir, 'package.json'), JSON.stringify({
 }, null, 2) + '\n');
 
 // astro.config.mjs
-await writeFile(join(dir, 'astro.config.mjs'), `import { defineConfig } from 'astro/config';
+await safeWrite(join(dir, 'astro.config.mjs'), `import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 
 export default defineConfig({
@@ -125,26 +135,26 @@ export default defineConfig({
 `);
 
 // tsconfig.json
-await writeFile(join(dir, 'tsconfig.json'), JSON.stringify({
+await safeWrite(join(dir, 'tsconfig.json'), JSON.stringify({
   extends: 'astro/tsconfigs/strict',
 }, null, 2) + '\n');
 
 // src/env.d.ts
-await writeFile(join(dir, 'src', 'env.d.ts'), `/// <reference types="astro/client" />
+await safeWrite(join(dir, 'src', 'env.d.ts'), `/// <reference types="astro/client" />
 `);
 
 // .env
 if (stripeKey) {
-  await writeFile(join(dir, '.env'), `STRIPE_SECRET_KEY=${stripeKey}\n`);
+  await safeWrite(join(dir, '.env'), `STRIPE_SECRET_KEY=${stripeKey}\n`);
 } else {
-  await writeFile(join(dir, '.env'), `# Your Stripe secret key — find it at https://dashboard.stripe.com/apikeys
+  await safeWrite(join(dir, '.env'), `# Your Stripe secret key — find it at https://dashboard.stripe.com/apikeys
 # Paste it below, then run: npm run dev
 STRIPE_SECRET_KEY=
 `);
 }
 
 // .gitignore
-await writeFile(join(dir, '.gitignore'), `node_modules/
+await safeWrite(join(dir, '.gitignore'), `node_modules/
 dist/
 .env
 `);
@@ -167,48 +177,48 @@ if (wantOrderSheet) {
   }
 }
 configLines.push(`}\n`);
-await writeFile(join(dir, 'cornerstore.config.js'), configLines.join('\n'));
+await safeWrite(join(dir, 'cornerstore.config.js'), configLines.join('\n'));
 
 // theme/theme.css — read from the package's source copy
 const themeTemplate = await readFile(join(packageRoot, 'theme', 'theme.css'), 'utf-8');
-await writeFile(join(dir, 'theme', 'theme.css'), themeTemplate);
+await safeWrite(join(dir, 'theme', 'theme.css'), themeTemplate);
 
 // Page stubs
 const stubsDir = join(packageRoot, 'bin', 'stubs');
 
 // Home — always scaffolded
 const homeStub = await readFile(join(stubsDir, 'home.mdx'), 'utf-8');
-await writeFile(join(dir, 'pages', 'home.mdx'), homeStub);
+await safeWrite(join(dir, 'pages', 'home.mdx'), homeStub);
 
 if (wantAbout) {
   const stub = await readFile(join(stubsDir, 'about.mdx'), 'utf-8');
-  await writeFile(join(dir, 'pages', 'about.mdx'), stub);
+  await safeWrite(join(dir, 'pages', 'about.mdx'), stub);
 }
 
 if (wantShipping) {
   const stub = await readFile(join(stubsDir, 'shipping-policy.mdx'), 'utf-8');
-  await writeFile(join(dir, 'pages', 'shipping-policy.mdx'), stub);
+  await safeWrite(join(dir, 'pages', 'shipping-policy.mdx'), stub);
 }
 
 if (wantReturns) {
   const stub = await readFile(join(stubsDir, 'returns-policy.mdx'), 'utf-8');
-  await writeFile(join(dir, 'pages', 'returns-policy.mdx'), stub);
+  await safeWrite(join(dir, 'pages', 'returns-policy.mdx'), stub);
 }
 
 if (wantFaq) {
   const stub = await readFile(join(stubsDir, 'faq.mdx'), 'utf-8');
-  await writeFile(join(dir, 'pages', 'faq.mdx'), stub);
+  await safeWrite(join(dir, 'pages', 'faq.mdx'), stub);
 }
 
 // Privacy Policy and Terms of Service — always scaffolded
 const privacyStub = await readFile(join(stubsDir, 'privacy-policy.mdx'), 'utf-8');
-await writeFile(join(dir, 'pages', 'privacy-policy.mdx'), privacyStub);
+await safeWrite(join(dir, 'pages', 'privacy-policy.mdx'), privacyStub);
 
 const tosStub = await readFile(join(stubsDir, 'terms-of-service.mdx'), 'utf-8');
-await writeFile(join(dir, 'pages', 'terms-of-service.mdx'), tosStub);
+await safeWrite(join(dir, 'pages', 'terms-of-service.mdx'), tosStub);
 
 if (wantOrderSheet) {
-  await writeFile(join(dir, 'src', 'pages', 'order-sheet.astro'), `---
+  await safeWrite(join(dir, 'src', 'pages', 'order-sheet.astro'), `---
 import ContentPage from 'corner-store/layouts/ContentPage';
 import { OrderSheet } from 'corner-store/components';
 import { loadConfig, getOrderSheetListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
@@ -218,6 +228,7 @@ const listings = await getOrderSheetListings();
 const minCartSizeRaw = config.minCartSize != null
   ? decimalToRawPrice(config.minCartSize, DEFAULT_CURRENCY)
   : null;
+const checkoutEnabled = !!import.meta.env.STRIPE_SECRET_KEY;
 ---
 
 <ContentPage title="Order Sheet" hasExplicitTitle>
@@ -229,13 +240,18 @@ const minCartSizeRaw = config.minCartSize != null
     minCartSize={config.minCartSize}
     minCartSizeRaw={minCartSizeRaw}
     currency={DEFAULT_CURRENCY}
+    wholesaleMargin={config.wholesaleMargin}
+    checkoutEnabled={checkoutEnabled}
+    shippingFlat={config.shippingFlat}
+    shippingFreeThreshold={config.shippingFreeThreshold}
+    checkoutUrl={config.checkoutUrl}
   />
 </ContentPage>
 `);
 }
 
 // src/pages/index.astro
-await writeFile(join(dir, 'src', 'pages', 'index.astro'), `---
+await safeWrite(join(dir, 'src', 'pages', 'index.astro'), `---
 import ContentPage from 'corner-store/layouts/ContentPage';
 import { Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
@@ -266,7 +282,7 @@ if (homeModule) {
 `);
 
 // src/pages/[slug].astro
-await writeFile(join(dir, 'src', 'pages', '[slug].astro'), `---
+await safeWrite(join(dir, 'src', 'pages', '[slug].astro'), `---
 import ContentPage from 'corner-store/layouts/ContentPage';
 import { Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
@@ -296,7 +312,7 @@ const Content = mod.default;
 `);
 
 // src/pages/404.astro
-await writeFile(join(dir, 'src', 'pages', '404.astro'), `---
+await safeWrite(join(dir, 'src', 'pages', '404.astro'), `---
 import { StatusPage } from 'corner-store/components';
 ---
 
@@ -310,7 +326,7 @@ import { StatusPage } from 'corner-store/components';
 `);
 
 // src/pages/success.astro
-await writeFile(join(dir, 'src', 'pages', 'success.astro'), `---
+await safeWrite(join(dir, 'src', 'pages', 'success.astro'), `---
 import { StatusPage } from 'corner-store/components';
 ---
 
@@ -324,7 +340,7 @@ import { StatusPage } from 'corner-store/components';
 `);
 
 // src/pages/cancel.astro
-await writeFile(join(dir, 'src', 'pages', 'cancel.astro'), `---
+await safeWrite(join(dir, 'src', 'pages', 'cancel.astro'), `---
 import { StatusPage } from 'corner-store/components';
 ---
 
@@ -351,6 +367,10 @@ try {
   execFileSync('npm', ['install', '--fund=false', '--audit=false'], { cwd: dir, stdio: 'inherit' });
 } catch {
   console.log('\n  npm install failed — you can run it manually.');
+}
+
+if (skipped.length > 0) {
+  console.log(`  Skipped ${skipped.length} existing file${skipped.length === 1 ? '' : 's'} (not overwritten).\n`);
 }
 
 console.log(`
