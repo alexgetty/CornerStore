@@ -1,7 +1,12 @@
 export type { Listing } from './types.js';
-export type { NavItem, ResolvedNavItem, StoreConfig, PageData } from './types.js';
+export type { NavItem, ResolvedNavItem, StoreConfig, ListingsConfig, PageData } from './types.js';
 export { formatPrice, rawPriceToDecimal, decimalToRawPrice, DEFAULT_CURRENCY } from './pricing.js';
-export { getListings, getOrderSheetListings } from './get-listings.js';
+export { getListings } from './get-listings.js';
+export { filterListings } from './filter-listings.js';
+export type { FilterOptions } from './filter-listings.js';
+export { sortListings } from './sort-listings.js';
+export type { SortOptions } from './sort-listings.js';
 export { getErrorMessage } from './utils.js';
+export { slugify } from './slugify.js';
 export { loadConfig, getNav, resolveNavItem, parseConfig } from './config.js';
 export { loadPages, resolvePageTitle, frontmatterSchema } from './pages.js';
