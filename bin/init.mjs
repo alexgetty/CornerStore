@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -20,65 +20,99 @@ async function safeWrite(path, content) {
   }
 }
 
-const rl = createInterface({ input: stdin, output: stdout });
+const dir = process.cwd();
+const configPath = join(dir, 'cornerstore.config.js');
 
-console.log('\n  Corner Store\n');
-
-const storeName = (await rl.question('  Store name (Corner Store): ')).trim() || 'Corner Store';
-
-console.log('\n  Your Stripe secret key lets Corner Store fetch your products.');
-console.log('  It stays local in .env and is never sent anywhere except directly to Stripe.');
-const stripeKey = (await rl.question('  Stripe secret key (press Enter to skip): ')).trim();
-
-// Page selection
-console.log('\n  Choose which pages to include:\n');
-const wantAbout = (await rl.question('  About page? (Y/n): ')).trim().toLowerCase() !== 'n';
-const wantShipping = (await rl.question('  Shipping Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
-const wantReturns = (await rl.question('  Returns Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
-const wantFaq = (await rl.question('  FAQ? (Y/n): ')).trim().toLowerCase() !== 'n';
-const wantOrderSheet = (await rl.question('  Order Sheet? (Y/n): ')).trim().toLowerCase() !== 'n';
-
-let minCartSize = null;
-if (wantOrderSheet) {
-  const minCartStr = (await rl.question('  Minimum order amount in dollars (press Enter to skip): ')).trim();
-  if (minCartStr && !isNaN(Number(minCartStr)) && Number(minCartStr) > 0) {
-    minCartSize = Number(minCartStr);
-  }
+let existingConfig = null;
+try {
+  await access(configPath);
+  const mod = await import(pathToFileURL(configPath).href);
+  existingConfig = mod.default;
+} catch {
+  // No existing config — fresh init
 }
 
-// Contact email
-console.log('');
-const contactEmail = (await rl.question('  Contact email (press Enter to skip): ')).trim();
+let storeName, stripeKey, wantAbout, wantShipping, wantReturns, wantFaq, wantTable, minCartSize, contactEmail, nav, footerNav;
 
-rl.close();
+if (existingConfig) {
+  // Re-init: derive everything from existing config, skip prompts
+  console.log('\n  Corner Store — updating existing project\n');
+
+  storeName = existingConfig.name ?? 'Corner Store';
+  stripeKey = '';
+
+  nav = Array.isArray(existingConfig.nav) ? existingConfig.nav : [];
+  footerNav = Array.isArray(existingConfig.footerNav) ? existingConfig.footerNav : [];
+
+  wantAbout = nav.some(i => i.page === 'about');
+  wantShipping = footerNav.some(i => i.page === 'shipping-policy');
+  wantReturns = footerNav.some(i => i.page === 'returns-policy');
+  wantFaq = footerNav.some(i => i.page === 'faq');
+
+  const views = existingConfig.listings?.views ?? ['card'];
+  wantTable = views.includes('table');
+  minCartSize = existingConfig.minCartSize ?? null;
+  contactEmail = existingConfig.contact ?? '';
+} else {
+  // Fresh init: interactive prompts
+  const rl = createInterface({ input: stdin, output: stdout });
+
+  console.log('\n  Corner Store\n');
+
+  storeName = (await rl.question('  Store name (Corner Store): ')).trim() || 'Corner Store';
+
+  console.log('\n  Your Stripe secret key lets Corner Store fetch your products.');
+  console.log('  It stays local in .env and is never sent anywhere except directly to Stripe.');
+  stripeKey = (await rl.question('  Stripe secret key (press Enter to skip): ')).trim();
+
+  console.log('\n  Choose which pages to include:\n');
+  wantAbout = (await rl.question('  About page? (Y/n): ')).trim().toLowerCase() !== 'n';
+  wantShipping = (await rl.question('  Shipping Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
+  wantReturns = (await rl.question('  Returns Policy? (Y/n): ')).trim().toLowerCase() !== 'n';
+  wantFaq = (await rl.question('  FAQ? (Y/n): ')).trim().toLowerCase() !== 'n';
+  wantTable = (await rl.question('  Table view (wholesale)? (Y/n): ')).trim().toLowerCase() !== 'n';
+
+  minCartSize = null;
+  if (wantTable) {
+    const minCartStr = (await rl.question('  Minimum order amount in dollars (press Enter to skip): ')).trim();
+    if (minCartStr && !isNaN(Number(minCartStr)) && Number(minCartStr) > 0) {
+      minCartSize = Number(minCartStr);
+    }
+  }
+
+  console.log('');
+  contactEmail = (await rl.question('  Contact email (press Enter to skip): ')).trim();
+
+  rl.close();
+
+  // Build nav/footerNav from answers
+  nav = [{ label: 'Shop', page: 'home' }];
+  footerNav = [];
+
+  if (wantAbout) nav.push({ label: 'About', page: 'about' });
+  if (wantShipping) footerNav.push({ label: 'Shipping Policy', page: 'shipping-policy' });
+  if (wantReturns) footerNav.push({ label: 'Returns Policy', page: 'returns-policy' });
+  if (wantFaq) footerNav.push({ label: 'FAQ', page: 'faq' });
+  footerNav.push({ label: 'Privacy Policy', page: 'privacy-policy' });
+  footerNav.push({ label: 'Terms of Service', page: 'terms-of-service' });
+}
 
 const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'corner-store';
-const dir = process.cwd();
 
 console.log('\n  Scaffolding your store...\n');
-
-// Build nav arrays from answers
-const nav = [{ label: 'Shop', page: 'home' }];
-const footerNav = [];
-
-if (wantAbout) nav.push({ label: 'About', page: 'about' });
-if (wantOrderSheet) nav.push({ label: 'Order Sheet', page: 'order-sheet', path: '/order-sheet' });
-if (wantShipping) footerNav.push({ label: 'Shipping Policy', page: 'shipping-policy' });
-if (wantReturns) footerNav.push({ label: 'Returns Policy', page: 'returns-policy' });
-if (wantFaq) footerNav.push({ label: 'FAQ', page: 'faq' });
-footerNav.push({ label: 'Privacy Policy', page: 'privacy-policy' });
-footerNav.push({ label: 'Terms of Service', page: 'terms-of-service' });
 
 // Directory structure
 await mkdir(join(dir, 'src', 'pages'), { recursive: true });
 await mkdir(join(dir, 'pages'), { recursive: true });
+await mkdir(join(dir, 'pages', 'category'), { recursive: true });
+await mkdir(join(dir, 'src', 'pages', 'category'), { recursive: true });
 await mkdir(join(dir, 'theme'), { recursive: true });
 await mkdir(join(dir, 'products'), { recursive: true });
 await mkdir(join(dir, 'products', 'images'), { recursive: true });
 
 // catalog.csv — the product catalog, source of truth for all product data
-await safeWrite(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Storefront,Order Sheet,MOQ,Payment Link
-SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,yes,no,,
+await safeWrite(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Featured,Storefront,Order Sheet,MOQ,Payment Link
+SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,,yes,no,,
 `);
 
 // products/SAMPLE-001.md — example rich description override
@@ -170,11 +204,13 @@ const configLines = [
 if (contactEmail) {
   configLines.push(`  contact: ${JSON.stringify(contactEmail)},`);
 }
-if (wantOrderSheet) {
-  configLines.push(`  orderSheet: true,`);
+if (wantTable) {
+  configLines.push(`  listings: { views: ['card', 'table'] },`);
   if (minCartSize !== null) {
     configLines.push(`  minCartSize: ${minCartSize},`);
   }
+} else {
+  configLines.push(`  listings: { views: ['card'] },`);
 }
 configLines.push(`}\n`);
 await safeWrite(join(dir, 'cornerstore.config.js'), configLines.join('\n'));
@@ -217,38 +253,6 @@ await safeWrite(join(dir, 'pages', 'privacy-policy.mdx'), privacyStub);
 const tosStub = await readFile(join(stubsDir, 'terms-of-service.mdx'), 'utf-8');
 await safeWrite(join(dir, 'pages', 'terms-of-service.mdx'), tosStub);
 
-if (wantOrderSheet) {
-  await safeWrite(join(dir, 'src', 'pages', 'order-sheet.astro'), `---
-import ContentPage from 'corner-store/layouts/ContentPage';
-import { OrderSheet } from 'corner-store/components';
-import { loadConfig, getOrderSheetListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
-
-const config = await loadConfig();
-const listings = await getOrderSheetListings();
-const minCartSizeRaw = config.minCartSize != null
-  ? decimalToRawPrice(config.minCartSize, DEFAULT_CURRENCY)
-  : null;
-const checkoutEnabled = !!import.meta.env.STRIPE_SECRET_KEY;
----
-
-<ContentPage title="Order Sheet" hasExplicitTitle>
-  <OrderSheet
-    storeName={config.name}
-    contact={config.contact ?? ''}
-    logo={config.logo}
-    listings={listings}
-    minCartSize={config.minCartSize}
-    minCartSizeRaw={minCartSizeRaw}
-    currency={DEFAULT_CURRENCY}
-    wholesaleMargin={config.wholesaleMargin}
-    checkoutEnabled={checkoutEnabled}
-    shippingFlat={config.shippingFlat}
-    shippingFreeThreshold={config.shippingFreeThreshold}
-    checkoutUrl={config.checkoutUrl}
-  />
-</ContentPage>
-`);
-}
 
 // src/pages/index.astro
 await safeWrite(join(dir, 'src', 'pages', 'index.astro'), `---
@@ -311,6 +315,63 @@ const Content = mod.default;
 </ContentPage>
 `);
 
+// src/pages/category/[slug].astro
+await safeWrite(join(dir, 'src', 'pages', 'category', '[slug].astro'), `---
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { loadConfig, getCategories, loadCategoryPages } from 'corner-store';
+
+export async function getStaticPaths() {
+  const config = await loadConfig();
+  const categories = await getCategories();
+  const categoryPages = await loadCategoryPages();
+
+  const paths = [];
+
+  for (const [slug, catPage] of categoryPages) {
+    paths.push({
+      params: { slug },
+      props: { page: catPage, isMdx: true },
+    });
+  }
+
+  for (const cat of categories) {
+    if (!categoryPages.has(cat.slug)) {
+      paths.push({
+        params: { slug: cat.slug },
+        props: { categoryName: cat.name, isMdx: false },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { page, categoryName, isMdx } = Astro.props;
+const slug = Astro.params.slug;
+
+let Content = null;
+if (isMdx) {
+  const mdxModules = import.meta.glob('/pages/category/*.mdx');
+  const loader = mdxModules[\`/pages/category/\${slug}.mdx\`];
+  if (loader) {
+    const mod = await loader();
+    Content = mod.default;
+  }
+}
+---
+
+{isMdx && Content ? (
+  <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
+    <Content components={{ Listings, Listing }} />
+  </ContentPage>
+) : (
+  <ContentPage title={categoryName}>
+    <Listings categories={[categoryName]} />
+  </ContentPage>
+)}
+`);
+
 // src/pages/404.astro
 await safeWrite(join(dir, 'src', 'pages', '404.astro'), `---
 import { StatusPage } from 'corner-store/components';
@@ -323,6 +384,37 @@ import { StatusPage } from 'corner-store/components';
   linkText="Back to store"
   linkHref="/"
 />
+`);
+
+// src/pages/cart.astro
+await safeWrite(join(dir, 'src', 'pages', 'cart.astro'), `---
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Cart } from 'corner-store/components';
+import { loadConfig, getListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
+
+const config = await loadConfig();
+const listings = await getListings();
+const minCartSizeRaw = config.minCartSize != null
+  ? decimalToRawPrice(config.minCartSize, DEFAULT_CURRENCY)
+  : null;
+const checkoutEnabled = !!import.meta.env.STRIPE_SECRET_KEY;
+---
+
+<ContentPage title="Cart" hasExplicitTitle>
+  <Cart
+    storeName={config.name}
+    contact={config.contact ?? ''}
+    listings={listings}
+    currency={DEFAULT_CURRENCY}
+    minCartSize={config.minCartSize}
+    minCartSizeRaw={minCartSizeRaw}
+    wholesaleMargin={config.wholesaleMargin}
+    checkoutEnabled={checkoutEnabled}
+    shippingFlat={config.shippingFlat}
+    shippingFreeThreshold={config.shippingFreeThreshold}
+    checkoutUrl={config.checkoutUrl}
+  />
+</ContentPage>
 `);
 
 // src/pages/success.astro
