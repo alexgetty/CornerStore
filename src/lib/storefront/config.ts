@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { StoreConfig, NavItem, ResolvedNavItem, PageData } from './types.js';
+import type { StoreConfig, NavItem, ResolvedNavItem, PageData, Category } from './types.js';
 
 export const CONFIG_FILENAME = 'cornerstore.config.js';
 
@@ -106,19 +106,89 @@ export function resolveNavItem(item: NavItem, home: string): ResolvedNavItem {
   return { label: item.label, href };
 }
 
-export function getNav(config: StoreConfig, pages: Map<string, PageData>): { nav: ResolvedNavItem[]; footerNav: ResolvedNavItem[] } {
+export interface CategoryNavData {
+  catalogCategories: Category[];
+  customCategoryPages: Map<string, PageData>;
+}
+
+export function getNav(
+  config: StoreConfig,
+  pages: Map<string, PageData>,
+  categoryData?: CategoryNavData,
+): { nav: ResolvedNavItem[]; footerNav: ResolvedNavItem[] } {
+
+  function resolveDropdownChildren(dropdown: 'categories' | string[]): ResolvedNavItem[] {
+    if (dropdown === 'categories') {
+      if (!categoryData) return [];
+
+      const { catalogCategories, customCategoryPages } = categoryData;
+      const catalogSlugs = new Set(catalogCategories.map(c => c.slug));
+
+      const customEntries: ResolvedNavItem[] = [];
+      for (const [slug, catPage] of customCategoryPages) {
+        if (!catalogSlugs.has(slug)) {
+          customEntries.push({ label: catPage.title, href: `/category/${slug}` });
+        }
+      }
+      customEntries.sort((a, b) => a.label.localeCompare(b.label));
+
+      const catalogEntries: ResolvedNavItem[] = [];
+      for (const cat of catalogCategories) {
+        const override = customCategoryPages.get(cat.slug);
+        catalogEntries.push({
+          label: override ? override.title : cat.name,
+          href: `/category/${cat.slug}`,
+        });
+      }
+
+      return [...customEntries, ...catalogEntries];
+    }
+
+    const children: ResolvedNavItem[] = [];
+    for (const pageName of dropdown) {
+      const p = pages.get(pageName);
+      if (p) {
+        children.push({
+          label: p.title,
+          href: pageName === config.home ? '/' : `/${pageName}`,
+        });
+      } else {
+        console.warn(`[Storefront] Warning: dropdown references "${pageName}" but pages/${pageName}.mdx does not exist`);
+      }
+    }
+    return children;
+  }
+
   function filterAndResolve(items: NavItem[]): ResolvedNavItem[] {
     const result: ResolvedNavItem[] = [];
     for (const item of items) {
+      let href: string | undefined;
+
       if (item.path !== undefined) {
-        result.push(resolveNavItem(item, config.home));
-      } else if (item.dropdown !== undefined) {
-        result.push(resolveNavItem(item, config.home));
-      } else if (item.page !== undefined && pages.has(item.page)) {
-        result.push(resolveNavItem(item, config.home));
-      } else {
-        console.warn(`[Storefront] Warning: nav references "${item.page}" but pages/${item.page}.mdx does not exist`);
+        href = item.path;
+      } else if (item.page !== undefined) {
+        if (pages.has(item.page)) {
+          href = item.page === config.home ? '/' : `/${item.page}`;
+        } else if (!item.dropdown) {
+          console.warn(`[Storefront] Warning: nav references "${item.page}" but pages/${item.page}.mdx does not exist`);
+          continue;
+        }
       }
+
+      let children: ResolvedNavItem[] | undefined;
+      if (item.dropdown) {
+        const resolved = resolveDropdownChildren(item.dropdown);
+        if (resolved.length > 0) children = resolved;
+      }
+
+      if (href === undefined && !children) {
+        continue;
+      }
+
+      const resolved: ResolvedNavItem = { label: item.label };
+      if (href !== undefined) resolved.href = href;
+      if (children) resolved.children = children;
+      result.push(resolved);
     }
     return result;
   }

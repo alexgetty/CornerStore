@@ -2,7 +2,7 @@
 import Base from "./Base.astro";
 import Nav from "../components/Nav/Nav.astro";
 import "./ContentPage.css";
-import { loadConfig, loadPages, getNav } from "../lib/storefront";
+import { loadConfig, loadPages, getNav, getListings, getCategories, loadCategoryPages, DEFAULT_CURRENCY } from "../lib/storefront";
 import type { ResolvedNavItem } from "../lib/storefront";
 
 interface Props {
@@ -14,11 +14,24 @@ interface Props {
 const { title, hasExplicitTitle = true, description } = Astro.props;
 const config = await loadConfig();
 const pages = await loadPages(config);
-const { nav, footerNav } = getNav(config, pages);
+const categories = await getCategories();
+const categoryPages = await loadCategoryPages();
+const { nav, footerNav } = getNav(config, pages, {
+  catalogCategories: categories,
+  customCategoryPages: categoryPages,
+});
+
+const listings = await getListings();
+const priceMap: Record<string, number> = {};
+for (const listing of listings) {
+  priceMap[listing.sku] = config.wholesaleMargin != null
+    ? Math.round(listing.rawPrice * config.wholesaleMargin)
+    : listing.rawPrice;
+}
 ---
 
 <Base title={`${title} — ${config.name}`} description={description}>
-  <Nav storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} />
+  <Nav storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} priceMap={priceMap} currency={DEFAULT_CURRENCY} />
   <main id="main-content">
     <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
     <slot />
@@ -29,7 +42,7 @@ const { nav, footerNav } = getNav(config, pages);
         <nav aria-label="Footer">
           <ul class="cs-footer-links">
             {footerNav.map((item: ResolvedNavItem) => (
-              <li><a href={item.href}>{item.label}</a></li>
+              <li>{item.href ? <a href={item.href}>{item.label}</a> : item.label}</li>
             ))}
           </ul>
         </nav>

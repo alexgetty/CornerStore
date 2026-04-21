@@ -659,6 +659,243 @@ describe('getNav', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('[Storefront] Warning: nav references "missing" but pages/missing.mdx does not exist');
   });
+
+  it('resolves dropdown: "categories" with catalog categories', () => {
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Shop', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      new Map(),
+      {
+        catalogCategories: [
+          { name: 'Hats', slug: 'hats', productCount: 3 },
+          { name: 'Shirts', slug: 'shirts', productCount: 5 },
+        ],
+        customCategoryPages: new Map(),
+      },
+    );
+    expect(result.nav).toEqual([
+      {
+        label: 'Shop',
+        children: [
+          { label: 'Hats', href: '/category/hats' },
+          { label: 'Shirts', href: '/category/shirts' },
+        ],
+      },
+    ]);
+  });
+
+  it('resolves dropdown: "categories" with custom pages before catalog', () => {
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Browse', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      new Map(),
+      {
+        catalogCategories: [
+          { name: 'Hats', slug: 'hats', productCount: 2 },
+        ],
+        customCategoryPages: new Map([
+          ['gift-ideas', { slug: 'gift-ideas', title: 'Gift Ideas', hasExplicitTitle: true, description: undefined }],
+        ]),
+      },
+    );
+    expect(result.nav).toEqual([
+      {
+        label: 'Browse',
+        children: [
+          { label: 'Gift Ideas', href: '/category/gift-ideas' },
+          { label: 'Hats', href: '/category/hats' },
+        ],
+      },
+    ]);
+  });
+
+  it('deduplicates MDX override from catalog categories', () => {
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Browse', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      new Map(),
+      {
+        catalogCategories: [
+          { name: 'Hats', slug: 'hats', productCount: 2 },
+          { name: 'Shirts', slug: 'shirts', productCount: 3 },
+        ],
+        customCategoryPages: new Map([
+          ['hats', { slug: 'hats', title: 'Our Hats', hasExplicitTitle: true, description: undefined }],
+        ]),
+      },
+    );
+    expect(result.nav[0]!.children).toEqual([
+      { label: 'Our Hats', href: '/category/hats' },
+      { label: 'Shirts', href: '/category/shirts' },
+    ]);
+  });
+
+  it('resolves nav item with page + dropdown: "categories"', () => {
+    const pages = new Map([['home', page('home')]]);
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Shop', page: 'home', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      pages,
+      {
+        catalogCategories: [{ name: 'Hats', slug: 'hats', productCount: 1 }],
+        customCategoryPages: new Map(),
+      },
+    );
+    expect(result.nav).toEqual([
+      {
+        label: 'Shop',
+        href: '/',
+        children: [{ label: 'Hats', href: '/category/hats' }],
+      },
+    ]);
+  });
+
+  it('resolves dropdown string array through page system', () => {
+    const pages = new Map([['faq', page('faq')], ['about', page('about')]]);
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Info', dropdown: ['faq', 'about'] }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      pages,
+    );
+    expect(result.nav).toEqual([
+      {
+        label: 'Info',
+        children: [
+          { label: 'faq', href: '/faq' },
+          { label: 'about', href: '/about' },
+        ],
+      },
+    ]);
+  });
+
+  it('warns and omits missing pages from dropdown array', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const pages = new Map([['faq', page('faq')]]);
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Info', dropdown: ['faq', 'missing'] }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      pages,
+    );
+    expect(result.nav[0]!.children).toEqual([
+      { label: 'faq', href: '/faq' },
+    ]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('dropdown references "missing"'),
+    );
+  });
+
+  it('drops dropdown-only item when children resolve to empty', () => {
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Browse', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      new Map(),
+      {
+        catalogCategories: [],
+        customCategoryPages: new Map(),
+      },
+    );
+    expect(result.nav).toEqual([]);
+  });
+
+  it('resolves home page in dropdown array to /', () => {
+    const pages = new Map([['home', page('home')]]);
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Stuff', dropdown: ['home'] }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      pages,
+    );
+    expect(result.nav[0]!.children).toEqual([
+      { label: 'home', href: '/' },
+    ]);
+  });
+
+  it('falls back gracefully when categoryData is not provided', () => {
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Browse', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      new Map(),
+    );
+    expect(result.nav).toEqual([]);
+  });
+
+  it('keeps page-referenced item with missing page when dropdown provides children', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Shop', page: 'shop', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      new Map(),
+      {
+        catalogCategories: [{ name: 'Hats', slug: 'hats', productCount: 1 }],
+        customCategoryPages: new Map(),
+      },
+    );
+    expect(result.nav).toEqual([
+      {
+        label: 'Shop',
+        children: [{ label: 'Hats', href: '/category/hats' }],
+      },
+    ]);
+  });
+
+  it('sorts custom category pages alphabetically in dropdown', () => {
+    const result = getNav(
+      {
+        name: 'Test', home: 'home',
+        nav: [{ label: 'Browse', dropdown: 'categories' }],
+        footerNav: [],
+        listings: { views: ['card'] },
+      },
+      new Map(),
+      {
+        catalogCategories: [],
+        customCategoryPages: new Map([
+          ['zebra', { slug: 'zebra', title: 'Zebra', hasExplicitTitle: true, description: undefined }],
+          ['alpha', { slug: 'alpha', title: 'Alpha', hasExplicitTitle: true, description: undefined }],
+        ]),
+      },
+    );
+    expect(result.nav[0]!.children!.map(c => c.label)).toEqual(['Alpha', 'Zebra']);
+  });
 });
 
 // ─── loadConfig ─────────────────────────────────────────────────────────────
