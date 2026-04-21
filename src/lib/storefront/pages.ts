@@ -80,3 +80,53 @@ export async function loadPages(config: StoreConfig): Promise<Map<string, PageDa
 
   return pages;
 }
+
+export const CATEGORY_PAGES_DIR = join(process.cwd(), 'pages', 'category');
+
+function titleCase(slug: string): string {
+  return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+export async function loadCategoryPages(): Promise<Map<string, PageData>> {
+  const pages = new Map<string, PageData>();
+
+  let files: string[];
+  try {
+    files = ((await readdir(CATEGORY_PAGES_DIR)) as string[]).sort();
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'ENOENT') {
+      return pages;
+    }
+    throw err;
+  }
+
+  const mdxFiles = files.filter((f) => f.endsWith('.mdx'));
+
+  for (const file of mdxFiles) {
+    const slug = file.replace(/\.mdx$/, '');
+
+    let raw: string;
+    try {
+      raw = await readFile(join(CATEGORY_PAGES_DIR, file), 'utf-8');
+    } catch (err: unknown) {
+      console.log(`[Storefront] Warning: pages/category/${file}: failed to read — ${getErrorMessage(err)}`);
+      continue;
+    }
+
+    let rawData: Record<string, unknown>;
+    try {
+      ({ data: rawData } = parseFrontmatter(raw));
+    } catch (err: unknown) {
+      console.log(`[Storefront] Warning: pages/category/${file}: failed to parse frontmatter — ${getErrorMessage(err)}`);
+      continue;
+    }
+
+    const parsed = frontmatterSchema.parse(rawData);
+    const hasExplicitTitle = typeof parsed.title === 'string' && parsed.title.length > 0;
+    const title = hasExplicitTitle ? parsed.title as string : titleCase(slug);
+
+    pages.set(slug, { slug, title, hasExplicitTitle, description: parsed.description });
+  }
+
+  return pages;
+}

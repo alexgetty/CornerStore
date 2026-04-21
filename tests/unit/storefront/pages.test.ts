@@ -465,3 +465,150 @@ describe('loadPages', () => {
     expect(allLogCalls).toContain('42');
   });
 });
+
+describe('loadCategoryPages', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('returns empty map when pages/category/ does not exist', async () => {
+    const { readdirMock } = await getFsMock();
+    readdirMock.mockRejectedValue(
+      Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    );
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+    expect(result.size).toBe(0);
+  });
+
+  it('re-throws non-ENOENT errors from readdir', async () => {
+    const { readdirMock } = await getFsMock();
+    const permErr = new Error('EACCES: permission denied');
+    readdirMock.mockRejectedValue(permErr);
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    await expect(loadCategoryPages()).rejects.toBe(permErr);
+  });
+
+  it('reads MDX files from pages/category/ and uses frontmatter title', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['shirts.mdx']);
+    readFileMock.mockResolvedValue('---\ntitle: Our Shirts\ndescription: Hand-printed\n---\nContent\n');
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    expect(result.size).toBe(1);
+    expect(result.get('shirts')).toEqual({
+      slug: 'shirts',
+      title: 'Our Shirts',
+      hasExplicitTitle: true,
+      description: 'Hand-printed',
+    });
+  });
+
+  it('title-cases slug when no frontmatter title', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['gift-ideas.mdx']);
+    readFileMock.mockResolvedValue('Just content, no frontmatter\n');
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    expect(result.get('gift-ideas')).toEqual({
+      slug: 'gift-ideas',
+      title: 'Gift Ideas',
+      hasExplicitTitle: false,
+      description: undefined,
+    });
+  });
+
+  it('title-cases single-word slug', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['hats.mdx']);
+    readFileMock.mockResolvedValue('Content\n');
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    expect(result.get('hats')!.title).toBe('Hats');
+  });
+
+  it('ignores non-MDX files', async () => {
+    const { readdirMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['readme.txt', 'notes.md']);
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    expect(result.size).toBe(0);
+  });
+
+  it('processes multiple files sorted alphabetically', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['zebra.mdx', 'alpha.mdx']);
+    readFileMock.mockImplementation(((path: string) => {
+      if (path.includes('alpha')) return Promise.resolve('---\ntitle: Alpha\n---\n');
+      return Promise.resolve('---\ntitle: Zebra\n---\n');
+    }) as never);
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    const slugs = [...result.keys()];
+    expect(slugs).toEqual(['alpha', 'zebra']);
+  });
+
+  it('warns and skips when readFile throws', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    readdirMock.mockResolvedValue(['broken.mdx', 'good.mdx']);
+    readFileMock.mockImplementation(((path: string) => {
+      if (path.includes('broken')) return Promise.reject(new Error('EACCES'));
+      return Promise.resolve('---\ntitle: Good\n---\n');
+    }) as never);
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    expect(result.size).toBe(1);
+    expect(result.has('good')).toBe(true);
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('pages/category/broken.mdx');
+    expect(allLogCalls).toContain('failed to read');
+  });
+
+  it('warns and skips when frontmatter is malformed', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    readdirMock.mockResolvedValue(['bad.mdx', 'ok.mdx']);
+    readFileMock.mockImplementation(((path: string) => {
+      if (path.includes('bad')) return Promise.resolve('---\ntitle: [\n---\n');
+      return Promise.resolve('---\ntitle: OK\n---\n');
+    }) as never);
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    expect(result.size).toBe(1);
+    expect(result.has('ok')).toBe(true);
+    const allLogCalls = logSpy.mock.calls.map((c) => c[0]).join('\n');
+    expect(allLogCalls).toContain('pages/category/bad.mdx');
+    expect(allLogCalls).toContain('failed to parse frontmatter');
+  });
+
+  it('treats empty frontmatter title as missing and falls back to title case', async () => {
+    const { readdirMock, readFileMock } = await getFsMock();
+    readdirMock.mockResolvedValue(['cool-stuff.mdx']);
+    readFileMock.mockResolvedValue('---\ntitle: ""\n---\n');
+
+    const { loadCategoryPages } = await import('../../../src/lib/storefront/pages.js');
+    const result = await loadCategoryPages();
+
+    expect(result.get('cool-stuff')!.title).toBe('Cool Stuff');
+    expect(result.get('cool-stuff')!.hasExplicitTitle).toBe(false);
+  });
+});
