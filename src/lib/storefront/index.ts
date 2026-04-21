@@ -10,3 +10,5 @@ export { getErrorMessage } from './utils.js';
 export { slugify } from './slugify.js';
 export { loadConfig, getNav, resolveNavItem, parseConfig } from './config.js';
 export { loadPages, resolvePageTitle, frontmatterSchema } from './pages.js';
+export type { Category } from './types.js';
+export { getCategories } from './categories.js';

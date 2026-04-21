@@ -10,6 +10,13 @@ export interface Listing {
   status: string | null;
   paymentLink: string | null;
   moq: number | null;
+  featured: boolean;
+}
+
+export interface Category {
+  name: string;
+  slug: string;
+  productCount: number;
 }
 
 export interface NavItem {
@@ -23,6 +30,10 @@ export interface ResolvedNavItem {
   href: string;
 }
 
+export interface ListingsConfig {
+  views: ('card' | 'table')[];
+}
+
 export interface StoreConfig {
   name: string;
   home: string;
@@ -30,7 +41,7 @@ export interface StoreConfig {
   footerNav: NavItem[];
   contact?: string;
   logo?: string;
-  orderSheet?: boolean;
+  listings: ListingsConfig;
   minCartSize?: number;
   wholesaleMargin?: number;
   shippingFlat?: number;

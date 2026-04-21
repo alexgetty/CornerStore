@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import type { Listing } from '../../../src/lib/storefront/types.js';
 
 export function makeAsyncIterable<T>(items: T[]) {
   return {
@@ -21,6 +22,24 @@ export function makeThrowingAsyncIterable(error: Error) {
     async *[Symbol.asyncIterator]() {
       throw error;
     },
+  };
+}
+
+export function makeListing(overrides: Partial<Listing> = {}): Listing {
+  return {
+    sku: 'TEST-001',
+    name: 'Test Product',
+    description: null,
+    images: [],
+    price: '$19.99',
+    rawPrice: 1999,
+    currency: 'usd',
+    category: null,
+    status: null,
+    paymentLink: null,
+    moq: null,
+    featured: false,
+    ...overrides,
   };
 }
 
