@@ -21,13 +21,15 @@ export interface Category {
 
 export interface NavItem {
   label: string;
-  page: string;
+  page?: string;
+  dropdown?: 'categories' | string[];
   path?: string;
 }
 
 export interface ResolvedNavItem {
   label: string;
-  href: string;
+  href?: string;
+  children?: ResolvedNavItem[];
 }
 
 export interface ListingsConfig {

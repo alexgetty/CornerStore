@@ -12,8 +12,13 @@ export function parseConfig(raw: unknown): StoreConfig {
   const config: StoreConfig = {
     name: typeof obj.name === 'string' && obj.name ? obj.name : 'My Store',
     home: typeof obj.home === 'string' && obj.home ? obj.home : 'home',
-    nav: Array.isArray(obj.nav) ? obj.nav.filter(isValidNavItem) : [],
-    footerNav: Array.isArray(obj.footerNav) ? obj.footerNav.filter(isValidNavItem) : [],
+    nav: Array.isArray(obj.nav)
+      ? obj.nav.map(parseNavItem).filter((item): item is NavItem => item !== null)
+      : [],
+    footerNav: Array.isArray(obj.footerNav)
+      ? obj.footerNav.map(parseNavItem).filter((item): item is NavItem => item !== null)
+      : [],
+    listings: { views: ['card'] },
   };
 
   if (typeof obj.contact === 'string' && obj.contact) {
@@ -24,8 +29,26 @@ export function parseConfig(raw: unknown): StoreConfig {
     config.logo = obj.logo;
   }
 
-  if (typeof obj.orderSheet === 'boolean') {
-    config.orderSheet = obj.orderSheet;
+  const VALID_VIEWS = ['card', 'table'] as const;
+  type View = typeof VALID_VIEWS[number];
+
+  if (
+    obj.listings !== null &&
+    typeof obj.listings === 'object' &&
+    !Array.isArray(obj.listings)
+  ) {
+    const listingsObj = obj.listings as Record<string, unknown>;
+    if (Array.isArray(listingsObj.views)) {
+      const filtered = listingsObj.views.filter(
+        (v: unknown): v is View =>
+          typeof v === 'string' && (VALID_VIEWS as readonly string[]).includes(v),
+      );
+      if (filtered.length > 0) {
+        config.listings = { views: filtered };
+      }
+    }
+  } else if (typeof obj.orderSheet === 'boolean' && obj.orderSheet && obj.listings === undefined) {
+    config.listings = { views: ['card', 'table'] };
   }
 
   if (typeof obj.minCartSize === 'number' && obj.minCartSize > 0) {
@@ -51,10 +74,31 @@ export function parseConfig(raw: unknown): StoreConfig {
   return config;
 }
 
-function isValidNavItem(item: unknown): item is NavItem {
-  if (item === null || typeof item !== 'object') return false;
+function parseNavItem(item: unknown): NavItem | null {
+  if (item === null || typeof item !== 'object') return null;
   const rec = item as Record<string, unknown>;
-  return typeof rec.label === 'string' && typeof rec.page === 'string';
+
+  if (typeof rec.label !== 'string') return null;
+
+  const result: NavItem = { label: rec.label };
+
+  if (typeof rec.page === 'string') result.page = rec.page;
+  if (typeof rec.path === 'string') result.path = rec.path;
+
+  if (rec.dropdown === 'categories') {
+    result.dropdown = 'categories';
+  } else if (Array.isArray(rec.dropdown)) {
+    const filtered = rec.dropdown.filter(
+      (v: unknown): v is string => typeof v === 'string',
+    );
+    if (filtered.length > 0) result.dropdown = filtered;
+  }
+
+  if (result.page === undefined && result.path === undefined && result.dropdown === undefined) {
+    return null;
+  }
+
+  return result;
 }
 
 export function resolveNavItem(item: NavItem, home: string): ResolvedNavItem {
@@ -68,7 +112,9 @@ export function getNav(config: StoreConfig, pages: Map<string, PageData>): { nav
     for (const item of items) {
       if (item.path !== undefined) {
         result.push(resolveNavItem(item, config.home));
-      } else if (pages.has(item.page)) {
+      } else if (item.dropdown !== undefined) {
+        result.push(resolveNavItem(item, config.home));
+      } else if (item.page !== undefined && pages.has(item.page)) {
         result.push(resolveNavItem(item, config.home));
       } else {
         console.warn(`[Storefront] Warning: nav references "${item.page}" but pages/${item.page}.mdx does not exist`);

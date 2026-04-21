@@ -22,6 +22,7 @@ describe('parseConfig', () => {
       home: 'home',
       nav: [],
       footerNav: [],
+      listings: { views: ['card'] },
     });
   });
 
@@ -32,6 +33,7 @@ describe('parseConfig', () => {
       home: 'home',
       nav: [],
       footerNav: [],
+      listings: { views: ['card'] },
     });
   });
 
@@ -48,6 +50,7 @@ describe('parseConfig', () => {
       home: 'home',
       nav: [],
       footerNav: [],
+      listings: { views: ['card'] },
     });
   });
 
@@ -185,6 +188,64 @@ describe('parseConfig', () => {
     expect(config.contact).toBeUndefined();
   });
 
+  // ── dropdown nav items ────────────────────────────────────────────
+
+  it('accepts nav item with dropdown: "categories"', () => {
+    const config = parseConfig({
+      nav: [{ label: 'Shop', dropdown: 'categories' }],
+    });
+    expect(config.nav).toEqual([{ label: 'Shop', dropdown: 'categories' }]);
+  });
+
+  it('accepts nav item with dropdown: "categories" and page', () => {
+    const config = parseConfig({
+      nav: [{ label: 'Shop', page: 'home', dropdown: 'categories' }],
+    });
+    expect(config.nav).toEqual([{ label: 'Shop', page: 'home', dropdown: 'categories' }]);
+  });
+
+  it('accepts nav item with dropdown string array', () => {
+    const config = parseConfig({
+      nav: [{ label: 'Info', dropdown: ['faq', 'about'] }],
+    });
+    expect(config.nav).toEqual([{ label: 'Info', dropdown: ['faq', 'about'] }]);
+  });
+
+  it('filters non-string values from dropdown array', () => {
+    const config = parseConfig({
+      nav: [{ label: 'Info', dropdown: ['faq', 42, null, 'about'] }],
+    });
+    expect(config.nav).toEqual([{ label: 'Info', dropdown: ['faq', 'about'] }]);
+  });
+
+  it('rejects nav item with empty dropdown array after filtering', () => {
+    const config = parseConfig({
+      nav: [{ label: 'Info', dropdown: [42, null] }],
+    });
+    expect(config.nav).toEqual([]);
+  });
+
+  it('ignores invalid dropdown values', () => {
+    const config = parseConfig({
+      nav: [{ label: 'Bad', dropdown: 42 }],
+    });
+    expect(config.nav).toEqual([]);
+  });
+
+  it('ignores dropdown: empty string', () => {
+    const config = parseConfig({
+      nav: [{ label: 'Bad', dropdown: '' }],
+    });
+    expect(config.nav).toEqual([]);
+  });
+
+  it('accepts dropdown-only nav items in footerNav', () => {
+    const config = parseConfig({
+      footerNav: [{ label: 'Browse', dropdown: 'categories' }],
+    });
+    expect(config.footerNav).toEqual([{ label: 'Browse', dropdown: 'categories' }]);
+  });
+
   // ── logo ──────────────────────────────────────────────────────────────
 
   it('extracts logo when valid string', () => {
@@ -207,26 +268,76 @@ describe('parseConfig', () => {
     expect(config.logo).toBeUndefined();
   });
 
-  // ── orderSheet ────────────────────────────────────────────────────────
+  // ── listings ───────────────────────────────────────────────────────────
 
-  it('extracts orderSheet when true', () => {
-    const config = parseConfig({ orderSheet: true });
-    expect(config.orderSheet).toBe(true);
+  it('parses listings.views when valid array', () => {
+    const config = parseConfig({ listings: { views: ['card', 'table'] } });
+    expect(config.listings).toEqual({ views: ['card', 'table'] });
   });
 
-  it('extracts orderSheet when false', () => {
-    const config = parseConfig({ orderSheet: false });
-    expect(config.orderSheet).toBe(false);
+  it('parses listings.views with single card', () => {
+    const config = parseConfig({ listings: { views: ['card'] } });
+    expect(config.listings).toEqual({ views: ['card'] });
   });
 
-  it('orderSheet is undefined when missing', () => {
+  it('parses listings.views with single table', () => {
+    const config = parseConfig({ listings: { views: ['table'] } });
+    expect(config.listings).toEqual({ views: ['table'] });
+  });
+
+  it('preserves view order (first entry is default)', () => {
+    const config = parseConfig({ listings: { views: ['table', 'card'] } });
+    expect(config.listings).toEqual({ views: ['table', 'card'] });
+  });
+
+  it('defaults to { views: ["card"] } when listings is missing', () => {
     const config = parseConfig({});
-    expect(config.orderSheet).toBeUndefined();
+    expect(config.listings).toEqual({ views: ['card'] });
   });
 
-  it('orderSheet is undefined when non-boolean', () => {
-    const config = parseConfig({ orderSheet: 'yes' });
-    expect(config.orderSheet).toBeUndefined();
+  it('defaults to { views: ["card"] } when listings is null', () => {
+    const config = parseConfig({ listings: null });
+    expect(config.listings).toEqual({ views: ['card'] });
+  });
+
+  it('defaults to { views: ["card"] } when listings is non-object', () => {
+    const config = parseConfig({ listings: 'card' });
+    expect(config.listings).toEqual({ views: ['card'] });
+  });
+
+  it('defaults to { views: ["card"] } when listings.views is empty after filtering', () => {
+    const config = parseConfig({ listings: { views: ['grid', 'list'] } });
+    expect(config.listings).toEqual({ views: ['card'] });
+  });
+
+  it('defaults to { views: ["card"] } when listings.views is empty array', () => {
+    const config = parseConfig({ listings: { views: [] } });
+    expect(config.listings).toEqual({ views: ['card'] });
+  });
+
+  it('defaults to { views: ["card"] } when listings.views is not an array', () => {
+    const config = parseConfig({ listings: { views: 'card' } });
+    expect(config.listings).toEqual({ views: ['card'] });
+  });
+
+  it('filters out invalid view values', () => {
+    const config = parseConfig({ listings: { views: ['card', 'grid', 'table', 42] } });
+    expect(config.listings).toEqual({ views: ['card', 'table'] });
+  });
+
+  it('backwards compat: orderSheet true without listings becomes { views: ["card", "table"] }', () => {
+    const config = parseConfig({ orderSheet: true });
+    expect(config.listings).toEqual({ views: ['card', 'table'] });
+  });
+
+  it('backwards compat: orderSheet false without listings defaults to { views: ["card"] }', () => {
+    const config = parseConfig({ orderSheet: false });
+    expect(config.listings).toEqual({ views: ['card'] });
+  });
+
+  it('backwards compat: listings takes precedence over orderSheet', () => {
+    const config = parseConfig({ orderSheet: true, listings: { views: ['table'] } });
+    expect(config.listings).toEqual({ views: ['table'] });
   });
 
   // ── minCartSize ───────────────────────────────────────────────────────
@@ -428,6 +539,7 @@ describe('getNav', () => {
       footerNav: [
         { label: 'FAQ', page: 'faq' },
       ],
+      listings: { views: ['card'] },
     }, pages);
     expect(result.nav).toEqual([
       { label: 'Shop', href: '/' },
@@ -444,6 +556,7 @@ describe('getNav', () => {
       home: 'home',
       nav: [],
       footerNav: [],
+      listings: { views: ['card'] },
     }, new Map());
     expect(result.nav).toEqual([]);
     expect(result.footerNav).toEqual([]);
@@ -456,6 +569,7 @@ describe('getNav', () => {
       home: 'index',
       nav: [],
       footerNav: [{ label: 'Home', page: 'index' }],
+      listings: { views: ['card'] },
     }, pages);
     expect(result.footerNav).toEqual([{ label: 'Home', href: '/' }]);
   });
@@ -467,6 +581,7 @@ describe('getNav', () => {
       home: 'home',
       nav: [{ label: 'About', page: 'about' }],
       footerNav: [],
+      listings: { views: ['card'] },
     }, pages);
     expect(result.nav).toEqual([{ label: 'About', href: '/about' }]);
   });
@@ -478,6 +593,7 @@ describe('getNav', () => {
       home: 'home',
       nav: [{ label: 'About', page: 'about' }],
       footerNav: [],
+      listings: { views: ['card'] },
     }, new Map());
     expect(result.nav).toEqual([]);
   });
@@ -488,6 +604,7 @@ describe('getNav', () => {
       home: 'home',
       nav: [{ label: 'Blog', page: 'blog', path: '/writing' }],
       footerNav: [],
+      listings: { views: ['card'] },
     }, new Map());
     expect(result.nav).toEqual([{ label: 'Blog', href: '/writing' }]);
   });
@@ -499,6 +616,7 @@ describe('getNav', () => {
       home: 'home',
       nav: [{ label: 'About', page: 'about' }],
       footerNav: [{ label: 'FAQ', page: 'faq' }],
+      listings: { views: ['card'] },
     }, new Map());
     expect(warnSpy).toHaveBeenCalledTimes(2);
     expect(warnSpy).toHaveBeenCalledWith('[Storefront] Warning: nav references "about" but pages/about.mdx does not exist');
@@ -515,6 +633,7 @@ describe('getNav', () => {
         { label: 'FAQ', page: 'faq' },
       ],
       footerNav: [],
+      listings: { views: ['card'] },
     }, new Map());
     expect(result.nav).toEqual([]);
   });
@@ -531,6 +650,7 @@ describe('getNav', () => {
         { label: 'Blog', page: 'blog', path: '/writing' },
       ],
       footerNav: [],
+      listings: { views: ['card'] },
     }, pages);
     expect(result.nav).toEqual([
       { label: 'About', href: '/about' },
