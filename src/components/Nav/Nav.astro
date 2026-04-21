@@ -1,5 +1,6 @@
 ---
 import "./Nav.css";
+import CartWidget from "../CartWidget/CartWidget.astro";
 import type { ResolvedNavItem } from "../../lib/storefront";
 
 interface Props {
@@ -7,9 +8,11 @@ interface Props {
   logo?: string;
   nav: ResolvedNavItem[];
   currentPath?: string;
+  priceMap?: Record<string, number>;
+  currency?: string;
 }
 
-const { storeName, logo, nav, currentPath } = Astro.props;
+const { storeName, logo, nav, currentPath, priceMap, currency } = Astro.props;
 
 function normalizePath(p: string): string {
   return p === '/' ? p : p.replace(/\/$/, '');
@@ -23,13 +26,55 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
     {logo && <img src={logo} alt="" class="cs-logo" />}
     {storeName}
   </a>
-  {nav.length > 0 && (
-    <nav aria-label="Main">
-      <ul class="cs-nav-links">
-        {nav.map((item) => (
-          <li><a href={item.href} {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}>{item.label}</a></li>
-        ))}
-      </ul>
-    </nav>
-  )}
+  <div class="cs-header-actions">
+    {nav.length > 0 && (
+      <nav aria-label="Main">
+        <ul class="cs-nav-links">
+          {nav.map((item) => (
+            item.children ? (
+              <li class="cs-nav-dropdown">
+                {item.href ? (
+                  <a
+                    href={item.href}
+                    class="cs-nav-dropdown-trigger"
+                    {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <button type="button" class="cs-nav-dropdown-trigger">
+                    {item.label}
+                  </button>
+                )}
+                <ul class="cs-nav-dropdown-menu">
+                  {item.children.map((child) => (
+                    <li>
+                      <a
+                        href={child.href}
+                        {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
+                      >
+                        {child.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ) : (
+              <li>
+                <a
+                  href={item.href}
+                  {...(normalizedCurrentPath === normalizePath(item.href ?? '') ? { "aria-current": "page" as const } : {})}
+                >
+                  {item.label}
+                </a>
+              </li>
+            )
+          ))}
+        </ul>
+      </nav>
+    )}
+    {priceMap && currency && (
+      <CartWidget priceMap={priceMap} currency={currency} />
+    )}
+  </div>
 </header>
