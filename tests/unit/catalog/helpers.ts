@@ -7,11 +7,11 @@ export function makeCatalogProduct(overrides: Partial<CatalogProduct> = {}): Cat
     price: 19.99,
     category: null,
     status: null,
-    storefront: true,
-    orderSheet: true,
+    hidden: false,
     description: null,
     paymentLink: null,
     moq: null,
+    featured: false,
     ...overrides,
   };
 }

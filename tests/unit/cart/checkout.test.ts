@@ -23,11 +23,11 @@ function makeProduct(overrides: Partial<CatalogProduct> = {}): CatalogProduct {
     price: 25.00,
     category: null,
     status: null,
-    storefront: true,
-    orderSheet: true,
+    hidden: false,
     description: null,
     paymentLink: null,
     moq: null,
+    featured: false,
     ...overrides,
   };
 }

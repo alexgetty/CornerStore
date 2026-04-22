@@ -4,11 +4,11 @@ export interface CatalogProduct {
   price: number;
   category: string | null;
   status: string | null;
-  storefront: boolean;
-  orderSheet: boolean;
+  hidden: boolean;
   description: string | null;
   paymentLink: string | null;
   moq: number | null;
+  featured: boolean;
 }
 
 export interface CatalogValidationError {
