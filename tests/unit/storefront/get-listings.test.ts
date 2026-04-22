@@ -45,10 +45,10 @@ describe('getListings', () => {
     expect(listings[0]!.images).toEqual([]);
   });
 
-  it('filters to storefront products only', async () => {
+  it('excludes hidden products', async () => {
     loadCatalogMock.mockResolvedValue([
-      makeCatalogProduct({ sku: 'SHOW', storefront: true }),
-      makeCatalogProduct({ sku: 'HIDE', storefront: false }),
+      makeCatalogProduct({ sku: 'SHOW', hidden: false }),
+      makeCatalogProduct({ sku: 'HIDE', hidden: true }),
     ]);
     const listings = await getListings();
     expect(listings).toHaveLength(1);
@@ -127,18 +127,18 @@ describe('getListings', () => {
     consoleSpy.mockRestore();
   });
 
-  it('returns empty array when catalog has no storefront products', async () => {
-    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ storefront: false })]);
+  it('returns empty array when all catalog products are hidden', async () => {
+    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ hidden: true })]);
     const listings = await getListings();
     expect(listings).toEqual([]);
   });
 
-  it('propagates catalog validation errors', async () => {
-    loadCatalogMock.mockRejectedValue(new Error('[Catalog] Validation failed'));
-    await expect(getListings()).rejects.toThrow('[Catalog] Validation failed');
+  it('propagates catalog load errors', async () => {
+    loadCatalogMock.mockRejectedValue(new Error('ENOENT: no such file'));
+    await expect(getListings()).rejects.toThrow('ENOENT');
   });
 
-  it('logs plural "products" when multiple storefront products are found', async () => {
+  it('logs plural "products" when multiple visible products are found', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     loadCatalogMock.mockResolvedValue([
       makeCatalogProduct({ sku: 'ONE' }),
@@ -168,59 +168,16 @@ describe('getListings', () => {
     const listings = await getListings();
     expect(listings[0]!.moq).toBeNull();
   });
-});
 
-describe('getOrderSheetListings', () => {
-  let getOrderSheetListings: typeof import('../../../src/lib/storefront/get-listings.js').getOrderSheetListings;
-  let loadCatalogMock: ReturnType<typeof vi.fn>;
-  let loadProductImagesMock: ReturnType<typeof vi.fn>;
-  let loadProductOverridesMock: ReturnType<typeof vi.fn>;
-
-  beforeEach(async () => {
-    vi.resetModules();
-    const csv = await import('../../../src/lib/catalog/csv.js');
-    const images = await import('../../../src/lib/catalog/images.js');
-    const overrides = await import('../../../src/lib/catalog/overrides.js');
-    loadCatalogMock = vi.mocked(csv.loadCatalog);
-    loadProductImagesMock = vi.mocked(images.loadProductImages);
-    loadProductOverridesMock = vi.mocked(overrides.loadProductOverrides);
-    loadProductImagesMock.mockResolvedValue(new Map());
-    loadProductOverridesMock.mockResolvedValue(new Map());
-    ({ getOrderSheetListings } = await import('../../../src/lib/storefront/get-listings.js'));
+  it('passes through featured true from catalog product', async () => {
+    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ featured: true })]);
+    const listings = await getListings();
+    expect(listings[0]!.featured).toBe(true);
   });
 
-  afterEach(() => vi.restoreAllMocks());
-
-  it('filters to orderSheet products only', async () => {
-    loadCatalogMock.mockResolvedValue([
-      makeCatalogProduct({ sku: 'SHEET', orderSheet: true, storefront: false }),
-      makeCatalogProduct({ sku: 'STORE', orderSheet: false, storefront: true }),
-    ]);
-    const listings = await getOrderSheetListings();
-    expect(listings).toHaveLength(1);
-    expect(listings[0]!.sku).toBe('SHEET');
-  });
-
-  it('includes moq on order sheet listings', async () => {
-    loadCatalogMock.mockResolvedValue([
-      makeCatalogProduct({ sku: 'BULK', orderSheet: true, moq: 12 }),
-    ]);
-    const listings = await getOrderSheetListings();
-    expect(listings[0]!.moq).toBe(12);
-  });
-
-  it('includes images on order sheet listings', async () => {
-    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ orderSheet: true })]);
-    loadProductImagesMock.mockResolvedValue(
-      new Map([['TEST-001', [{ url: '/products/images/TEST-001-1.jpg', filename: 'TEST-001-1.jpg' }]]])
-    );
-    const listings = await getOrderSheetListings();
-    expect(listings[0]!.images).toHaveLength(1);
-  });
-
-  it('returns empty array when no order sheet products', async () => {
-    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ orderSheet: false })]);
-    const listings = await getOrderSheetListings();
-    expect(listings).toEqual([]);
+  it('passes through featured false from catalog product', async () => {
+    loadCatalogMock.mockResolvedValue([makeCatalogProduct({ featured: false })]);
+    const listings = await getListings();
+    expect(listings[0]!.featured).toBe(false);
   });
 });

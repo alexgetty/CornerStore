@@ -39,6 +39,7 @@ async function buildListings(
       status: product.status,
       paymentLink: product.paymentLink,
       moq: product.moq,
+      featured: product.featured,
     };
   });
 
@@ -56,9 +57,5 @@ async function buildListings(
 }
 
 export async function getListings(): Promise<Listing[]> {
-  return buildListings((p) => p.storefront, 'storefront');
-}
-
-export async function getOrderSheetListings(): Promise<Listing[]> {
-  return buildListings((p) => p.orderSheet, 'order sheet');
+  return buildListings((p) => !p.hidden, 'storefront');
 }
