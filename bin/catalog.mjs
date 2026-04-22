@@ -162,10 +162,7 @@ var init_errors = __esm({
     StripeSetupError = class extends Error {
       guidance;
       constructor(message, guidance, cause) {
-        super(
-          `[Storefront] ${message}
-  \u2192 See SETUP.md${guidance} for steps to fix this.`
-        );
+        super(`[Storefront] ${message}`);
         this.name = "StripeSetupError";
         this.guidance = guidance;
         if (cause) {
@@ -312,6 +309,7 @@ function catalogDiff(catalog, stripeState, currency) {
     if (existing.currency !== currency) changes.push("currency");
     const expectedAmount = decimalToRawPrice(product.price, currency);
     if (existing.unitAmount !== expectedAmount) changes.push("price");
+    if (existing.paymentLinkId === null) changes.push("payment-link-missing");
     if (changes.length > 0) {
       toUpdate.push({ sku: product.sku, product, existing, changes });
     }
@@ -377,6 +375,7 @@ async function catalogUpdate(stripe, toUpdate, currency) {
       if (entry.changes.includes("name")) productUpdate.name = entry.product.name;
       if (entry.changes.includes("description")) productUpdate.description = entry.product.description ?? "";
       const priceChanged = entry.changes.includes("price");
+      const linkMissing = entry.changes.includes("payment-link-missing");
       if (priceChanged) {
         const rawPrice = decimalToRawPrice(entry.product.price, currency);
         const newPrice = await withRetry(() => stripe.prices.create({
@@ -397,6 +396,15 @@ async function catalogUpdate(stripe, toUpdate, currency) {
         productUpdate["metadata[payment_link_url]"] = newLink.url;
         updatedLinks.set(entry.sku, newLink.url);
         console.log(`[Sync] Updated: ${entry.sku} \u2014 price changed, new Payment Link created`);
+      } else if (linkMissing) {
+        const newLink = await withRetry(() => stripe.paymentLinks.create({
+          line_items: [{ price: entry.existing.priceId, quantity: 1 }]
+        }));
+        productUpdate["metadata[sku]"] = entry.sku;
+        productUpdate["metadata[payment_link_id]"] = newLink.id;
+        productUpdate["metadata[payment_link_url]"] = newLink.url;
+        updatedLinks.set(entry.sku, newLink.url);
+        console.log(`[Sync] Updated: ${entry.sku} \u2014 Payment Link created`);
       } else {
         console.log(`[Sync] Updated: ${entry.sku} \u2014 ${entry.changes.join(", ")}`);
       }

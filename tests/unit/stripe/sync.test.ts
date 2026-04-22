@@ -354,6 +354,43 @@ describe('catalogDiff', () => {
     const result = catalogDiff(catalog, stripeState, 'usd');
     expect(result.toAdd).toHaveLength(2);
   });
+
+  it('flags existing product with no Payment Link as needing repair', () => {
+    const catalog = [makeCatalogProduct({ sku: 'TEST-001', name: 'Test Product', price: 19.99, description: null })];
+    const stripeState = new Map([
+      ['TEST-001', {
+        productId: 'prod_1',
+        name: 'Test Product',
+        description: null,
+        priceId: 'price_1',
+        unitAmount: 1999,
+        currency: 'usd',
+        paymentLinkId: null,
+        paymentLinkUrl: null,
+      }],
+    ]);
+    const result = catalogDiff(catalog, stripeState, 'usd');
+    expect(result.toUpdate).toHaveLength(1);
+    expect(result.toUpdate[0]!.changes).toContain('payment-link-missing');
+  });
+
+  it('does not flag payment-link-missing when Payment Link exists', () => {
+    const catalog = [makeCatalogProduct({ sku: 'TEST-001', name: 'Test Product', price: 19.99, description: null })];
+    const stripeState = new Map([
+      ['TEST-001', {
+        productId: 'prod_1',
+        name: 'Test Product',
+        description: null,
+        priceId: 'price_1',
+        unitAmount: 1999,
+        currency: 'usd',
+        paymentLinkId: 'plink_1',
+        paymentLinkUrl: 'https://buy.stripe.com/test',
+      }],
+    ]);
+    const result = catalogDiff(catalog, stripeState, 'usd');
+    expect(result.toUpdate).toHaveLength(0);
+  });
 });
 
 describe('catalogAdd', () => {
@@ -769,6 +806,33 @@ describe('catalogUpdate', () => {
 
     const result = await catalogUpdate(stripe as any, toUpdate, 'usd');
 
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('creates Payment Link without recreating Price when only link is missing', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    paymentLinksCreateMock.mockResolvedValue({ id: 'plink_new', url: 'https://buy.stripe.com/new' });
+
+    const existing = makeExistingState({ paymentLinkId: null, paymentLinkUrl: null, priceId: 'price_existing' });
+    const toUpdate = [{
+      sku: 'REPAIR-001',
+      product: makeCatalogProduct({ sku: 'REPAIR-001' }),
+      existing,
+      changes: ['payment-link-missing'],
+    }];
+
+    const result = await catalogUpdate(stripe as any, toUpdate, 'usd');
+
+    expect(pricesCreateMock).not.toHaveBeenCalled();
+    expect(pricesUpdateMock).not.toHaveBeenCalled();
+    expect(paymentLinksCreateMock).toHaveBeenCalledWith({
+      line_items: [{ price: 'price_existing', quantity: 1 }],
+    });
+    expect(productsUpdateMock).toHaveBeenCalledWith('prod_1', expect.objectContaining({
+      'metadata[payment_link_id]': 'plink_new',
+      'metadata[payment_link_url]': 'https://buy.stripe.com/new',
+    }));
+    expect(result.links.get('REPAIR-001')).toBe('https://buy.stripe.com/new');
     expect(result.errors).toHaveLength(0);
   });
 

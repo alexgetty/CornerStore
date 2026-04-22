@@ -1,0 +1,29 @@
+---
+import ListingCards from "./ListingCards.astro";
+import type { Listing } from "../../lib/storefront";
+import { getListings } from "../../lib/storefront";
+
+interface Props {
+  listing?: Listing;
+  product?: string;
+}
+
+const { listing: listingProp, product } = Astro.props;
+
+let listing: Listing | undefined = listingProp;
+
+if (!listing && product) {
+  const allListings = await getListings();
+  const needle = product.toLowerCase();
+  listing = allListings.find((l) => {
+    const slugified = l.name.toLowerCase().replace(/\s+/g, '-');
+    return l.sku.toLowerCase() === needle
+      || slugified === needle
+      || l.name.toLowerCase() === needle;
+  });
+}
+
+const listings = listing ? [listing] : [];
+---
+
+<ListingCards listings={listings} />

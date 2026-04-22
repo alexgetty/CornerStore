@@ -96,11 +96,10 @@
     top: 100%;
     right: 0;
     flex-direction: column;
-    gap: 0.25rem;
-    padding-top: 0.5rem;
-    padding-right: 0.75rem;
-    padding-bottom: 0.5rem;
-    padding-left: 0.75rem;
+    padding-top: 0.25rem;
+    padding-right: 0;
+    padding-bottom: 0.25rem;
+    padding-left: 0;
     background-color: var(--cs-header-surface, var(--cs-surface-color));
     border-width: 1px;
     border-style: solid;
@@ -116,15 +115,21 @@
   }
 
   .cs-nav-dropdown-menu a {
+    display: block;
     font-size: var(--cs-font-size-small);
     color: var(--cs-body-text-color);
     text-decoration: none;
     white-space: nowrap;
     transition: color var(--cs-transition-fast);
+    padding-top: 0.375rem;
+    padding-right: 0.75rem;
+    padding-bottom: 0.375rem;
+    padding-left: 0.75rem;
   }
 
   .cs-nav-dropdown-menu a:hover {
     color: var(--cs-heading-text-color);
+    background-color: var(--cs-surface-hover, rgba(0, 0, 0, 0.04));
   }
 
   .cs-nav-dropdown-menu a:focus-visible {

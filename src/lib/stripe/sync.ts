@@ -103,6 +103,7 @@ export function catalogDiff(
     if (existing.currency !== currency) changes.push('currency');
     const expectedAmount = decimalToRawPrice(product.price, currency);
     if (existing.unitAmount !== expectedAmount) changes.push('price');
+    if (existing.paymentLinkId === null) changes.push('payment-link-missing');
     if (changes.length > 0) {
       toUpdate.push({ sku: product.sku, product, existing, changes });
     }
@@ -192,6 +193,7 @@ export async function catalogUpdate(
       if (entry.changes.includes('description')) productUpdate.description = entry.product.description ?? '';
 
       const priceChanged = entry.changes.includes('price');
+      const linkMissing = entry.changes.includes('payment-link-missing');
 
       if (priceChanged) {
         const rawPrice = decimalToRawPrice(entry.product.price, currency);
@@ -217,6 +219,17 @@ export async function catalogUpdate(
 
         updatedLinks.set(entry.sku, newLink.url);
         console.log(`[Sync] Updated: ${entry.sku} — price changed, new Payment Link created`);
+      } else if (linkMissing) {
+        const newLink = await withRetry(() => stripe.paymentLinks.create({
+          line_items: [{ price: entry.existing.priceId, quantity: 1 }],
+        }));
+
+        productUpdate['metadata[sku]'] = entry.sku;
+        productUpdate['metadata[payment_link_id]'] = newLink.id;
+        productUpdate['metadata[payment_link_url]'] = newLink.url;
+
+        updatedLinks.set(entry.sku, newLink.url);
+        console.log(`[Sync] Updated: ${entry.sku} — Payment Link created`);
       } else {
         console.log(`[Sync] Updated: ${entry.sku} — ${entry.changes.join(', ')}`);
       }

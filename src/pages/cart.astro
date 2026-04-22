@@ -1,28 +1,28 @@
 ---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { OrderSheet } from 'corner-store/components';
-import { loadConfig, getOrderSheetListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
+import CartPage from '../components/Cart/Cart.astro';
+import { loadConfig, getListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
 
 const config = await loadConfig();
-const listings = await getOrderSheetListings();
+const listings = await getListings();
 const minCartSizeRaw = config.minCartSize != null
   ? decimalToRawPrice(config.minCartSize, DEFAULT_CURRENCY)
   : null;
 const checkoutEnabled = !!import.meta.env.STRIPE_SECRET_KEY;
 ---
 
-<ContentPage title="Order Sheet" hasExplicitTitle>
-  <OrderSheet
+<ContentPage title="Cart" hasExplicitTitle>
+  <CartPage
     storeName={config.name}
     contact={config.contact ?? ''}
-    logo={config.logo}
     listings={listings}
+    currency={DEFAULT_CURRENCY}
     minCartSize={config.minCartSize}
     minCartSizeRaw={minCartSizeRaw}
-    currency={DEFAULT_CURRENCY}
     wholesaleMargin={config.wholesaleMargin}
     checkoutEnabled={checkoutEnabled}
     shippingFlat={config.shippingFlat}
     shippingFreeThreshold={config.shippingFreeThreshold}
+    checkoutUrl={config.checkoutUrl}
   />
 </ContentPage>

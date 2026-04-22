@@ -419,4 +419,29 @@ describe('runCatalogSync', () => {
       await expect(runCatalogSync('add')).resolves.toBeUndefined();
     });
   });
+
+  // ─── hidden product filtering ─────────────────────────────────────────────────
+
+  describe('hidden product filtering', () => {
+    it('filters hidden products out before passing to catalogDiff', async () => {
+      const visible = makeCatalogProduct({ sku: 'VISIBLE-001', hidden: false });
+      const hidden = makeCatalogProduct({ sku: 'HIDDEN-001', hidden: true });
+      loadCatalog.mockResolvedValue([visible, hidden]);
+
+      await runCatalogSync('diff');
+
+      expect(catalogDiff).toHaveBeenCalledWith([visible], expect.anything(), 'usd');
+    });
+
+    it('passes an empty list to catalogDiff when every product is hidden', async () => {
+      loadCatalog.mockResolvedValue([
+        makeCatalogProduct({ sku: 'H-1', hidden: true }),
+        makeCatalogProduct({ sku: 'H-2', hidden: true }),
+      ]);
+
+      await runCatalogSync('diff');
+
+      expect(catalogDiff).toHaveBeenCalledWith([], expect.anything(), 'usd');
+    });
+  });
 });

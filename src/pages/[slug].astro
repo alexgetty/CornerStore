@@ -1,8 +1,7 @@
 ---
-import ContentPage from "../layouts/ContentPage.astro";
-import { Listings, Listing } from "../components";
-import { loadConfig, loadPages } from "../lib/storefront";
-import type { PageData } from "../lib/storefront";
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { loadConfig, loadPages } from 'corner-store';
 
 export async function getStaticPaths() {
   const config = await loadConfig();
@@ -16,17 +15,13 @@ export async function getStaticPaths() {
     }));
 }
 
-interface Props {
-  page: PageData;
-}
-
 const { page } = Astro.props;
 
 const mdxModules = import.meta.glob('/pages/*.mdx');
-const mod = await (mdxModules[`/pages/${page.slug}.mdx`] as any)() as any;
+const mod = await mdxModules[`/pages/${page.slug}.mdx`]();
 const Content = mod.default;
 ---
 
-<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle} description={page.description}>
+<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
   <Content components={{ Listings, Listing }} />
 </ContentPage>

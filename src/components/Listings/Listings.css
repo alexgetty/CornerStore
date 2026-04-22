@@ -1,21 +1,104 @@
 @layer package {
-  .cs-listings ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--cs-listing-minimum-width), 1fr));
-    gap: var(--cs-listings-gap);
+  .cs-listings {
+    width: 100%;
   }
 
-  .cs-listings li {
-    display: flex;
-  }
+  /* --- Empty state --- */
 
   .cs-listings-empty {
     text-align: center;
-    color: var(--cs-muted-text-color);
-    padding-top: 3rem;
-    padding-bottom: 3rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    font-size: var(--cs-font-size-large);
+    color: var(--cs-body-text-color);
+    opacity: 0.6;
+    padding: 2rem 0;
+  }
+
+  /* --- View toggle --- */
+
+  .cs-view-toggle {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .cs-view-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid var(--cs-border-color);
+    border-radius: var(--cs-button-border-radius, 4px);
+    background: var(--cs-surface-color, #fff);
+    cursor: pointer;
+    color: var(--cs-body-text-color);
+    opacity: 0.5;
+    transition: opacity var(--cs-transition-fast, 0.15s);
+  }
+
+  .cs-view-toggle-btn:hover {
+    opacity: 0.8;
+  }
+
+  .cs-view-toggle-btn[aria-pressed="true"] {
+    opacity: 1;
+    border-color: var(--cs-heading-text-color);
+    color: var(--cs-heading-text-color);
+  }
+
+  /* --- Card icon (2x2 grid) --- */
+
+  .cs-icon-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .cs-icon-card::before,
+  .cs-icon-card::after {
+    content: '';
+    background: currentColor;
+    border-radius: 1px;
+  }
+
+  /* Need 4 squares but only have 2 pseudo-elements, so use box-shadow trick */
+  .cs-icon-card::before {
+    grid-column: 1;
+    grid-row: 1;
+    box-shadow: 8px 0 0 0 currentColor;
+  }
+
+  .cs-icon-card::after {
+    grid-column: 1;
+    grid-row: 2;
+    box-shadow: 8px 0 0 0 currentColor;
+  }
+
+  /* --- Table icon (3 horizontal lines) --- */
+
+  .cs-icon-table {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .cs-icon-table::before,
+  .cs-icon-table::after {
+    content: '';
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+  }
+
+  /* Third line via box-shadow on the after pseudo */
+  .cs-icon-table::after {
+    box-shadow: 0 -8px 0 0 currentColor;
   }
 }

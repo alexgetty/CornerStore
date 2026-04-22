@@ -1,0 +1,50 @@
+@layer package {
+  .cs-cart-widget {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--cs-body-text-color);
+    transition: color var(--cs-transition-fast);
+  }
+
+  .cs-cart-widget:hover {
+    color: var(--cs-heading-text-color);
+  }
+
+  .cs-cart-widget:focus-visible {
+    outline-width: var(--cs-focus-width);
+    outline-style: solid;
+    outline-color: var(--cs-focus-color);
+    outline-offset: var(--cs-focus-offset);
+  }
+
+  .cs-cart-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .cs-cart-count {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    background-color: var(--cs-highlight-text-color);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: var(--cs-emphasis-font-weight);
+    min-width: 1.125rem;
+    height: 1.125rem;
+    line-height: 1.125rem;
+    text-align: center;
+    border-radius: 50%;
+    padding: 0 0.25rem;
+  }
+
+  .cs-cart-subtotal {
+    font-size: var(--cs-font-size-small);
+    font-weight: var(--cs-emphasis-font-weight);
+    color: var(--cs-heading-text-color);
+    white-space: nowrap;
+  }
+}

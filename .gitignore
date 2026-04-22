@@ -1,8 +1,7 @@
-node_modules
-dist
-coverage
+node_modules/
+dist/
+coverage/
 .env
-.astro
+.astro/
 .DS_Store
-claude.md
-.obsidian
+.obsidian/

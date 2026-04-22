@@ -1,28 +1,39 @@
-// Corner Store configuration
-// Edit the values below to customize your store
-
 export default {
-  // Your store name — appears in the header and browser tab
-  name: 'Corner Store',
-
-  // Which page renders at /
+  name: "Despair Factory",
   home: 'home',
-
-  // Main navigation — appears in the header
   nav: [
-    { label: 'Shop', page: 'home' },
-    { label: 'About', page: 'about' },
-  ],
-
-  // Footer navigation — appears at the bottom of every page
+    {
+        "label": "Shop",
+        "page": "home"
+    },
+    {
+        "label": "About",
+        "page": "about"
+    }
+],
   footerNav: [
-    { label: 'Shipping Policy', page: 'shipping-policy' },
-    { label: 'Returns Policy', page: 'returns-policy' },
-    { label: 'FAQ', page: 'faq' },
-    { label: 'Privacy Policy', page: 'privacy-policy' },
-    { label: 'Terms of Service', page: 'terms-of-service' },
-  ],
-
-  // Contact email — displayed in the footer (optional)
-  // contact: 'hello@example.com',
+    {
+        "label": "Shipping Policy",
+        "page": "shipping-policy"
+    },
+    {
+        "label": "Returns Policy",
+        "page": "returns-policy"
+    },
+    {
+        "label": "FAQ",
+        "page": "faq"
+    },
+    {
+        "label": "Privacy Policy",
+        "page": "privacy-policy"
+    },
+    {
+        "label": "Terms of Service",
+        "page": "terms-of-service"
+    }
+],
+  contact: "support@despairfactory.com",
+  listings: { views: ['card', 'table'] },
+  minCartSize: 50,
 }

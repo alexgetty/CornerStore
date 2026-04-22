@@ -112,7 +112,7 @@ await mkdir(join(dir, 'products', 'images'), { recursive: true });
 
 // catalog.csv — the product catalog, source of truth for all product data
 await safeWrite(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Featured,Hidden,MOQ,Payment Link
-SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,,,
+SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,,,,
 `);
 
 // products/SAMPLE-001.md — example rich description override
@@ -443,6 +443,13 @@ import { StatusPage } from 'corner-store/components';
   linkText="Back to store"
   linkHref="/"
 />
+`);
+
+// src/pages/product-names.json.ts — SKU -> name map used by the cart to label unavailable items
+await safeWrite(join(dir, 'src', 'pages', 'product-names.json.ts'), `import type { APIRoute } from 'astro';
+import { getProductNamesResponse } from 'corner-store/catalog';
+
+export const GET: APIRoute = () => getProductNamesResponse();
 `);
 
 // Link corner-store first (before npm install), so npm doesn't try to fetch it from the registry

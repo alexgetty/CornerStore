@@ -1,7 +1,7 @@
 ---
-import ContentPage from "../layouts/ContentPage.astro";
-import { Listings, Listing } from "../components";
-import { loadConfig, loadPages } from "../lib/storefront";
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { loadConfig, loadPages } from 'corner-store';
 
 const config = await loadConfig();
 const pages = await loadPages(config);
@@ -10,15 +10,15 @@ const homePage = pages.get(config.home);
 const mdxModules = import.meta.glob('/pages/*.mdx');
 const homeModule = mdxModules[`/pages/${config.home}.mdx`];
 
-let Content: any = null;
+let Content = null;
 if (homeModule) {
-  const mod = await homeModule() as any;
+  const mod = await homeModule();
   Content = mod.default;
 }
 ---
 
 {Content ? (
-  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false} description={homePage?.description}>
+  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
     <Content components={{ Listings, Listing }} />
   </ContentPage>
 ) : (

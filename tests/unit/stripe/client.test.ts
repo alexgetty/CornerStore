@@ -88,7 +88,7 @@ describe('getStripeClient', () => {
     } catch (err: unknown) {
       const error = err as { guidance: string; message: string };
       expect(error.guidance).toBe('#missing-api-key');
-      expect(error.message).toContain('SETUP.md');
+      expect(error.message).toContain('[Storefront]');
     }
   });
 
@@ -105,7 +105,7 @@ describe('getStripeClient', () => {
     } catch (err: unknown) {
       const error = err as { guidance: string; message: string };
       expect(error.guidance).toBe('#invalid-key-format');
-      expect(error.message).toContain('SETUP.md');
+      expect(error.message).toContain('[Storefront]');
     }
   });
 });

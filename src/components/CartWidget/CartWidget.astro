@@ -1,0 +1,25 @@
+---
+import "./CartWidget.css";
+
+interface Props {
+  priceMap: Record<string, number>;
+  currency: string;
+}
+
+const { priceMap, currency } = Astro.props;
+---
+
+<a href="/cart" class="cs-cart-widget" aria-label="Shopping cart" data-currency={currency} data-prices={JSON.stringify(priceMap)}>
+  <span class="cs-cart-icon-wrap">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 6V5a4 4 0 1 1 8 0v1" />
+      <rect x="3" y="6" width="14" height="12" rx="1" />
+    </svg>
+    <span class="cs-cart-count" hidden>0</span>
+  </span>
+  <span class="cs-cart-subtotal" hidden></span>
+</a>
+
+<script>
+  import './cart-widget.ts';
+</script>

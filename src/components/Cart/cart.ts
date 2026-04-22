@@ -38,6 +38,15 @@ function init(root: HTMLElement) {
   const rowMap = new Map<string, HTMLElement>();
   rows.forEach((row) => rowMap.set(row.dataset.sku ?? '', row));
 
+  let allNames: Record<string, string> = {};
+  fetch('/product-names.json')
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((data) => {
+      allNames = data;
+      hydrateFromCart();
+    })
+    .catch(() => { /* fall back to SKU in banner */ });
+
   const shippingFlatDecimal = root.dataset.shippingFlat ? Number(root.dataset.shippingFlat) : null;
   const shippingFreeThresholdDecimal = root.dataset.shippingFreeThreshold ? Number(root.dataset.shippingFreeThreshold) : null;
   const shippingFlatRaw = shippingFlatDecimal != null ? decimalToRawPrice(shippingFlatDecimal, DEFAULT_CURRENCY) : null;
@@ -58,8 +67,8 @@ function init(root: HTMLElement) {
     for (const item of cart.items) {
       const row = rowMap.get(item.sku);
       if (!row) {
-        // Hidden product: no row exists, track by SKU
-        unavailableItems.push(item.sku);
+        // Hidden or deleted product: no row in DOM. Use name from fetched map, fall back to SKU.
+        unavailableItems.push(allNames[item.sku] ?? item.sku);
         continue;
       }
 

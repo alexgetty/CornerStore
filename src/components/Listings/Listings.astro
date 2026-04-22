@@ -1,33 +1,98 @@
 ---
 import "./Listings.css";
-import Listing from "../Listing/Listing.astro";
-import type { Listing as ListingType } from "../../lib/storefront";
-import { getListings } from "../../lib/storefront";
+import ListingCards from "./ListingCards.astro";
+import ListingTable from "./ListingTable.astro";
+import type { Listing } from "../../lib/storefront";
+import { getListings, filterListings, sortListings, loadConfig, DEFAULT_CURRENCY } from "../../lib/storefront";
 
 interface Props {
-  listings?: ListingType[];
+  listings?: Listing[];
   limit?: number;
+  mode?: 'card' | 'table';
+  toggle?: boolean;
+  categories?: string[];
+  featured?: boolean;
+  sort?: string;
+  order?: 'asc' | 'desc';
 }
 
-const { listings: listingsProp, limit } = Astro.props;
+const { listings: listingsProp, limit, mode, toggle, categories, featured, sort, order } = Astro.props;
 
-let listings: ListingType[] = listingsProp ?? await getListings();
+let listings: Listing[] = listingsProp ?? await getListings();
 
-if (limit !== undefined) {
+const { filtered, warnings } = filterListings(listings, { categories, featured });
+listings = filtered;
+
+for (const warning of warnings) {
+  console.log(warning);
+}
+
+const { sorted, warnings: sortWarnings } = sortListings(listings, { sort, order });
+listings = sorted;
+
+for (const warning of sortWarnings) {
+  console.log(warning);
+}
+
+if (limit) {
   listings = listings.slice(0, limit);
 }
+
+const config = await loadConfig();
+const enabledViews = config.listings.views;
+
+const activeView: 'card' | 'table' =
+  mode && enabledViews.includes(mode) ? mode : enabledViews[0]!;
+
+const inactiveView: 'card' | 'table' = activeView === 'card' ? 'table' : 'card';
+
+const showToggle = toggle === true && enabledViews.length >= 2;
+const isEmpty = listings.length === 0;
 ---
 
-<section class="cs-listings" aria-label="Products">
-  {listings.length > 0 ? (
-    <ul role="list">
-      {listings.map((listing) => (
-        <li>
-          <Listing listing={listing} />
-        </li>
-      ))}
-    </ul>
+<div class="cs-listings" data-view={activeView}>
+  {isEmpty ? (
+    <p class="cs-listings-empty">No products to display.</p>
   ) : (
-    <p class="cs-listings-empty">No products available.</p>
+    <>
+      {showToggle && (
+        <div class="cs-view-toggle" role="group" aria-label="View mode">
+          <button
+            type="button"
+            class="cs-view-toggle-btn"
+            data-view="card"
+            aria-pressed={activeView === 'card' ? 'true' : 'false'}
+            aria-label="Card view"
+          >
+            <span class="cs-icon-card" aria-hidden="true"></span>
+          </button>
+          <button
+            type="button"
+            class="cs-view-toggle-btn"
+            data-view="table"
+            aria-pressed={activeView === 'table' ? 'true' : 'false'}
+            aria-label="Table view"
+          >
+            <span class="cs-icon-table" aria-hidden="true"></span>
+          </button>
+        </div>
+      )}
+
+      {activeView === 'card'
+        ? <ListingCards listings={listings} currency={DEFAULT_CURRENCY} wholesaleMargin={config.wholesaleMargin} />
+        : <ListingTable listings={listings} currency={DEFAULT_CURRENCY} wholesaleMargin={config.wholesaleMargin} />
+      }
+
+      {showToggle && (
+        <template id="cs-listings-alt">
+          {inactiveView === 'card'
+            ? <ListingCards listings={listings} currency={DEFAULT_CURRENCY} wholesaleMargin={config.wholesaleMargin} />
+            : <ListingTable listings={listings} currency={DEFAULT_CURRENCY} wholesaleMargin={config.wholesaleMargin} />
+          }
+        </template>
+      )}
+
+      <script>import './listings.ts';</script>
+    </>
   )}
-</section>
+</div>

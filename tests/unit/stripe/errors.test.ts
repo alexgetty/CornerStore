@@ -21,14 +21,13 @@ describe('StripeSetupError', () => {
     expect(err.guidance).toBe('#some-section');
   });
 
-  it('formats message with [Storefront] prefix and SETUP.md reference', async () => {
+  it('formats message with [Storefront] prefix', async () => {
     const { StripeSetupError } = await import(
       '../../../src/lib/stripe/index.js'
     );
     const err = new StripeSetupError('Something broke', '#fix-it');
     expect(err.message).toContain('[Storefront]');
     expect(err.message).toContain('Something broke');
-    expect(err.message).toContain('SETUP.md#fix-it');
   });
 
   it('preserves cause when provided', async () => {

@@ -2,9 +2,7 @@ export class StripeSetupError extends Error {
   guidance: string;
 
   constructor(message: string, guidance: string, cause?: Error) {
-    super(
-      `[Storefront] ${message}\n  → See SETUP.md${guidance} for steps to fix this.`
-    );
+    super(`[Storefront] ${message}`);
     this.name = 'StripeSetupError';
     this.guidance = guidance;
     if (cause) {
