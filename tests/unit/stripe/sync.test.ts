@@ -308,80 +308,6 @@ describe('catalogDiff', () => {
     expect(result.toUpdate[0]!.changes).toContain('description');
   });
 
-  it('detects storefront-added when product is storefront but has no payment link', () => {
-    const catalog = [makeCatalogProduct({ sku: 'TEST-001', storefront: true, name: 'Test Product', price: 19.99, description: null })];
-    const stripeState = new Map([
-      ['TEST-001', {
-        productId: 'prod_1',
-        name: 'Test Product',
-        description: null,
-        priceId: 'price_1',
-        unitAmount: 1999,
-        currency: 'usd',
-        paymentLinkId: null,
-        paymentLinkUrl: null,
-      }],
-    ]);
-    const result = catalogDiff(catalog, stripeState, 'usd');
-    expect(result.toUpdate).toHaveLength(1);
-    expect(result.toUpdate[0]!.changes).toContain('storefront-added');
-  });
-
-  it('detects storefront-removed when product is not storefront but has payment link', () => {
-    const catalog = [makeCatalogProduct({ sku: 'TEST-001', storefront: false, name: 'Test Product', price: 19.99, description: null })];
-    const stripeState = new Map([
-      ['TEST-001', {
-        productId: 'prod_1',
-        name: 'Test Product',
-        description: null,
-        priceId: 'price_1',
-        unitAmount: 1999,
-        currency: 'usd',
-        paymentLinkId: 'plink_1',
-        paymentLinkUrl: 'https://buy.stripe.com/test',
-      }],
-    ]);
-    const result = catalogDiff(catalog, stripeState, 'usd');
-    expect(result.toUpdate).toHaveLength(1);
-    expect(result.toUpdate[0]!.changes).toContain('storefront-removed');
-  });
-
-  it('does not flag storefront change when storefront product already has payment link', () => {
-    const catalog = [makeCatalogProduct({ sku: 'TEST-001', storefront: true, name: 'Test Product', price: 19.99, description: null })];
-    const stripeState = new Map([
-      ['TEST-001', {
-        productId: 'prod_1',
-        name: 'Test Product',
-        description: null,
-        priceId: 'price_1',
-        unitAmount: 1999,
-        currency: 'usd',
-        paymentLinkId: 'plink_1',
-        paymentLinkUrl: 'https://buy.stripe.com/test',
-      }],
-    ]);
-    const result = catalogDiff(catalog, stripeState, 'usd');
-    expect(result.toUpdate).toHaveLength(0);
-  });
-
-  it('does not flag storefront change when non-storefront product has no payment link', () => {
-    const catalog = [makeCatalogProduct({ sku: 'TEST-001', storefront: false, name: 'Test Product', price: 19.99, description: null })];
-    const stripeState = new Map([
-      ['TEST-001', {
-        productId: 'prod_1',
-        name: 'Test Product',
-        description: null,
-        priceId: 'price_1',
-        unitAmount: 1999,
-        currency: 'usd',
-        paymentLinkId: null,
-        paymentLinkUrl: null,
-      }],
-    ]);
-    const result = catalogDiff(catalog, stripeState, 'usd');
-    expect(result.toUpdate).toHaveLength(0);
-  });
-
   it('detects currency mismatch between Stripe and sync currency', () => {
     const catalog = [makeCatalogProduct({ sku: 'TEST-001', name: 'Test Product', price: 19.99, description: null })];
     const stripeState = new Map([
@@ -419,16 +345,14 @@ describe('catalogDiff', () => {
     expect(result.toUpdate).toHaveLength(0);
   });
 
-  it('includes non-storefront products in diff', () => {
+  it('includes all non-hidden products in diff', () => {
     const catalog = [
-      makeCatalogProduct({ sku: 'STORE-001', storefront: true }),
-      makeCatalogProduct({ sku: 'WHOLESALE-001', storefront: false }),
+      makeCatalogProduct({ sku: 'VISIBLE-001' }),
+      makeCatalogProduct({ sku: 'VISIBLE-002' }),
     ];
     const stripeState = new Map();
     const result = catalogDiff(catalog, stripeState, 'usd');
     expect(result.toAdd).toHaveLength(2);
-    expect(result.toAdd.map((e) => e.sku)).toContain('STORE-001');
-    expect(result.toAdd.map((e) => e.sku)).toContain('WHOLESALE-001');
   });
 });
 
@@ -499,21 +423,17 @@ describe('catalogAdd', () => {
     expect(productsCreateMock).not.toHaveBeenCalled();
   });
 
-  it('skips Payment Link creation for non-storefront products', async () => {
+  it('creates Payment Link for all products', async () => {
     productsCreateMock.mockResolvedValue({ id: 'prod_1' });
     pricesCreateMock.mockResolvedValue({ id: 'price_1' });
+    paymentLinksCreateMock.mockResolvedValue({ id: 'plink_1', url: 'https://buy.stripe.com/test' });
     productsUpdateMock.mockResolvedValue({});
 
-    const toAdd = [{
-      sku: 'BULK-001',
-      product: makeCatalogProduct({ sku: 'BULK-001', storefront: false }),
-    }];
+    const toAdd = [{ sku: 'NEW-001', product: makeCatalogProduct({ sku: 'NEW-001' }) }];
     const result = await catalogAdd(stripe as any, toAdd, 'usd');
 
-    expect(productsCreateMock).toHaveBeenCalledTimes(1);
-    expect(pricesCreateMock).toHaveBeenCalledTimes(1);
-    expect(paymentLinksCreateMock).not.toHaveBeenCalled();
-    expect(result.links.size).toBe(0);
+    expect(paymentLinksCreateMock).toHaveBeenCalledTimes(1);
+    expect(result.links.get('NEW-001')).toBe('https://buy.stripe.com/test');
   });
 
   it('reuses existing incomplete product instead of creating new one', async () => {
@@ -628,19 +548,18 @@ describe('catalogAdd', () => {
     expect(updateCall).not.toHaveProperty('metadata');
   });
 
-  it('uses partial metadata keys for non-storefront products too', async () => {
+  it('sets metadata keys on product update', async () => {
     productsCreateMock.mockResolvedValue({ id: 'prod_1' });
     pricesCreateMock.mockResolvedValue({ id: 'price_1' });
+    paymentLinksCreateMock.mockResolvedValue({ id: 'plink_1', url: 'https://buy.stripe.com/test' });
     productsUpdateMock.mockResolvedValue({});
 
-    const toAdd = [{ sku: 'BULK-002', product: makeCatalogProduct({ sku: 'BULK-002', storefront: false }) }];
+    const toAdd = [{ sku: 'BULK-002', product: makeCatalogProduct({ sku: 'BULK-002' }) }];
     await catalogAdd(stripe as any, toAdd, 'usd');
 
     const updateCall = productsUpdateMock.mock.calls[0]![1];
     expect(updateCall['metadata[sku]']).toBe('BULK-002');
     expect(updateCall).not.toHaveProperty('metadata');
-    expect(updateCall).not.toHaveProperty('metadata[payment_link_id]');
-    expect(updateCall).not.toHaveProperty('metadata[payment_link_url]');
   });
 });
 
@@ -781,13 +700,14 @@ describe('catalogUpdate', () => {
     expect(productsUpdateMock).not.toHaveBeenCalled();
   });
 
-  it('skips Payment Link recreation for non-storefront product on price change', async () => {
+  it('always recreates Payment Link on price change', async () => {
     pricesCreateMock.mockResolvedValue({ id: 'price_new' });
+    paymentLinksCreateMock.mockResolvedValue({ id: 'plink_new', url: 'https://buy.stripe.com/new' });
 
     const existing = makeExistingState({ paymentLinkId: null, paymentLinkUrl: null });
     const toUpdate = [{
       sku: 'BULK-001',
-      product: makeCatalogProduct({ sku: 'BULK-001', storefront: false, price: 29.99 }),
+      product: makeCatalogProduct({ sku: 'BULK-001', price: 29.99 }),
       existing,
       changes: ['price'],
     }];
@@ -795,9 +715,8 @@ describe('catalogUpdate', () => {
     const result = await catalogUpdate(stripe as any, toUpdate, 'usd');
 
     expect(pricesCreateMock).toHaveBeenCalledTimes(1);
-    expect(paymentLinksCreateMock).not.toHaveBeenCalled();
-    expect(paymentLinksUpdateMock).not.toHaveBeenCalled();
-    expect(result.links.size).toBe(0);
+    expect(paymentLinksCreateMock).toHaveBeenCalledTimes(1);
+    expect(result.links.get('BULK-001')).toBe('https://buy.stripe.com/new');
   });
 
   it('continues processing remaining entries after one fails', async () => {
@@ -853,7 +772,7 @@ describe('catalogUpdate', () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it('uses partial metadata keys on price change with storefront product', async () => {
+  it('uses partial metadata keys on price change', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
 
     pricesCreateMock.mockResolvedValue({ id: 'price_new' });

@@ -72,23 +72,14 @@ describe('runCatalogSync', () => {
       expect(consoleSpy).toHaveBeenCalledWith('\nEverything is in sync.');
     });
 
-    it('logs new products with storefront type label', async () => {
-      const product = makeCatalogProduct({ sku: 'NEW-001', name: 'Widget', price: 19.99, storefront: true });
+    it('logs new products with price', async () => {
+      const product = makeCatalogProduct({ sku: 'NEW-001', name: 'Widget', price: 19.99 });
       catalogDiff.mockReturnValue({ toAdd: [{ sku: 'NEW-001', product }], toUpdate: [], orphaned: [] });
 
       await runCatalogSync('diff');
 
       expect(consoleSpy).toHaveBeenCalledWith('\nNew products (1):');
-      expect(consoleSpy).toHaveBeenCalledWith(`  + NEW-001: Widget — $19.99 (storefront)`);
-    });
-
-    it('logs new products with order sheet type label for non-storefront products', async () => {
-      const product = makeCatalogProduct({ sku: 'BULK-001', name: 'Bulk Widget', price: 9.99, storefront: false });
-      catalogDiff.mockReturnValue({ toAdd: [{ sku: 'BULK-001', product }], toUpdate: [], orphaned: [] });
-
-      await runCatalogSync('diff');
-
-      expect(consoleSpy).toHaveBeenCalledWith(`  + BULK-001: Bulk Widget — $9.99 (order sheet)`);
+      expect(consoleSpy).toHaveBeenCalledWith(`  + NEW-001: Widget — $19.99`);
     });
 
     it('logs products to update with changes list', async () => {
@@ -134,7 +125,7 @@ describe('runCatalogSync', () => {
       gsc.mockReturnValue(fakeStripe);
       rss.mockResolvedValue({ state: new Map(), incompleteSkus: fakeIncompleteSkus });
 
-      const product = makeCatalogProduct({ sku: 'EUR-001', name: 'Euro Widget', price: 19.99, storefront: true });
+      const product = makeCatalogProduct({ sku: 'EUR-001', name: 'Euro Widget', price: 19.99 });
       cd.mockReturnValue({ toAdd: [{ sku: 'EUR-001', product }], toUpdate: [], orphaned: [] });
 
       await run('diff');

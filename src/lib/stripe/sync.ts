@@ -103,9 +103,6 @@ export function catalogDiff(
     if (existing.currency !== currency) changes.push('currency');
     const expectedAmount = decimalToRawPrice(product.price, currency);
     if (existing.unitAmount !== expectedAmount) changes.push('price');
-    if (product.storefront === true && existing.paymentLinkId === null) changes.push('storefront-added');
-    if (product.storefront === false && existing.paymentLinkId !== null) changes.push('storefront-removed');
-
     if (changes.length > 0) {
       toUpdate.push({ sku: product.sku, product, existing, changes });
     }
@@ -153,16 +150,17 @@ export async function catalogAdd(
         currency,
       }));
 
-      const updatePayload: Record<string, unknown> = { default_price: price.id, 'metadata[sku]': entry.sku };
+      const link = await withRetry(() => stripe.paymentLinks.create({
+        line_items: [{ price: price.id, quantity: 1 }],
+      }));
 
-      if (entry.product.storefront) {
-        const link = await withRetry(() => stripe.paymentLinks.create({
-          line_items: [{ price: price.id, quantity: 1 }],
-        }));
-        updatePayload['metadata[payment_link_id]'] = link.id;
-        updatePayload['metadata[payment_link_url]'] = link.url;
-        newLinks.set(entry.sku, link.url);
-      }
+      const updatePayload: Record<string, unknown> = {
+        default_price: price.id,
+        'metadata[sku]': entry.sku,
+        'metadata[payment_link_id]': link.id,
+        'metadata[payment_link_url]': link.url,
+      };
+      newLinks.set(entry.sku, link.url);
 
       await withRetry(() => stripe.products.update(productId, updatePayload));
 
@@ -205,24 +203,20 @@ export async function catalogUpdate(
         await withRetry(() => stripe.prices.update(entry.existing.priceId, { active: false }));
         productUpdate.default_price = newPrice.id;
 
-        if (entry.product.storefront) {
-          if (entry.existing.paymentLinkId) {
-            await withRetry(() => stripe.paymentLinks.update(entry.existing.paymentLinkId!, { active: false }));
-          }
-
-          const newLink = await withRetry(() => stripe.paymentLinks.create({
-            line_items: [{ price: newPrice.id, quantity: 1 }],
-          }));
-
-          productUpdate['metadata[sku]'] = entry.sku;
-          productUpdate['metadata[payment_link_id]'] = newLink.id;
-          productUpdate['metadata[payment_link_url]'] = newLink.url;
-
-          updatedLinks.set(entry.sku, newLink.url);
-          console.log(`[Sync] Updated: ${entry.sku} — price changed, new Payment Link created`);
-        } else {
-          console.log(`[Sync] Updated: ${entry.sku} — price changed`);
+        if (entry.existing.paymentLinkId) {
+          await withRetry(() => stripe.paymentLinks.update(entry.existing.paymentLinkId!, { active: false }));
         }
+
+        const newLink = await withRetry(() => stripe.paymentLinks.create({
+          line_items: [{ price: newPrice.id, quantity: 1 }],
+        }));
+
+        productUpdate['metadata[sku]'] = entry.sku;
+        productUpdate['metadata[payment_link_id]'] = newLink.id;
+        productUpdate['metadata[payment_link_url]'] = newLink.url;
+
+        updatedLinks.set(entry.sku, newLink.url);
+        console.log(`[Sync] Updated: ${entry.sku} — price changed, new Payment Link created`);
       } else {
         console.log(`[Sync] Updated: ${entry.sku} — ${entry.changes.join(', ')}`);
       }

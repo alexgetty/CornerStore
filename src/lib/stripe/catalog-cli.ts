@@ -6,18 +6,18 @@ import { DEFAULT_CURRENCY, formatPrice, decimalToRawPrice } from '../storefront/
 
 export async function runCatalogSync(mode: 'diff' | 'add' | 'update' | 'sync'): Promise<void> {
   const catalog = await loadCatalog();
+  const visible = catalog.filter((p) => !p.hidden);
   const stripe = getStripeClient();
   const currency = DEFAULT_CURRENCY;
 
   const { state, incompleteSkus } = await readStripeState(stripe);
-  const diff = catalogDiff(catalog, state, currency);
+  const diff = catalogDiff(visible, state, currency);
 
   if (mode === 'diff') {
     if (diff.toAdd.length > 0) {
       console.log(`\nNew products (${diff.toAdd.length}):`);
       for (const entry of diff.toAdd) {
-        const type = entry.product.storefront ? 'storefront' : 'order sheet';
-        console.log(`  + ${entry.sku}: ${entry.product.name} — ${formatPrice(decimalToRawPrice(entry.product.price, currency), currency)} (${type})`);
+        console.log(`  + ${entry.sku}: ${entry.product.name} — ${formatPrice(decimalToRawPrice(entry.product.price, currency), currency)}`);
       }
     }
     if (diff.toUpdate.length > 0) {
