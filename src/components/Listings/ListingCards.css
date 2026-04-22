@@ -1,0 +1,198 @@
+@layer package {
+
+  /* --- Grid layout --- */
+
+  .cs-listing-cards ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--cs-listing-minimum-width), 1fr));
+    gap: var(--cs-listings-gap);
+  }
+
+  .cs-listing-cards li {
+    display: flex;
+  }
+
+  .cs-listings-empty {
+    text-align: center;
+    color: var(--cs-muted-text-color);
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: var(--cs-font-size-large);
+  }
+
+  /* --- Card --- */
+
+  .cs-listing {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--cs-listing-surface, #fff);
+    border: 1px solid var(--cs-border-color);
+    border-radius: var(--cs-listing-border-radius, 8px);
+    transition: box-shadow var(--cs-transition-normal, 0.2s);
+  }
+
+  .cs-listing:hover {
+    box-shadow: var(--cs-listing-shadow-hover, 0 2px 12px rgba(0, 0, 0, 0.08));
+  }
+
+  /* --- Image --- */
+
+  .cs-listing-image {
+    order: -1;
+    margin: 0;
+  }
+
+  .cs-listing-image img {
+    width: 100%;
+    aspect-ratio: var(--cs-image-aspect-ratio, 1);
+    object-fit: cover;
+    display: block;
+  }
+
+  .cs-listing-placeholder {
+    width: 100%;
+    aspect-ratio: var(--cs-image-aspect-ratio, 1);
+    background-color: var(--cs-image-background, #e0e0e0);
+  }
+
+  /* --- Badge --- */
+
+  .cs-listing-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cs-heading-text-color, #000);
+    color: var(--cs-listing-surface, #fff);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 999px;
+    line-height: 1;
+  }
+
+  /* --- Details --- */
+
+  .cs-listing-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    flex: 1;
+  }
+
+  .cs-listing-name {
+    font-size: var(--cs-font-size-base, 1rem);
+    font-weight: var(--cs-emphasis-font-weight, 600);
+    line-height: var(--cs-heading-line-height, 1.3);
+    margin: 0;
+  }
+
+  .cs-listing-description {
+    font-size: var(--cs-font-size-small, 0.875rem);
+    color: var(--cs-body-text-color);
+    line-height: var(--cs-body-line-height, 1.5);
+    margin: 0;
+  }
+
+  .cs-listing-price {
+    font-size: var(--cs-font-size-base, 1rem);
+    font-weight: var(--cs-emphasis-font-weight, 600);
+    color: var(--cs-heading-text-color);
+    margin: 0.25rem 0 0;
+  }
+
+  .cs-listing-moq {
+    font-size: var(--cs-font-size-small, 0.875rem);
+    color: var(--cs-body-text-color);
+    opacity: 0.6;
+  }
+
+  /* --- Cart controls --- */
+
+  .cs-listing-cart {
+    padding: 0 0.75rem 0.75rem;
+  }
+
+  .cs-listing-add {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: var(--cs-font-size-small, 0.875rem);
+    font-weight: 600;
+    background: var(--cs-heading-text-color, #000);
+    color: var(--cs-listing-surface, #fff);
+    border: none;
+    border-radius: var(--cs-button-border-radius, 4px);
+    cursor: pointer;
+    transition: opacity var(--cs-transition-fast, 0.15s);
+  }
+
+  .cs-listing-add:hover {
+    opacity: 0.85;
+  }
+
+  .cs-listing-add:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: var(--cs-border-color, #ccc);
+    color: var(--cs-body-text-color, #333);
+  }
+
+  .cs-listing-qty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+  }
+
+  .cs-listing-qty-down,
+  .cs-listing-qty-up {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    border: 1px solid var(--cs-border-color);
+    background: var(--cs-listing-surface, #fff);
+  }
+
+  .cs-listing-qty-down {
+    border-radius: var(--cs-button-border-radius, 4px) 0 0 var(--cs-button-border-radius, 4px);
+  }
+
+  .cs-listing-qty-up {
+    border-radius: 0 var(--cs-button-border-radius, 4px) var(--cs-button-border-radius, 4px) 0;
+  }
+
+  .cs-listing-qty-input {
+    flex: 1;
+    height: 2.25rem;
+    text-align: center;
+    font-size: var(--cs-font-size-small, 0.875rem);
+    font-weight: 600;
+    border: 1px solid var(--cs-border-color);
+    border-left: none;
+    border-right: none;
+    -moz-appearance: textfield;
+  }
+
+  .cs-listing-qty-input::-webkit-inner-spin-button,
+  .cs-listing-qty-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}

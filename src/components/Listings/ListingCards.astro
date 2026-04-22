@@ -1,0 +1,96 @@
+---
+import "./ListingCards.css";
+import type { Listing } from "../../lib/storefront";
+import { rawPriceToDecimal, formatPrice } from "../../lib/storefront";
+
+interface Props {
+  listings: Listing[];
+  currency?: string;
+  wholesaleMargin?: number;
+}
+
+const { listings, currency = 'usd', wholesaleMargin } = Astro.props;
+const isWholesale = wholesaleMargin != null;
+---
+
+<section class="cs-listing-cards" aria-label="Products">
+  {listings.length > 0 ? (
+    <ul role="list">
+      {listings.map((listing) => (
+        <li>
+          <article
+            class="cs-listing"
+            itemscope
+            itemtype="https://schema.org/Product"
+            data-sku={listing.sku}
+            data-raw-price={isWholesale ? Math.round(listing.rawPrice * wholesaleMargin!) : listing.rawPrice}
+            data-moq={listing.moq ?? ''}
+            data-currency={listing.currency}
+          >
+            <figure class="cs-listing-image">
+              {
+                listing.images.length > 0 ? (
+                  <img src={listing.images[0].url} alt={listing.images[0].alt} itemprop="image" />
+                ) : (
+                  <div class="cs-listing-placeholder" aria-label={`${listing.name} product image`} />
+                )
+              }
+            </figure>
+
+            <span class="cs-listing-badge" hidden></span>
+
+            <div class="cs-listing-details">
+              <h2 class="cs-listing-name" itemprop="name">{listing.name}</h2>
+              {listing.description && <p class="cs-listing-description" itemprop="description">{listing.description}</p>}
+              {isWholesale ? (
+                <p class="cs-listing-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  {listing.moq ? (
+                    <span aria-label={`Minimum ${listing.moq} at ${formatPrice(Math.round(listing.rawPrice * wholesaleMargin!), currency)} each`}>
+                      Min {listing.moq} @ <data value={String(rawPriceToDecimal(Math.round(listing.rawPrice * wholesaleMargin!), currency))} itemprop="price">{formatPrice(Math.round(listing.rawPrice * wholesaleMargin!), currency)}</data>/ea
+                    </span>
+                  ) : (
+                    <data value={String(rawPriceToDecimal(Math.round(listing.rawPrice * wholesaleMargin!), currency))} itemprop="price" aria-label={"Price: " + formatPrice(Math.round(listing.rawPrice * wholesaleMargin!), currency)}>{formatPrice(Math.round(listing.rawPrice * wholesaleMargin!), currency)}</data>
+                  )}
+                  <meta itemprop="priceCurrency" content={currency.toUpperCase()} />
+                </p>
+              ) : (
+                <p class="cs-listing-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <data value={String(rawPriceToDecimal(listing.rawPrice, listing.currency))} itemprop="price" aria-label={"Price: " + listing.price}>{listing.price}</data>
+                  <meta itemprop="priceCurrency" content={listing.currency.toUpperCase()} />
+                </p>
+              )}
+              {!isWholesale && listing.moq && <span class="cs-listing-moq">Min {listing.moq}</span>}
+            </div>
+
+            <div class="cs-listing-cart">
+              {listing.status ? (
+                <button type="button" class="cs-listing-add" disabled aria-label={`${listing.name}: ${listing.status}`}>{listing.status}</button>
+              ) : (
+                <button type="button" class="cs-listing-add" aria-label={`Add ${listing.name} to cart`}>Add to Cart</button>
+              )}
+              <div class="cs-listing-qty" hidden>
+                <button type="button" class="cs-listing-qty-down" aria-label="Decrease quantity">-</button>
+                <input
+                  type="number"
+                  class="cs-listing-qty-input"
+                  min="0"
+                  step={listing.moq ?? 1}
+                  value="0"
+                  inputmode="numeric"
+                  aria-label={`Quantity for ${listing.name}`}
+                />
+                <button type="button" class="cs-listing-qty-up" aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+          </article>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class="cs-listings-empty">No products available.</p>
+  )}
+</section>
+
+<script>
+  // Client-side logic wired by Listings orchestrator
+</script>
