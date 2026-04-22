@@ -1,0 +1,173 @@
+---
+import "./Cart.css";
+import type { Listing } from "../../lib/storefront";
+import { formatPrice } from "../../lib/storefront";
+
+interface Props {
+  storeName: string;
+  contact: string;
+  listings: Listing[];
+  currency: string;
+  minCartSize?: number;
+  minCartSizeRaw: number | null;
+  wholesaleMargin?: number;
+  checkoutEnabled: boolean;
+  shippingFlat?: number;
+  shippingFreeThreshold?: number;
+  checkoutUrl?: string;
+}
+
+const {
+  storeName,
+  contact,
+  listings,
+  currency,
+  minCartSize,
+  minCartSizeRaw,
+  wholesaleMargin,
+  checkoutEnabled,
+  shippingFlat,
+  shippingFreeThreshold,
+  checkoutUrl,
+} = Astro.props;
+
+const hasWholesale = wholesaleMargin != null;
+---
+
+<div
+  class="cs-cart"
+  data-currency={currency}
+  data-min-cart-size-raw={minCartSizeRaw ?? ''}
+  data-contact={contact}
+  data-store-name={storeName}
+  data-checkout-enabled={checkoutEnabled ? 'true' : ''}
+  data-shipping-flat={shippingFlat ?? ''}
+  data-shipping-free-threshold={shippingFreeThreshold ?? ''}
+  data-checkout-url={checkoutUrl ?? ''}
+>
+  <p class="cs-cart-empty">Your cart is empty. <a href="/">Continue shopping</a></p>
+
+  <div class="cs-cart-content" hidden>
+    <div class="cs-cart-unavailable-banner" hidden></div>
+    <table class="cs-cart-table">
+      <thead>
+        <tr>
+          <th class="cs-col-product">Product</th>
+          {hasWholesale ? (
+            <>
+              <th class="cs-col-price">MSRP</th>
+              <th class="cs-col-price">Wholesale</th>
+            </>
+          ) : (
+            <th class="cs-col-price">Price</th>
+          )}
+          <th class="cs-col-qty">Qty</th>
+          <th class="cs-col-total">Total</th>
+          <th class="cs-col-remove"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {listings.map((listing) => {
+          const thumb = listing.images[0];
+          const effectiveRaw = hasWholesale
+            ? Math.round(listing.rawPrice * wholesaleMargin!)
+            : listing.rawPrice;
+          return (
+            <tr
+              class="cs-cart-row"
+              data-sku={listing.sku}
+              data-raw-price={effectiveRaw}
+              data-moq={listing.moq ?? ''}
+              data-status={listing.status ?? ''}
+              data-name={listing.name}
+              hidden
+            >
+              <td class="cs-col-product">
+                <div class="cs-cart-product">
+                  {thumb ? (
+                    <img src={thumb.url} alt={thumb.alt || listing.name} class="cs-cart-thumb" loading="lazy" />
+                  ) : (
+                    <span class="cs-no-image"></span>
+                  )}
+                  <div>
+                    <strong>{listing.name}</strong>
+                    <span class="cs-cart-sku">{listing.sku}</span>
+                    {listing.moq && <span class="cs-cart-moq">Min {listing.moq}</span>}
+                  </div>
+                </div>
+              </td>
+              {hasWholesale ? (
+                <>
+                  <td class="cs-col-price cs-msrp">{listing.price}</td>
+                  <td class="cs-col-price">{formatPrice(effectiveRaw, currency)}</td>
+                </>
+              ) : (
+                <td class="cs-col-price">{listing.price}</td>
+              )}
+              <td class="cs-col-qty">
+                <div class="cs-qty-control">
+                  <button type="button" class="cs-qty-btn cs-qty-down" aria-label="Decrease quantity">-</button>
+                  <input
+                    type="number"
+                    class="cs-qty-input"
+                    min="0"
+                    step={listing.moq ?? 1}
+                    value="0"
+                    aria-label={`Quantity for ${listing.name}`}
+                  />
+                  <button type="button" class="cs-qty-btn cs-qty-up" aria-label="Increase quantity">+</button>
+                </div>
+              </td>
+              <td class="cs-col-total">
+                <span class="cs-line-total">$0.00</span>
+              </td>
+              <td class="cs-col-remove">
+                <button type="button" class="cs-remove-btn" aria-label={`Remove ${listing.name}`}>&times;</button>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan={hasWholesale ? 4 : 3} class="cs-subtotal-label">Subtotal</td>
+          <td class="cs-subtotal-value">$0.00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="cs-cart-summary" hidden>
+      <p class="cs-shipping-status"></p>
+      <p class="cs-minimum-status"></p>
+    </div>
+
+    {minCartSize != null && (
+      <p class="cs-min-cart-notice">Minimum order: {formatPrice(minCartSizeRaw!, currency)}</p>
+    )}
+
+    <div class="cs-order-errors" hidden></div>
+
+    <div class="cs-order-actions">
+      <button type="button" class="cs-submit-btn" disabled>
+        {checkoutEnabled ? 'Checkout' : 'Submit Order'}
+      </button>
+      <a href="/" class="cs-continue-shopping">Continue shopping</a>
+    </div>
+
+    <div class="cs-checkout-error" hidden></div>
+    <div class="cs-checkout-fallback" hidden>
+      <button type="button" class="cs-retry-btn">Try Again</button>
+      <button type="button" class="cs-pdf-btn">Download PDF</button>
+    </div>
+
+    <div class="cs-mailto-section" hidden>
+      <p>Your order has been downloaded.</p>
+      <a class="cs-mailto-link" href="#">Email your order</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  import './cart.ts';
+</script>
