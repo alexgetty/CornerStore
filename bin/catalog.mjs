@@ -50,8 +50,8 @@ function parseRow(row, rowNum, seenSkus) {
   if (description && description.length > MAX_DESCRIPTION_LENGTH) {
     errors.push({ row: rowNum, field: "Description", message: `exceeds ${MAX_DESCRIPTION_LENGTH} characters` });
   }
-  const storefrontVal = (row["Storefront"] ?? "").trim().toLowerCase();
-  const orderSheetVal = (row["Order Sheet"] ?? "").trim().toLowerCase();
+  const hiddenVal = (row["Hidden"] ?? "").trim().toLowerCase();
+  const featuredVal = (row["Featured"] ?? "").trim().toLowerCase();
   const moqStr = (row["MOQ"] ?? "").trim();
   let moq = null;
   if (moqStr && moqStr !== "0") {
@@ -68,11 +68,11 @@ function parseRow(row, rowNum, seenSkus) {
     price,
     category: row["Category"]?.trim() || null,
     status: row["Status"]?.trim() || null,
-    storefront: storefrontVal !== "no",
-    orderSheet: orderSheetVal !== "no",
+    hidden: hiddenVal === "true" || hiddenVal === "yes",
     description,
     paymentLink: row["Payment Link"]?.trim() || null,
-    moq
+    moq,
+    featured: featuredVal === "true" || featuredVal === "yes"
   };
   return { errors, product };
 }
@@ -82,11 +82,13 @@ function validateRows(records) {
   const seenSkus = /* @__PURE__ */ new Set();
   for (let i = 0; i < records.length; i++) {
     const { errors, product } = parseRow(records[i], i + 2, seenSkus);
-    allErrors.push(...errors);
-    products.push(product);
+    if (errors.length > 0) {
+      allErrors.push(...errors);
+    } else {
+      products.push(product);
+    }
   }
-  if (allErrors.length > 0) return { products: [], errors: allErrors };
-  return { products, errors: [] };
+  return { products, errors: allErrors };
 }
 async function loadCatalog(path) {
   const csvPath = path ?? CATALOG_PATH;
@@ -97,12 +99,8 @@ async function loadCatalog(path) {
     bom: true
   });
   const { products, errors } = validateRows(records);
-  if (errors.length > 0) {
-    const lines = errors.map(
-      (e) => `  Row ${e.row}, ${e.field}: ${e.message}`
-    ).join("\n");
-    throw new Error(`[Catalog] Validation failed:
-${lines}`);
+  for (const e of errors) {
+    console.log(`[Catalog] Warning: Row ${e.row}, ${e.field}: ${e.message} \u2014 skipped`);
   }
   return products;
 }
@@ -314,8 +312,6 @@ function catalogDiff(catalog, stripeState, currency) {
     if (existing.currency !== currency) changes.push("currency");
     const expectedAmount = decimalToRawPrice(product.price, currency);
     if (existing.unitAmount !== expectedAmount) changes.push("price");
-    if (product.storefront === true && existing.paymentLinkId === null) changes.push("storefront-added");
-    if (product.storefront === false && existing.paymentLinkId !== null) changes.push("storefront-removed");
     if (changes.length > 0) {
       toUpdate.push({ sku: product.sku, product, existing, changes });
     }
@@ -351,15 +347,16 @@ async function catalogAdd(stripe, toAdd, currency, incompleteSkus = /* @__PURE__
         unit_amount: rawPrice,
         currency
       }));
-      const updatePayload = { default_price: price.id, "metadata[sku]": entry.sku };
-      if (entry.product.storefront) {
-        const link = await withRetry(() => stripe.paymentLinks.create({
-          line_items: [{ price: price.id, quantity: 1 }]
-        }));
-        updatePayload["metadata[payment_link_id]"] = link.id;
-        updatePayload["metadata[payment_link_url]"] = link.url;
-        newLinks.set(entry.sku, link.url);
-      }
+      const link = await withRetry(() => stripe.paymentLinks.create({
+        line_items: [{ price: price.id, quantity: 1 }]
+      }));
+      const updatePayload = {
+        default_price: price.id,
+        "metadata[sku]": entry.sku,
+        "metadata[payment_link_id]": link.id,
+        "metadata[payment_link_url]": link.url
+      };
+      newLinks.set(entry.sku, link.url);
       await withRetry(() => stripe.products.update(productId, updatePayload));
       console.log(`[Sync] Created: ${entry.sku} \u2014 ${entry.product.name}`);
     } catch (err) {
@@ -389,21 +386,17 @@ async function catalogUpdate(stripe, toUpdate, currency) {
         }));
         await withRetry(() => stripe.prices.update(entry.existing.priceId, { active: false }));
         productUpdate.default_price = newPrice.id;
-        if (entry.product.storefront) {
-          if (entry.existing.paymentLinkId) {
-            await withRetry(() => stripe.paymentLinks.update(entry.existing.paymentLinkId, { active: false }));
-          }
-          const newLink = await withRetry(() => stripe.paymentLinks.create({
-            line_items: [{ price: newPrice.id, quantity: 1 }]
-          }));
-          productUpdate["metadata[sku]"] = entry.sku;
-          productUpdate["metadata[payment_link_id]"] = newLink.id;
-          productUpdate["metadata[payment_link_url]"] = newLink.url;
-          updatedLinks.set(entry.sku, newLink.url);
-          console.log(`[Sync] Updated: ${entry.sku} \u2014 price changed, new Payment Link created`);
-        } else {
-          console.log(`[Sync] Updated: ${entry.sku} \u2014 price changed`);
+        if (entry.existing.paymentLinkId) {
+          await withRetry(() => stripe.paymentLinks.update(entry.existing.paymentLinkId, { active: false }));
         }
+        const newLink = await withRetry(() => stripe.paymentLinks.create({
+          line_items: [{ price: newPrice.id, quantity: 1 }]
+        }));
+        productUpdate["metadata[sku]"] = entry.sku;
+        productUpdate["metadata[payment_link_id]"] = newLink.id;
+        productUpdate["metadata[payment_link_url]"] = newLink.url;
+        updatedLinks.set(entry.sku, newLink.url);
+        console.log(`[Sync] Updated: ${entry.sku} \u2014 price changed, new Payment Link created`);
       } else {
         console.log(`[Sync] Updated: ${entry.sku} \u2014 ${entry.changes.join(", ")}`);
       }
@@ -434,17 +427,17 @@ __export(catalog_cli_exports, {
 });
 async function runCatalogSync(mode) {
   const catalog = await loadCatalog();
+  const visible = catalog.filter((p) => !p.hidden);
   const stripe = getStripeClient();
   const currency = DEFAULT_CURRENCY;
   const { state, incompleteSkus } = await readStripeState(stripe);
-  const diff = catalogDiff(catalog, state, currency);
+  const diff = catalogDiff(visible, state, currency);
   if (mode === "diff") {
     if (diff.toAdd.length > 0) {
       console.log(`
 New products (${diff.toAdd.length}):`);
       for (const entry of diff.toAdd) {
-        const type = entry.product.storefront ? "storefront" : "order sheet";
-        console.log(`  + ${entry.sku}: ${entry.product.name} \u2014 ${formatPrice(decimalToRawPrice(entry.product.price, currency), currency)} (${type})`);
+        console.log(`  + ${entry.sku}: ${entry.product.name} \u2014 ${formatPrice(decimalToRawPrice(entry.product.price, currency), currency)}`);
       }
     }
     if (diff.toUpdate.length > 0) {
@@ -517,6 +510,21 @@ var init_catalog_cli = __esm({
 });
 
 // bin/catalog.ts
+import { readFileSync } from "node:fs";
+import { join as join2 } from "node:path";
+try {
+  const envFile = readFileSync(join2(process.cwd(), ".env"), "utf-8");
+  for (const line of envFile.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (!process.env[key]) process.env[key] = value;
+  }
+} catch {
+}
 var command = process.argv[2];
 var validCommands = ["diff", "add", "update", "sync"];
 function isValidCommand(cmd) {
