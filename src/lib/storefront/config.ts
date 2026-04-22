@@ -47,8 +47,6 @@ export function parseConfig(raw: unknown): StoreConfig {
         config.listings = { views: filtered };
       }
     }
-  } else if (typeof obj.orderSheet === 'boolean' && obj.orderSheet && obj.listings === undefined) {
-    config.listings = { views: ['card', 'table'] };
   }
 
   if (typeof obj.minCartSize === 'number' && obj.minCartSize > 0) {

@@ -325,20 +325,6 @@ describe('parseConfig', () => {
     expect(config.listings).toEqual({ views: ['card', 'table'] });
   });
 
-  it('backwards compat: orderSheet true without listings becomes { views: ["card", "table"] }', () => {
-    const config = parseConfig({ orderSheet: true });
-    expect(config.listings).toEqual({ views: ['card', 'table'] });
-  });
-
-  it('backwards compat: orderSheet false without listings defaults to { views: ["card"] }', () => {
-    const config = parseConfig({ orderSheet: false });
-    expect(config.listings).toEqual({ views: ['card'] });
-  });
-
-  it('backwards compat: listings takes precedence over orderSheet', () => {
-    const config = parseConfig({ orderSheet: true, listings: { views: ['table'] } });
-    expect(config.listings).toEqual({ views: ['table'] });
-  });
 
   // ── minCartSize ───────────────────────────────────────────────────────
 
