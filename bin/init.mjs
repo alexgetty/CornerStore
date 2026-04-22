@@ -111,8 +111,8 @@ await mkdir(join(dir, 'products'), { recursive: true });
 await mkdir(join(dir, 'products', 'images'), { recursive: true });
 
 // catalog.csv — the product catalog, source of truth for all product data
-await safeWrite(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Featured,Storefront,Order Sheet,MOQ,Payment Link
-SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,,yes,no,,
+await safeWrite(join(dir, 'products', 'catalog.csv'), `SKU,Name,Price,Description,Category,Status,Featured,Hidden,MOQ,Payment Link
+SAMPLE-001,Sample Product,19.99,A sample product to get you started,,,,,
 `);
 
 // products/SAMPLE-001.md — example rich description override
