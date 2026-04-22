@@ -34,8 +34,7 @@ describe('validateRows', () => {
     const rows = [makeCSVRow({
       Category: 'Candles',
       Status: 'active',
-      Storefront: 'yes',
-      'Order Sheet': 'yes',
+      Hidden: 'no',
       Description: 'A lovely candle',
       'Payment Link': 'https://buy.stripe.com/abc',
     })];
@@ -44,41 +43,40 @@ describe('validateRows', () => {
     expect(products[0]).toMatchObject(makeCatalogProduct({
       category: 'Candles',
       status: 'active',
-      storefront: true,
-      orderSheet: true,
+      hidden: false,
       description: 'A lovely candle',
       paymentLink: 'https://buy.stripe.com/abc',
     }));
   });
 
-  it('defaults storefront to true when column is absent', () => {
+  it('defaults hidden to false when Hidden column is absent', () => {
     const { products } = validateRows([makeCSVRow()]);
-    expect(products[0]!.storefront).toBe(true);
+    expect(products[0]!.hidden).toBe(false);
   });
 
-  it('defaults orderSheet to true when column is absent', () => {
-    const { products } = validateRows([makeCSVRow()]);
-    expect(products[0]!.orderSheet).toBe(true);
+  it('defaults hidden to false when Hidden is empty string', () => {
+    const { products } = validateRows([makeCSVRow({ Hidden: '' })]);
+    expect(products[0]!.hidden).toBe(false);
   });
 
-  it('sets storefront to false when value is "no"', () => {
-    const { products } = validateRows([makeCSVRow({ Storefront: 'no' })]);
-    expect(products[0]!.storefront).toBe(false);
+  it('sets hidden to true when Hidden is "true"', () => {
+    const { products } = validateRows([makeCSVRow({ Hidden: 'true' })]);
+    expect(products[0]!.hidden).toBe(true);
   });
 
-  it('sets orderSheet to false when value is "no"', () => {
-    const { products } = validateRows([makeCSVRow({ 'Order Sheet': 'no' })]);
-    expect(products[0]!.orderSheet).toBe(false);
+  it('sets hidden to true when Hidden is "True" (case-insensitive)', () => {
+    const { products } = validateRows([makeCSVRow({ Hidden: 'True' })]);
+    expect(products[0]!.hidden).toBe(true);
   });
 
-  it('sets storefront to false when value is "No" (case-insensitive)', () => {
-    const { products } = validateRows([makeCSVRow({ Storefront: 'No' })]);
-    expect(products[0]!.storefront).toBe(false);
+  it('sets hidden to true when Hidden is "yes"', () => {
+    const { products } = validateRows([makeCSVRow({ Hidden: 'yes' })]);
+    expect(products[0]!.hidden).toBe(true);
   });
 
-  it('sets orderSheet to false when value is "NO" (case-insensitive)', () => {
-    const { products } = validateRows([makeCSVRow({ 'Order Sheet': 'NO' })]);
-    expect(products[0]!.orderSheet).toBe(false);
+  it('sets hidden to false for non-truthy Hidden values', () => {
+    const { products } = validateRows([makeCSVRow({ Hidden: 'no' })]);
+    expect(products[0]!.hidden).toBe(false);
   });
 
   it('ignores extra columns', () => {
@@ -110,15 +108,15 @@ describe('validateRows', () => {
     expect(products[0]!.paymentLink).toBeNull();
   });
 
-  it('returns error for missing SKU', () => {
+  it('skips row and returns error for missing SKU', () => {
     const { products, errors } = validateRows([makeCSVRow({ SKU: '' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'SKU', message: 'required' }]);
   });
 
-  it('returns error for SKU with invalid characters', () => {
+  it('skips row and returns error for SKU with invalid characters', () => {
     const { products, errors } = validateRows([makeCSVRow({ SKU: 'INVALID SKU!' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{
       row: 2,
       field: 'SKU',
@@ -132,10 +130,11 @@ describe('validateRows', () => {
     expect(products[0]!.sku).toBe('ABC-123_xyz');
   });
 
-  it('returns error for duplicate SKUs', () => {
+  it('keeps first and skips duplicate SKU', () => {
     const rows = [makeCSVRow({ SKU: 'DUP-001' }), makeCSVRow({ SKU: 'DUP-001' })];
     const { products, errors } = validateRows(rows);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('DUP-001');
     expect(errors).toEqual([{
       row: 3,
       field: 'SKU',
@@ -143,16 +142,16 @@ describe('validateRows', () => {
     }]);
   });
 
-  it('returns error for missing Name', () => {
+  it('skips row and returns error for missing Name', () => {
     const { products, errors } = validateRows([makeCSVRow({ Name: '' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Name', message: 'required' }]);
   });
 
-  it('returns error for Name exceeding 250 characters', () => {
+  it('skips row and returns error for Name exceeding 250 characters', () => {
     const longName = 'A'.repeat(251);
     const { products, errors } = validateRows([makeCSVRow({ Name: longName })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Name', message: 'exceeds 250 characters' }]);
   });
 
@@ -163,48 +162,51 @@ describe('validateRows', () => {
     expect(products[0]!.name).toBe(maxName);
   });
 
-  it('returns error for missing Price', () => {
+  it('skips row and returns error for missing Price', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: '' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'required' }]);
   });
 
-  it('returns error for non-numeric Price', () => {
+  it('skips row and returns error for non-numeric Price', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: 'free' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be a positive number' }]);
   });
 
-  it('returns error for zero Price', () => {
+  it('skips row and returns error for zero Price', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: '0' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be a positive number' }]);
   });
 
-  it('returns error for negative Price', () => {
+  it('skips row and returns error for negative Price', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: '-5.00' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be a positive number' }]);
   });
 
-  it('returns no products when there are any errors', () => {
+  it('returns valid products and skips invalid rows', () => {
     const rows = [
       makeCSVRow({ SKU: '' }),
       makeCSVRow({ SKU: 'GOOD-001' }),
     ];
     const { products, errors } = validateRows(rows);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('GOOD-001');
     expect(errors).toHaveLength(1);
   });
 
-  it('collects errors from multiple rows', () => {
+  it('collects errors from multiple invalid rows while keeping valid ones', () => {
     const rows = [
       makeCSVRow({ SKU: '' }),
       makeCSVRow({ SKU: 'GOOD-001', Name: '' }),
       makeCSVRow({ SKU: 'GOOD-002', Price: '' }),
+      makeCSVRow({ SKU: 'GOOD-003' }),
     ];
     const { products, errors } = validateRows(rows);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('GOOD-003');
     expect(errors).toHaveLength(3);
     expect(errors[0]).toEqual({ row: 2, field: 'SKU', message: 'required' });
     expect(errors[1]).toEqual({ row: 3, field: 'Name', message: 'required' });
@@ -220,10 +222,10 @@ describe('validateRows', () => {
     expect(products[0]!.description).toBe(desc);
   });
 
-  it('returns error for description exceeding 500 characters', () => {
+  it('skips row and returns error for description exceeding 500 characters', () => {
     const desc = 'D'.repeat(501);
     const { products, errors } = validateRows([makeCSVRow({ Description: desc })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Description', message: 'exceeds 500 characters' }]);
   });
 
@@ -235,9 +237,9 @@ describe('validateRows', () => {
     expect(products[0]!.price).toBe(999999.99);
   });
 
-  it('returns error for price of 1000000.00', () => {
+  it('skips row and returns error for price of 1000000.00', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: '1000000.00' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'exceeds maximum of 999999.99' }]);
   });
 
@@ -249,23 +251,23 @@ describe('validateRows', () => {
     expect(products[0]!.price).toBe(0.01);
   });
 
-  it('returns error for price of 0.004 (rounds to 0 cents)', () => {
+  it('skips row and returns error for price of 0.004 (rounds to 0 cents)', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: '0.004' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be at least 0.01' }]);
   });
 
   // ── Strict number parsing ──────────────────────────────────────────────
 
-  it('returns error for price with trailing non-numeric characters', () => {
+  it('skips row and returns error for price with trailing non-numeric characters', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: '19.99abc' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be a positive number' }]);
   });
 
-  it('returns error for price with leading non-numeric characters', () => {
+  it('skips row and returns error for price with leading non-numeric characters', () => {
     const { products, errors } = validateRows([makeCSVRow({ Price: 'abc19.99' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'must be a positive number' }]);
   });
 
@@ -275,21 +277,21 @@ describe('validateRows', () => {
     expect(errors).toEqual([]);
   });
 
-  it('returns error for missing SKU key (undefined field)', () => {
+  it('skips row for missing SKU key (undefined field)', () => {
     const { products, errors } = validateRows([{ Name: 'Test', Price: '9.99' }]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'SKU', message: 'required' }]);
   });
 
-  it('returns error for missing Name key (undefined field)', () => {
+  it('skips row for missing Name key (undefined field)', () => {
     const { products, errors } = validateRows([{ SKU: 'TEST-001', Price: '9.99' }]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Name', message: 'required' }]);
   });
 
-  it('returns error for missing Price key (undefined field)', () => {
+  it('skips row for missing Price key (undefined field)', () => {
     const { products, errors } = validateRows([{ SKU: 'TEST-001', Name: 'Test' }]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'Price', message: 'required' }]);
   });
 
@@ -320,27 +322,59 @@ describe('validateRows', () => {
     expect(products[0]!.moq).toBeNull();
   });
 
-  it('returns error for non-integer MOQ', () => {
+  it('skips row and returns error for non-integer MOQ', () => {
     const { products, errors } = validateRows([makeCSVRow({ MOQ: '2.5' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'MOQ', message: 'must be a positive whole number' }]);
   });
 
-  it('returns error for negative MOQ', () => {
+  it('skips row and returns error for negative MOQ', () => {
     const { products, errors } = validateRows([makeCSVRow({ MOQ: '-3' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'MOQ', message: 'must be a positive whole number' }]);
   });
 
-  it('returns error for non-numeric MOQ', () => {
+  it('skips row and returns error for non-numeric MOQ', () => {
     const { products, errors } = validateRows([makeCSVRow({ MOQ: 'abc' })]);
-    expect(products).toEqual([]);
+    expect(products).toHaveLength(0);
     expect(errors).toEqual([{ row: 2, field: 'MOQ', message: 'must be a positive whole number' }]);
   });
 
   it('trims whitespace from MOQ', () => {
     const { products } = validateRows([makeCSVRow({ MOQ: ' 12 ' })]);
     expect(products[0]!.moq).toBe(12);
+  });
+
+  // ── Featured parsing ───────────────────────────────────────────────────
+
+  it('defaults featured to false when Featured column is absent', () => {
+    const { products } = validateRows([makeCSVRow()]);
+    expect(products[0]!.featured).toBe(false);
+  });
+
+  it('defaults featured to false when Featured is empty string', () => {
+    const { products } = validateRows([makeCSVRow({ Featured: '' })]);
+    expect(products[0]!.featured).toBe(false);
+  });
+
+  it('sets featured to true when Featured is "true"', () => {
+    const { products } = validateRows([makeCSVRow({ Featured: 'true' })]);
+    expect(products[0]!.featured).toBe(true);
+  });
+
+  it('sets featured to true when Featured is "True" (case-insensitive)', () => {
+    const { products } = validateRows([makeCSVRow({ Featured: 'True' })]);
+    expect(products[0]!.featured).toBe(true);
+  });
+
+  it('sets featured to true when Featured is "yes"', () => {
+    const { products } = validateRows([makeCSVRow({ Featured: 'yes' })]);
+    expect(products[0]!.featured).toBe(true);
+  });
+
+  it('sets featured to false for non-truthy Featured values', () => {
+    const { products } = validateRows([makeCSVRow({ Featured: 'no' })]);
+    expect(products[0]!.featured).toBe(false);
   });
 
   it('trims whitespace from SKU, Name, and Price', () => {
@@ -375,11 +409,29 @@ describe('loadCatalog', () => {
     expect(products[0]).toMatchObject(makeCatalogProduct());
   });
 
-  it('throws with validation error details when CSV has invalid rows', async () => {
+  it('logs warnings and returns empty array when all rows are invalid', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const csv = makeCSV([makeCSVRow({ SKU: '' })]);
     readFileMock.mockResolvedValue(csv);
-    await expect(loadCatalog('/fake/catalog.csv')).rejects.toThrow('[Catalog] Validation failed:');
-    await expect(loadCatalog('/fake/catalog.csv')).rejects.toThrow('Row 2, SKU: required');
+    const products = await loadCatalog('/fake/catalog.csv');
+    expect(products).toEqual([]);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Row 2, SKU: required'),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('returns valid products and warns about invalid rows', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const csv = makeCSV([makeCSVRow({ SKU: '' }), makeCSVRow({ SKU: 'GOOD-001' })]);
+    readFileMock.mockResolvedValue(csv);
+    const products = await loadCatalog('/fake/catalog.csv');
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('GOOD-001');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('skipped'),
+    );
+    consoleSpy.mockRestore();
   });
 
   it('throws when file is missing', async () => {

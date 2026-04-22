@@ -59,8 +59,9 @@ function parseRow(
     errors.push({ row: rowNum, field: 'Description', message: `exceeds ${MAX_DESCRIPTION_LENGTH} characters` });
   }
 
-  const storefrontVal = (row['Storefront'] ?? '').trim().toLowerCase();
-  const orderSheetVal = (row['Order Sheet'] ?? '').trim().toLowerCase();
+  const hiddenVal = (row['Hidden'] ?? '').trim().toLowerCase();
+
+  const featuredVal = (row['Featured'] ?? '').trim().toLowerCase();
 
   const moqStr = (row['MOQ'] ?? '').trim();
   let moq: number | null = null;
@@ -79,11 +80,11 @@ function parseRow(
     price,
     category: row['Category']?.trim() || null,
     status: row['Status']?.trim() || null,
-    storefront: storefrontVal !== 'no',
-    orderSheet: orderSheetVal !== 'no',
+    hidden: hiddenVal === 'true' || hiddenVal === 'yes',
     description,
     paymentLink: row['Payment Link']?.trim() || null,
     moq,
+    featured: featuredVal === 'true' || featuredVal === 'yes',
   };
 
   return { errors, product };
@@ -98,13 +99,14 @@ export function validateRows(
 
   for (let i = 0; i < records.length; i++) {
     const { errors, product } = parseRow(records[i]!, i + 2, seenSkus);
-    allErrors.push(...errors);
-    products.push(product);
+    if (errors.length > 0) {
+      allErrors.push(...errors);
+    } else {
+      products.push(product);
+    }
   }
 
-  if (allErrors.length > 0) return { products: [], errors: allErrors };
-
-  return { products, errors: [] };
+  return { products, errors: allErrors };
 }
 
 export async function loadCatalog(path?: string): Promise<CatalogProduct[]> {
@@ -118,11 +120,8 @@ export async function loadCatalog(path?: string): Promise<CatalogProduct[]> {
 
   const { products, errors } = validateRows(records);
 
-  if (errors.length > 0) {
-    const lines = errors.map(
-      (e) => `  Row ${e.row}, ${e.field}: ${e.message}`
-    ).join('\n');
-    throw new Error(`[Catalog] Validation failed:\n${lines}`);
+  for (const e of errors) {
+    console.log(`[Catalog] Warning: Row ${e.row}, ${e.field}: ${e.message} — skipped`);
   }
 
   return products;
