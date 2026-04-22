@@ -180,6 +180,20 @@ function init(root: HTMLElement) {
       });
   }
 
+  function getUnavailableNames(): string[] {
+    const cart = getCart('wholesale');
+    const names: string[] = [];
+    for (const item of cart.items) {
+      const row = rowMap.get(item.sku);
+      if (!row) {
+        names.push(item.sku);
+      } else if (row.dataset.status) {
+        names.push(row.dataset.name || item.sku);
+      }
+    }
+    return names;
+  }
+
   function updateTotals() {
     const items = getVisibleItems();
 
@@ -260,6 +274,15 @@ function init(root: HTMLElement) {
   // --- Submit ---
 
   submitBtn.addEventListener('click', async () => {
+    const unavailable = getUnavailableNames();
+    if (unavailable.length > 0) {
+      const list = unavailable.join(', ');
+      const ok = confirm(
+        `These items are no longer available and will be removed from your order:\n\n${list}\n\nContinue with remaining items?`
+      );
+      if (!ok) return;
+    }
+
     if (checkoutEnabled) {
       await attemptCheckout();
     } else {
