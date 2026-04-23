@@ -67,6 +67,13 @@ export function buildLineItems(
       return { ok: false, error: `Unknown SKU: ${item.sku}` };
     }
 
+    if (product.hidden) {
+      return { ok: false, error: `Unavailable SKU: ${item.sku}` };
+    }
+    if (product.status) {
+      return { ok: false, error: `Unavailable SKU: ${item.sku} (${product.status})` };
+    }
+
     if (!validateQuantity(item.quantity, product.moq)) {
       return { ok: false, error: `${item.sku}: minimum order quantity is ${product.moq}` };
     }

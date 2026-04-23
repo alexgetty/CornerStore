@@ -14,6 +14,7 @@ const baseConfig: StoreConfig = {
   home: 'home',
   nav: [],
   footerNav: [],
+  listings: { views: ['card'] },
 };
 
 describe('frontmatterSchema', () => {

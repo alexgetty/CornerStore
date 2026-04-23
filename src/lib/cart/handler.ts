@@ -1,5 +1,7 @@
 import { parseCheckoutRequest } from './checkout.js';
 import { decimalToRawPrice, DEFAULT_CURRENCY } from '../storefront/pricing.js';
+import { loadCatalog } from '../catalog/csv.js';
+import type { CatalogProduct } from '../catalog/types.js';
 import Stripe from 'stripe';
 
 export interface CheckoutHandlerConfig {
@@ -45,10 +47,39 @@ export function createCheckoutHandler(options: CheckoutHandlerConfig) {
     return skuMap;
   }
 
+  // Catalog availability cache: module-scoped, populated on first request. Known limitation: can go stale in a long-running dev server until process restart (same pattern as skuMap above).
+  let catalogCache: Map<string, CatalogProduct> | null = null;
+  async function getCatalog() {
+    if (catalogCache) return catalogCache;
+    const products = await loadCatalog();
+    catalogCache = new Map(products.map((p) => [p.sku, p]));
+    return catalogCache;
+  }
+
   return async (body: unknown, origin: string): Promise<Response> => {
     const parsed = parseCheckoutRequest(body);
     if (!parsed.ok) {
       return new Response(JSON.stringify({ error: parsed.error }), { status: 400 });
+    }
+
+    const catalog = await getCatalog();
+
+    // Availability gate: reject any SKU that is hidden or status-disabled in the catalog, regardless of Stripe state. Defense-in-depth so a stale/malicious client cannot bypass the UI filter. A SKU missing from the catalog is treated as unavailable here too; the downstream Stripe map lookup will surface "Unknown SKU" if the item is present in Stripe but not the catalog.
+    for (const item of parsed.items) {
+      const catalogProduct = catalog.get(item.sku);
+      if (!catalogProduct) {
+        // Defer to the Stripe-map lookup below, which preserves the legacy "Unknown SKU" error surface for truly unknown items.
+        continue;
+      }
+      if (catalogProduct.hidden) {
+        return new Response(JSON.stringify({ error: `Unavailable SKU: ${item.sku}` }), { status: 400 });
+      }
+      if (catalogProduct.status) {
+        return new Response(
+          JSON.stringify({ error: `Unavailable SKU: ${item.sku} (${catalogProduct.status})` }),
+          { status: 400 },
+        );
+      }
     }
 
     const products = await getSkuMap();

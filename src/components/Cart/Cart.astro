@@ -48,7 +48,9 @@ const hasWholesale = wholesaleMargin != null;
   <p class="cs-cart-empty">Your cart is empty. <a href="/">Continue shopping</a></p>
 
   <div class="cs-cart-content" hidden>
-    <div class="cs-cart-unavailable-banner" hidden></div>
+    <div class="cs-cart-unavailable-banner" hidden role="alert">
+      <button type="button" class="cs-clear-unavailable">Remove unavailable items</button>
+    </div>
     <table class="cs-cart-table">
       <thead>
         <tr>
@@ -147,6 +149,7 @@ const hasWholesale = wholesaleMargin != null;
     )}
 
     <div class="cs-order-errors" hidden></div>
+    <div class="cs-unavailable-notice" hidden></div>
 
     <div class="cs-order-actions">
       <button type="button" class="cs-submit-btn" disabled>

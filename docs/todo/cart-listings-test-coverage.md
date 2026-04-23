@@ -25,7 +25,7 @@ The cart/listings code was shipped across commits 650d772 → edf3b1e without te
 
 **Do this AFTER** the following findings have been resolved, so tests codify the fixed behavior:
 - **H3** — unavailable rows must set `aria-disabled` and disable qty inputs (not just `pointer-events: none`)
-- **H5** — checkout confirm flow; removing unavailable items from localStorage on confirm-accept
+- **H5** — RESOLVED (client layer): `confirm()` replaced by an inline "Remove unavailable items" button in the banner + dedicated `.cs-unavailable-notice`. Submit gated while `unavailableSkus.length > 0`. Test contract lives under "Checkout flow" below.
 - **H9** — skip attaching click handlers to status rows in cart
 
 If those findings change before this work starts, update the test matrix below accordingly.
@@ -69,8 +69,10 @@ Target: 100% lines + branches. File reference: `src/components/Cart/cart.ts`.
 - [ ] Cart with a hidden SKU (no row in DOM, present in localStorage) → banner shown, unavailable list contains the SKU, empty-state hidden, subtotal excludes it.
 - [ ] Cart with a status-disabled SKU (row exists with `data-status` truthy) → row gets `.cs-cart-unavailable` class, banner lists product name (from `data-name`), subtotal excludes it.
 - [ ] Cart with both hidden and status SKUs → banner lists both, order is stable.
-- [ ] Cart where ALL items are unavailable → banner shown, submit behavior per H5 decision (pin whatever the fixed behavior is).
+- [ ] Cart where ALL items are unavailable → banner shown, `.cs-unavailable-notice` visible, submit disabled. Empty-state stays hidden (unavailable items still count as cart content until cleared).
 - [ ] Banner text: for status rows uses `data-name`.
+- [ ] Module-scoped `unavailableSkus` after hydration: matches the union of hidden and status SKUs currently in the cart. Iteration order is cart-insertion order.
+- [ ] Hydration with an empty `unavailableSkus` result hides the banner, hides the notice, and does not leave stale `<p>`/`<ul>` children inside the banner element.
 
 ### Hidden-SKU name resolution (H4 — `/product-names.json` fetch)
 - [ ] On mount, cart.ts fetches `/product-names.json`. Mock `global.fetch`.
@@ -97,11 +99,20 @@ Target: 100% lines + branches. File reference: `src/components/Cart/cart.ts`.
 - [ ] Status rows' qty input is `disabled` and has `aria-disabled="true"` (per H3).
 - [ ] Keyboard Enter on a status-row + button does NOT mutate localStorage.
 
-### Checkout flow (depends on H5 resolution)
-- [ ] Submit with only available items → calls `attemptCheckout` (when `checkoutEnabled`), does not call `confirm`.
-- [ ] Submit with unavailable items → shows the confirm (or in-page modal per H5). If user declines, no fetch, no redirect, no localStorage mutation.
-- [ ] Submit with unavailable items + user accepts → unavailable SKUs are removed from localStorage BEFORE redirect (per H5 fix). Fetch payload contains only available items.
-- [ ] Submit in PDF mode (`!checkoutEnabled`) → calls `generatePdf`, same unavailable-item rules apply.
+### Checkout flow (H5 resolved — inline "Remove unavailable items" button, no confirm)
+- [ ] Submit with only available items → calls `attemptCheckout` (when `checkoutEnabled`). Fetch body contains those items.
+- [ ] `confirm()` is never called by `cart.ts`. Spy on `window.confirm` across all test paths and assert zero invocations.
+- [ ] Submit button is disabled while `unavailableSkus.length > 0`. Holds for hidden-SKU-only, status-SKU-only, and mixed carts.
+- [ ] Submit button re-enables automatically once the unavailable list is cleared (via the clear button below) and no other validation errors remain.
+- [ ] `.cs-unavailable-notice` is visible with text "Remove unavailable items to continue" while any unavailable item is in cart. Hidden otherwise.
+- [ ] `.cs-clear-unavailable` button click removes each SKU in `unavailableSkus` from the store (assert `removeItem` called once per sku with mode `'wholesale'`).
+- [ ] After the clear-button click, `hydrateFromCart` re-runs via `CART_EVENT`, banner hides, notice hides, submit re-enables.
+- [ ] Mixed cart (1 hidden + 1 status + 1 available) → clear button removes both unavailable SKUs, leaves the available one, submit enables, checkout payload contains only the available SKU.
+- [ ] Regression guard: with an unavailable item in cart, programmatically dispatch `click` on the submit button → no fetch fires, no redirect occurs, checkout URL is NOT called.
+- [ ] Banner button handler is wired ONCE at mount. Re-running `hydrateFromCart` does not rebind (dispatch two clicks, assert only the SKUs present at click time are removed, no double-removal).
+- [ ] Banner markup preservation: hydration rewrites the `<p>`/`<ul>` inside the banner but keeps the `.cs-clear-unavailable` button element identity stable (no listener loss).
+- [ ] Submit in PDF mode (`!checkoutEnabled`) → same gating rules apply. With unavailable items, submit is disabled and `generatePdf` is not called.
+- [ ] PDF generation output (when triggered after clearing) strips `.cs-unavailable-notice` and `.cs-cart-unavailable-banner` from the cloned content.
 
 ### Cross-tab sync
 - [ ] `storage` event for the cart key triggers re-hydration.

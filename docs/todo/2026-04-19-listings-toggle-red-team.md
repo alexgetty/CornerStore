@@ -1,24 +1,6 @@
 # Red Team: Listings View Toggle
 
-## Critical
-
-### `Listing` export removed but still imported by pages
-
-**Location:** `src/pages/index.astro:3`, `src/pages/[slug].astro:3`, `bin/init.mjs:256,287`
-
-`Listing` was removed from the barrel export but both page files still import it. The `Listing` component was passed to MDX rendering as a component override, allowing users to write `<Listing product="something" />` in their MDX files for single-product embeds. That use case is now broken.
-
-**Status:** Fixed
-
 ## High
-
-### `bin/init.mjs` scaffolds deleted page and references removed exports
-
-**Location:** `bin/init.mjs:39-65,173-235,256,275,287,310`
-
-The CLI init command still asks "Order Sheet? (Y/n)", scaffolds `src/pages/order-sheet.astro` with deleted imports, adds Order Sheet nav link, and passes `{ Listings, Listing }` to MDX components.
-
-**Status:** Fixed (prompt changed to "Table view (wholesale)?", scaffolds `listings` config, order-sheet page removed)
 
 ### `orderSheet` backwards-compat logic has untested edge case
 
@@ -28,21 +10,13 @@ When `{ orderSheet: true, listings: { views: ['garbage'] } }` is passed, the `or
 
 **Status:** Open (add test)
 
-### `listings.ts` localStorage value used unsanitized in selector
-
-**Location:** `src/components/Listings/listings.ts:138-142`
-
-The `saved` value from localStorage is interpolated directly into a CSS selector string. Should validate against known values ('card'|'table') before use.
-
-**Status:** Fixed (validates saved === 'card' || saved === 'table' before use)
-
 ### No tests for new Astro components or client-side logic
 
 **Location:** `src/components/Listings/*.ts`, `src/components/Listings/*.astro`
 
 Zero test coverage for toggle swap, cart hydration, quantity wiring, and prop resolution.
 
-**Status:** Open (add tests)
+**Status:** Open (add tests). Tracked under `cart-listings-test-coverage.md`.
 
 ## Medium
 

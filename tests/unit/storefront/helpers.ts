@@ -1,4 +1,5 @@
-import { vi } from 'vitest';
+import { vi, type MockedFunction } from 'vitest';
+import type { PathLike } from 'node:fs';
 import type { Listing } from '../../../src/lib/storefront/types.js';
 
 export function makeAsyncIterable<T>(items: T[]) {
@@ -43,10 +44,15 @@ export function makeListing(overrides: Partial<Listing> = {}): Listing {
   };
 }
 
+// Narrow readdir to the default string[] overload that our production code uses.
+// vi.mocked picks the last overload (Dirent<NonSharedBuffer>[]), which breaks
+// .mockResolvedValue(['file.ext']) with a type error.
+type ReaddirStringMock = MockedFunction<(path: PathLike) => Promise<string[]>>;
+
 export async function getFsMock() {
   const fs = await import('node:fs/promises');
   return {
-    readdirMock: vi.mocked(fs.readdir),
+    readdirMock: vi.mocked(fs.readdir) as unknown as ReaddirStringMock,
     readFileMock: vi.mocked(fs.readFile),
     copyFileMock: vi.mocked(fs.copyFile),
     mkdirMock: vi.mocked(fs.mkdir),

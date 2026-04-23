@@ -34,6 +34,13 @@ function init(root: HTMLElement) {
   const shippingStatus = root.querySelector('.cs-shipping-status') as HTMLElement;
   const minimumStatus = root.querySelector('.cs-minimum-status') as HTMLElement;
   const banner = root.querySelector('.cs-cart-unavailable-banner') as HTMLElement;
+  const clearUnavailableBtn = root.querySelector('.cs-clear-unavailable') as HTMLButtonElement | null;
+  const unavailableNotice = root.querySelector('.cs-unavailable-notice') as HTMLElement | null;
+
+  // Module-scoped list of unavailable SKUs currently in the cart. Updated by
+  // hydrateFromCart. Drives the submit-gating + the "Remove unavailable items"
+  // button click handler.
+  let unavailableSkus: string[] = [];
 
   const rowMap = new Map<string, HTMLElement>();
   rows.forEach((row) => rowMap.set(row.dataset.sku ?? '', row));
@@ -58,6 +65,7 @@ function init(root: HTMLElement) {
     const cart = getCart('wholesale');
     let hasItems = false;
     const unavailableItems: string[] = [];
+    const nextUnavailableSkus: string[] = [];
 
     rows.forEach((row) => {
       row.hidden = true;
@@ -69,6 +77,7 @@ function init(root: HTMLElement) {
       if (!row) {
         // Hidden or deleted product: no row in DOM. Use name from fetched map, fall back to SKU.
         unavailableItems.push(allNames[item.sku] ?? item.sku);
+        nextUnavailableSkus.push(item.sku);
         continue;
       }
 
@@ -79,6 +88,7 @@ function init(root: HTMLElement) {
         row.classList.add('cs-cart-unavailable');
         hasItems = true;
         unavailableItems.push(row.dataset.name || item.sku);
+        nextUnavailableSkus.push(item.sku);
         continue;
       }
 
@@ -90,7 +100,10 @@ function init(root: HTMLElement) {
       updateRow(row);
     }
 
-    // Show/hide unavailable banner
+    unavailableSkus = nextUnavailableSkus;
+
+    // Show/hide unavailable banner. Preserve the static .cs-clear-unavailable
+    // button that lives inside the banner markup (wired once at mount).
     if (unavailableItems.length > 0 && banner) {
       const p = document.createElement('p');
       p.textContent = 'Some items in your cart are no longer available:';
@@ -100,11 +113,20 @@ function init(root: HTMLElement) {
         li.textContent = name;
         ul.appendChild(li);
       }
-      banner.replaceChildren(p, ul);
+      // Remove any previously injected <p>/<ul>, keep the button.
+      banner.querySelectorAll(':scope > p, :scope > ul').forEach((el) => el.remove());
+      // Insert the new content before the button so the button stays as the
+      // last focusable element in reading order.
+      if (clearUnavailableBtn) {
+        banner.insertBefore(ul, clearUnavailableBtn);
+        banner.insertBefore(p, ul);
+      } else {
+        banner.append(p, ul);
+      }
       banner.hidden = false;
       hasItems = true;
     } else if (banner) {
-      banner.replaceChildren();
+      banner.querySelectorAll(':scope > p, :scope > ul').forEach((el) => el.remove());
       banner.hidden = true;
     }
 
@@ -189,20 +211,6 @@ function init(root: HTMLElement) {
       });
   }
 
-  function getUnavailableNames(): string[] {
-    const cart = getCart('wholesale');
-    const names: string[] = [];
-    for (const item of cart.items) {
-      const row = rowMap.get(item.sku);
-      if (!row) {
-        names.push(item.sku);
-      } else if (row.dataset.status) {
-        names.push(row.dataset.name || item.sku);
-      }
-    }
-    return names;
-  }
-
   function updateTotals() {
     const items = getVisibleItems();
 
@@ -240,7 +248,21 @@ function init(root: HTMLElement) {
       errorsEl.hidden = true;
     }
 
-    submitBtn.disabled = errors.length > 0;
+    // Separate gating path: unavailable items block checkout regardless of
+    // quantity/minimum validation. The notice lives in its own slot so it
+    // doesn't collide with the quantity/minimum error list.
+    const hasUnavailable = unavailableSkus.length > 0;
+    if (unavailableNotice) {
+      if (hasUnavailable) {
+        unavailableNotice.textContent = 'Remove unavailable items to continue';
+        unavailableNotice.hidden = false;
+      } else {
+        unavailableNotice.textContent = '';
+        unavailableNotice.hidden = true;
+      }
+    }
+
+    submitBtn.disabled = errors.length > 0 || hasUnavailable;
     updateCartSummary(subtotal);
   }
 
@@ -280,18 +302,25 @@ function init(root: HTMLElement) {
     cartSummary.hidden = !hasContent;
   }
 
+  // --- Clear unavailable items ---
+
+  // Wired once at mount. Submit is disabled while unavailableSkus.length > 0
+  // (see updateTotals), so the only way to move forward is via this button.
+  if (clearUnavailableBtn) {
+    clearUnavailableBtn.addEventListener('click', () => {
+      // Snapshot the list before mutating. Each removeItem call fires
+      // CART_EVENT, which re-runs hydrateFromCart and rewrites
+      // unavailableSkus in place.
+      const skus = unavailableSkus.slice();
+      for (const sku of skus) {
+        removeItem(sku, 'wholesale');
+      }
+    });
+  }
+
   // --- Submit ---
 
   submitBtn.addEventListener('click', async () => {
-    const unavailable = getUnavailableNames();
-    if (unavailable.length > 0) {
-      const list = unavailable.join(', ');
-      const ok = confirm(
-        `These items are no longer available and will be removed from your order:\n\n${list}\n\nContinue with remaining items?`
-      );
-      if (!ok) return;
-    }
-
     if (checkoutEnabled) {
       await attemptCheckout();
     } else {
@@ -360,7 +389,7 @@ function init(root: HTMLElement) {
       const pdfContent = contentEl.cloneNode(true) as HTMLElement;
 
       pdfContent.querySelectorAll(
-        '.cs-order-actions, .cs-mailto-section, .cs-order-errors, .cs-col-remove, .cs-remove-btn, .cs-qty-btn, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary, .cs-continue-shopping',
+        '.cs-order-actions, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-qty-btn, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary, .cs-continue-shopping',
       ).forEach((el) => el.remove());
 
       pdfContent.querySelectorAll('.cs-cart-row[hidden]').forEach((row) => row.remove());

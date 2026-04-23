@@ -48,6 +48,7 @@
   ],
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "npm run build:lib",
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check && tsc --noEmit",

@@ -12,7 +12,7 @@ Critical / High resolution summary (for cross-reference):
 - H2 — widget/cart subtotal drift → `docs/todo/cart-visibility-helper.md`.
 - H3 + H9 — unavailable rows only visually disabled → `docs/todo/cart-unavailable-row-disabling.md`.
 - H4 — banner shows raw SKU → **fixed inline (with init parity fix).**
-- H5 — checkout confirm + server guard → `docs/todo/cart-checkout-unavailable-handling.md`.
+- H5 — checkout confirm + server guard → **resolved, archived at `docs/archive/done/cart-checkout-unavailable-handling.md`.**
 - H6 — listings hides cart qty on status items → `docs/todo/listings-unavailable-in-cart-indicator.md`.
 - H7 — stale SETUP.md → **deleted the file, cleaned up runtime refs. Docs rewrite deferred until product stabilizes.**
 - H8 — legacy CSV migration → dismissed. No users to migrate.
@@ -159,6 +159,20 @@ If a Stripe product's `metadata.sku` was manually edited to mismatch its `catalo
 
 ---
 
+### D4 — Checkout handler accepts Stripe-only SKUs that aren't in the catalog
+
+**Location:** `src/lib/cart/handler.ts` (availability gate introduced by H5)
+
+The H5 server guard rejects requests whose SKU is `hidden` or has a `status` set in the catalog. It does **not** reject a SKU that is missing from the catalog entirely. If a product exists in Stripe state but has been removed from `catalog.csv`, the handler still builds a line item for it (falling through to the existing Stripe-map lookup). The existing "Unknown SKU" error path only fires when the SKU is absent from BOTH sources.
+
+**Impact:** Low today. Catalog deletions should also trigger Stripe archival via the sync tool, so in practice a Stripe-only SKU is a transient drift window. If sync skips or fails silently, a catalog-deleted product remains purchasable until Stripe state catches up.
+
+**Fix:** Decide whether catalog is the sole source of truth for checkout. If yes, tighten `handler.ts` to reject any SKU not present in the catalog (return `Unavailable SKU` with a clear error). If no, document the current behavior as intentional.
+
+**Dependency:** None. Surface during any future pass on the handler.
+
+---
+
 ## Summary table
 
 | ID | Status | Owner todo |
@@ -174,5 +188,6 @@ If a Stripe product's `metadata.sku` was manually edited to mismatch its `catalo
 | D1 | Resolved elsewhere | `cart-unavailable-row-disabling.md` |
 | D2 | Open | (this file) |
 | D3 | Open | (this file) |
+| D4 | Open | (this file) |
 
-Nine items live in this file. Three are closed by other todos or dismissed. Nothing blocks release.
+Ten items live in this file. Three are closed by other todos or dismissed. Nothing blocks release.

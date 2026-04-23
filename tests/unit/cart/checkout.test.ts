@@ -264,12 +264,63 @@ describe('buildLineItems', () => {
       ],
     });
   });
+
+  it('rejects SKU with hidden: true', () => {
+    const catalog = [makeProduct({ sku: 'HIDDEN-001', hidden: true })];
+    const items = [{ sku: 'HIDDEN-001', quantity: 1 }];
+    const result = buildLineItems(items, catalog, undefined);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/Unavailable SKU/);
+      expect(result.error).toContain('HIDDEN-001');
+    }
+  });
+
+  it('rejects SKU with truthy status', () => {
+    const catalog = [makeProduct({ sku: 'SOLD-001', status: 'sold out' })];
+    const items = [{ sku: 'SOLD-001', quantity: 1 }];
+    const result = buildLineItems(items, catalog, undefined);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/Unavailable SKU/);
+      expect(result.error).toContain('SOLD-001');
+      expect(result.error).toContain('sold out');
+    }
+  });
+
+  it('hidden error names the SKU and status error names SKU plus status text', () => {
+    const catalogHidden = [makeProduct({ sku: 'H-1', hidden: true })];
+    const hiddenResult = buildLineItems([{ sku: 'H-1', quantity: 1 }], catalogHidden, undefined);
+    expect(hiddenResult).toEqual({ ok: false, error: 'Unavailable SKU: H-1' });
+
+    const catalogStatus = [makeProduct({ sku: 'S-1', status: 'discontinued' })];
+    const statusResult = buildLineItems([{ sku: 'S-1', quantity: 1 }], catalogStatus, undefined);
+    expect(statusResult).toEqual({ ok: false, error: 'Unavailable SKU: S-1 (discontinued)' });
+  });
+
+  it('mixed request rejects with the hidden SKU named, in iteration order', () => {
+    const catalog = [
+      makeProduct({ sku: 'GOOD-001', name: 'Good', price: 10.00 }),
+      makeProduct({ sku: 'BAD-001', name: 'Bad', price: 10.00, hidden: true }),
+    ];
+    const items = [
+      { sku: 'GOOD-001', quantity: 1 },
+      { sku: 'BAD-001', quantity: 1 },
+    ];
+    const result = buildLineItems(items, catalog, undefined);
+
+    expect(result).toEqual({ ok: false, error: 'Unavailable SKU: BAD-001' });
+  });
 });
 
 describe('createCheckoutHandler', () => {
   let mockCreate: ReturnType<typeof vi.fn>;
 
   let mockList: ReturnType<typeof vi.fn>;
+
+  let mockLoadCatalog: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -291,6 +342,11 @@ describe('createCheckoutHandler', () => {
       checkout: { sessions: { create: mockCreate } },
       products: { list: mockList },
     }));
+
+    const catalogCsv = await import('../../../src/lib/catalog/csv.js');
+    mockLoadCatalog = catalogCsv.loadCatalog as ReturnType<typeof vi.fn>;
+    // Default: the WIDGET-001 product is available in the catalog so existing tests still pass.
+    mockLoadCatalog.mockResolvedValue([makeProduct({ sku: 'WIDGET-001', name: 'Widget', price: 20.00 })]);
   });
 
   it('returns checkout URL on success', async () => {
@@ -363,5 +419,49 @@ describe('createCheckoutHandler', () => {
     expect(response.status).toBe(500);
     const body = await response.json();
     expect(body).toEqual({ error: 'Stripe is down' });
+  });
+
+  it('rejects a SKU that is hidden in the catalog even if it exists in Stripe', async () => {
+    mockLoadCatalog.mockResolvedValue([
+      makeProduct({ sku: 'WIDGET-001', name: 'Widget', price: 20.00, hidden: true }),
+    ]);
+
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    const response = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/Unavailable SKU/);
+    expect(body.error).toContain('WIDGET-001');
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects a SKU with a status even if it exists in Stripe', async () => {
+    mockLoadCatalog.mockResolvedValue([
+      makeProduct({ sku: 'WIDGET-001', name: 'Widget', price: 20.00, status: 'sold out' }),
+    ]);
+
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    const response = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/Unavailable SKU/);
+    expect(body.error).toContain('WIDGET-001');
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('caches the catalog across requests (loadCatalog called once over two requests)', async () => {
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
+
+    expect(mockLoadCatalog).toHaveBeenCalledTimes(1);
   });
 });

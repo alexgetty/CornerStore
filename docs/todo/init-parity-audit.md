@@ -156,5 +156,5 @@ That would make init drift impossible to merge.
 
 ## Related todos (do NOT merge)
 
-- `cart-checkout-unavailable-handling.md` (H5) — overlaps on checkout behavior but is about unavailable items, not init scaffolding. Land either first; the other stays independent.
+- Cart checkout unavailable handling (H5) — resolved, archived at `docs/archive/done/cart-checkout-unavailable-handling.md`. The work added server-side hidden/status guards in both `checkout.ts` and `handler.ts`; init-parity for `src/pages/api/checkout.ts` scaffolding remains open here (gap #1).
 - `cart-listings-test-coverage.md` (C3) — the test infrastructure. Separate from init.

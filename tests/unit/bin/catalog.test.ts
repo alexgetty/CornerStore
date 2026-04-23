@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 
 // Sentinel error so we can distinguish process.exit calls from real errors
 class ExitError extends Error {
@@ -15,9 +15,9 @@ vi.mock('../../../src/lib/stripe/catalog-cli.js', () => ({
 }));
 
 describe('bin/catalog.ts', () => {
-  let exitSpy: ReturnType<typeof vi.spyOn>;
-  let logSpy: ReturnType<typeof vi.spyOn>;
-  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy: MockInstance<(code?: string | number | null | undefined) => never>;
+  let logSpy: MockInstance<(...args: unknown[]) => void>;
+  let errorSpy: MockInstance<(...args: unknown[]) => void>;
   let originalArgv: string[];
 
   beforeEach(() => {
