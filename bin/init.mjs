@@ -6,6 +6,13 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import {
+  parseCheckoutStyle,
+  deriveAnswersFromExistingConfig,
+  buildConfigFile,
+  buildCartPage,
+  buildEnvFile,
+} from './scaffold.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(__dirname, '..');
@@ -32,14 +39,13 @@ try {
   // No existing config — fresh init
 }
 
-let storeName, stripeKey, wantAbout, wantShipping, wantReturns, wantFaq, wantTable, minCartSize, contactEmail, nav, footerNav;
+let storeName, wantAbout, wantShipping, wantReturns, wantFaq, wantTable, minCartSize, contactEmail, nav, footerNav, checkoutStyle, checkoutUrl;
 
 if (existingConfig) {
   // Re-init: derive everything from existing config, skip prompts
   console.log('\n  Corner Store — updating existing project\n');
 
   storeName = existingConfig.name ?? 'Corner Store';
-  stripeKey = '';
 
   nav = Array.isArray(existingConfig.nav) ? existingConfig.nav : [];
   footerNav = Array.isArray(existingConfig.footerNav) ? existingConfig.footerNav : [];
@@ -53,6 +59,10 @@ if (existingConfig) {
   wantTable = views.includes('table');
   minCartSize = existingConfig.minCartSize ?? null;
   contactEmail = existingConfig.contact ?? '';
+
+  const derived = deriveAnswersFromExistingConfig(existingConfig);
+  checkoutStyle = derived.checkoutStyle;
+  checkoutUrl = derived.checkoutUrl;
 } else {
   // Fresh init: interactive prompts
   const rl = createInterface({ input: stdin, output: stdout });
@@ -61,9 +71,19 @@ if (existingConfig) {
 
   storeName = (await rl.question('  Store name (Corner Store): ')).trim() || 'Corner Store';
 
-  console.log('\n  Your Stripe secret key lets Corner Store fetch your products.');
-  console.log('  It stays local in .env and is never sent anywhere except directly to Stripe.');
-  stripeKey = (await rl.question('  Stripe secret key (press Enter to skip): ')).trim();
+  checkoutStyle = null;
+  while (checkoutStyle === null) {
+    const raw = await rl.question('  Checkout style — pdf or stripe? [pdf]: ');
+    checkoutStyle = parseCheckoutStyle(raw);
+    if (checkoutStyle === null) {
+      console.log(`  Please enter 'pdf' or 'stripe'.`);
+    }
+  }
+
+  checkoutUrl = '';
+  if (checkoutStyle === 'stripe') {
+    checkoutUrl = (await rl.question('  Checkout URL (blank to fill in later): ')).trim();
+  }
 
   console.log('\n  Choose which pages to include:\n');
   wantAbout = (await rl.question('  About page? (Y/n): ')).trim().toLowerCase() !== 'n';
@@ -177,15 +197,8 @@ await safeWrite(join(dir, 'tsconfig.json'), JSON.stringify({
 await safeWrite(join(dir, 'src', 'env.d.ts'), `/// <reference types="astro/client" />
 `);
 
-// .env
-if (stripeKey) {
-  await safeWrite(join(dir, '.env'), `STRIPE_SECRET_KEY=${stripeKey}\n`);
-} else {
-  await safeWrite(join(dir, '.env'), `# Your Stripe secret key — find it at https://dashboard.stripe.com/apikeys
-# Paste it below, then run: npm run dev
-STRIPE_SECRET_KEY=
-`);
-}
+// .env — storefront is static; secrets live on the consumer's separate server.
+await safeWrite(join(dir, '.env'), buildEnvFile());
 
 // .gitignore
 await safeWrite(join(dir, '.gitignore'), `node_modules/
@@ -194,26 +207,19 @@ dist/
 `);
 
 // cornerstore.config.js
-const configLines = [
-  `export default {`,
-  `  name: ${JSON.stringify(storeName)},`,
-  `  home: 'home',`,
-  `  nav: ${JSON.stringify(nav, null, 4)},`,
-  `  footerNav: ${JSON.stringify(footerNav, null, 4)},`,
-];
-if (contactEmail) {
-  configLines.push(`  contact: ${JSON.stringify(contactEmail)},`);
-}
-if (wantTable) {
-  configLines.push(`  listings: { views: ['card', 'table'] },`);
-  if (minCartSize !== null) {
-    configLines.push(`  minCartSize: ${minCartSize},`);
-  }
-} else {
-  configLines.push(`  listings: { views: ['card'] },`);
-}
-configLines.push(`}\n`);
-await safeWrite(join(dir, 'cornerstore.config.js'), configLines.join('\n'));
+await safeWrite(
+  join(dir, 'cornerstore.config.js'),
+  buildConfigFile({
+    storeName,
+    nav,
+    footerNav,
+    contactEmail,
+    wantTable,
+    minCartSize,
+    checkoutStyle,
+    checkoutUrl,
+  }),
+);
 
 // theme/theme.css — read from the package's source copy
 const themeTemplate = await readFile(join(packageRoot, 'theme', 'theme.css'), 'utf-8');
@@ -387,35 +393,7 @@ import { StatusPage } from 'corner-store/components';
 `);
 
 // src/pages/cart.astro
-await safeWrite(join(dir, 'src', 'pages', 'cart.astro'), `---
-import ContentPage from 'corner-store/layouts/ContentPage';
-import { Cart } from 'corner-store/components';
-import { loadConfig, getListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
-
-const config = await loadConfig();
-const listings = await getListings();
-const minCartSizeRaw = config.minCartSize != null
-  ? decimalToRawPrice(config.minCartSize, DEFAULT_CURRENCY)
-  : null;
-const checkoutEnabled = !!import.meta.env.STRIPE_SECRET_KEY;
----
-
-<ContentPage title="Cart" hasExplicitTitle>
-  <Cart
-    storeName={config.name}
-    contact={config.contact ?? ''}
-    listings={listings}
-    currency={DEFAULT_CURRENCY}
-    minCartSize={config.minCartSize}
-    minCartSizeRaw={minCartSizeRaw}
-    wholesaleMargin={config.wholesaleMargin}
-    checkoutEnabled={checkoutEnabled}
-    shippingFlat={config.shippingFlat}
-    shippingFreeThreshold={config.shippingFreeThreshold}
-    checkoutUrl={config.checkoutUrl}
-  />
-</ContentPage>
-`);
+await safeWrite(join(dir, 'src', 'pages', 'cart.astro'), buildCartPage());
 
 // src/pages/success.astro
 await safeWrite(join(dir, 'src', 'pages', 'success.astro'), `---
@@ -472,7 +450,10 @@ if (skipped.length > 0) {
   console.log(`  Skipped ${skipped.length} existing file${skipped.length === 1 ? '' : 's'} (not overwritten).\n`);
 }
 
+const nextLine = checkoutStyle === 'stripe' && !checkoutUrl
+  ? '  Next: set `checkoutUrl` in cornerstore.config.js when your server is ready.\n'
+  : '  Next: run `npm run dev`.\n';
+
 console.log(`
   Your store is ready!
-${stripeKey ? '' : '  Next: Open .env and add your Stripe secret key.\n'}  Then run: npm run dev
-`);
+${nextLine}`);
