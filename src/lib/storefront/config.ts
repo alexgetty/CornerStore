@@ -220,10 +220,11 @@ export function getNav(
 
 export async function loadConfig(): Promise<StoreConfig> {
   const configPath = join(process.cwd(), CONFIG_FILENAME);
+  let mod: { default?: unknown };
   try {
-    const mod = await import(/* @vite-ignore */ pathToFileURL(configPath).href);
-    return parseConfig(mod.default);
+    mod = await import(/* @vite-ignore */ pathToFileURL(configPath).href);
   } catch {
     return parseConfig(undefined);
   }
+  return parseConfig(mod.default);
 }

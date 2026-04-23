@@ -1067,4 +1067,30 @@ describe('loadConfig', () => {
 
     expect(config.name).toBe('My Store');
   });
+
+  it('rejects when loaded config has an invalid checkout value', async () => {
+    await writeFile(
+      join(tempDir, 'cornerstore.config.js'),
+      'export default { checkout: "paypal" }\n'
+    );
+
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    await expect(loadConfig()).rejects.toThrow(
+      /checkout.*must be.*'pdf'.*'stripe'/i,
+    );
+  });
+
+  it('returns defaults when config file is missing (regression)', async () => {
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    const config = await loadConfig();
+
+    expect(config).toEqual({
+      name: 'My Store',
+      home: 'home',
+      nav: [],
+      footerNav: [],
+      listings: { views: ['card'] },
+      checkout: 'pdf',
+    });
+  });
 });
