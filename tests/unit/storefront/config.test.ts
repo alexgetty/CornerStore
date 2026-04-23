@@ -469,10 +469,6 @@ describe('parseConfig', () => {
   // ── checkout mode ─────────────────────────────────────────────────────
 
   describe('checkout mode config', () => {
-    beforeEach(() => {
-      vi.spyOn(console, 'warn').mockImplementation(() => {});
-    });
-
     it('defaults checkout to "pdf" when absent', () => {
       const config = parseConfig({});
       expect(config.checkout).toBe('pdf');
@@ -515,49 +511,11 @@ describe('parseConfig', () => {
       );
     });
 
-    it('warns when checkout is "stripe" and checkoutUrl is missing', () => {
+    it('does not warn from parseConfig when checkout is "stripe" and checkoutUrl is missing', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      parseConfig({ checkout: 'stripe' });
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("checkout mode is 'stripe' but checkoutUrl is not set"),
-      );
-    });
-
-    it('warns when checkout is "stripe" and checkoutUrl is empty string', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      parseConfig({ checkout: 'stripe', checkoutUrl: '' });
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("checkout mode is 'stripe' but checkoutUrl is not set"),
-      );
-    });
-
-    it('does not warn when checkout is "stripe" and checkoutUrl is set', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      parseConfig({ checkout: 'stripe', checkoutUrl: 'https://api.example.com/checkout' });
-      expect(warnSpy).not.toHaveBeenCalled();
-    });
-
-    it('does not warn when checkout is "pdf" and checkoutUrl is blank', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      parseConfig({ checkout: 'pdf' });
-      expect(warnSpy).not.toHaveBeenCalled();
-    });
-
-    it('does not warn when checkout defaults to "pdf" and checkoutUrl is blank', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      parseConfig({});
-      expect(warnSpy).not.toHaveBeenCalled();
-    });
-
-    it('warns only once across repeated parseConfig calls in the same process', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      parseConfig({ checkout: 'stripe' });
       parseConfig({ checkout: 'stripe' });
       parseConfig({ checkout: 'stripe', checkoutUrl: '' });
-      const stripeWarnings = warnSpy.mock.calls.filter(
-        (call) => typeof call[0] === 'string' && call[0].includes("checkout mode is 'stripe'"),
-      );
-      expect(stripeWarnings).toHaveLength(1);
+      expect(warnSpy).not.toHaveBeenCalled();
     });
   });
 });
@@ -1092,5 +1050,94 @@ describe('loadConfig', () => {
       listings: { views: ['card'] },
       checkout: 'pdf',
     });
+  });
+
+  // ── checkoutUrl warning ──────────────────────────────────────────────
+
+  it('warns when checkout is "stripe" and checkoutUrl is missing', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await writeFile(
+      join(tempDir, 'cornerstore.config.js'),
+      'export default { checkout: "stripe" }\n'
+    );
+
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    await loadConfig();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("checkout mode is 'stripe' but checkoutUrl is not set"),
+    );
+  });
+
+  it('warns when checkout is "stripe" and checkoutUrl is empty string', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await writeFile(
+      join(tempDir, 'cornerstore.config.js'),
+      'export default { checkout: "stripe", checkoutUrl: "" }\n'
+    );
+
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    await loadConfig();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("checkout mode is 'stripe' but checkoutUrl is not set"),
+    );
+  });
+
+  it('does not warn when checkout is "stripe" and checkoutUrl is set', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await writeFile(
+      join(tempDir, 'cornerstore.config.js'),
+      'export default { checkout: "stripe", checkoutUrl: "https://api.example.com/checkout" }\n'
+    );
+
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    await loadConfig();
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when checkout is "pdf" and checkoutUrl is blank', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await writeFile(
+      join(tempDir, 'cornerstore.config.js'),
+      'export default { checkout: "pdf" }\n'
+    );
+
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    await loadConfig();
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when checkout defaults to "pdf" and checkoutUrl is blank', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await writeFile(
+      join(tempDir, 'cornerstore.config.js'),
+      'export default {}\n'
+    );
+
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    await loadConfig();
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('warns only once across repeated loadConfig calls in the same process', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await writeFile(
+      join(tempDir, 'cornerstore.config.js'),
+      'export default { checkout: "stripe" }\n'
+    );
+
+    const { loadConfig } = await import('../../../src/lib/storefront/config.js');
+    await loadConfig();
+    await loadConfig();
+    await loadConfig();
+
+    const stripeWarnings = warnSpy.mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].includes("checkout mode is 'stripe'"),
+    );
+    expect(stripeWarnings).toHaveLength(1);
   });
 });

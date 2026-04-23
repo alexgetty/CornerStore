@@ -4,8 +4,6 @@ import type { StoreConfig, NavItem, ResolvedNavItem, PageData, Category } from '
 
 export const CONFIG_FILENAME = 'cornerstore.config.js';
 
-let checkoutUrlWarningEmitted = false;
-
 export function parseConfig(raw: unknown): StoreConfig {
   const obj = (raw !== null && typeof raw === 'object' && !Array.isArray(raw)
     ? raw
@@ -13,6 +11,7 @@ export function parseConfig(raw: unknown): StoreConfig {
 
   let checkoutMode: 'pdf' | 'stripe' = 'pdf';
   if ('checkout' in obj) {
+    // Throws intentionally: silently defaulting 'stripe' to 'pdf' would ship a store with broken checkout.
     if (obj.checkout === 'pdf' || obj.checkout === 'stripe') {
       checkoutMode = obj.checkout;
     } else {
@@ -81,13 +80,6 @@ export function parseConfig(raw: unknown): StoreConfig {
 
   if (typeof obj.checkoutUrl === 'string' && obj.checkoutUrl) {
     config.checkoutUrl = obj.checkoutUrl;
-  }
-
-  if (config.checkout === 'stripe' && !config.checkoutUrl && !checkoutUrlWarningEmitted) {
-    checkoutUrlWarningEmitted = true;
-    console.warn(
-      "[Storefront] checkout mode is 'stripe' but checkoutUrl is not set; cart will fall back to PDF until you configure it.",
-    );
   }
 
   return config;
@@ -218,6 +210,8 @@ export function getNav(
   };
 }
 
+let checkoutUrlWarningEmitted = false;
+
 export async function loadConfig(): Promise<StoreConfig> {
   const configPath = join(process.cwd(), CONFIG_FILENAME);
   let mod: { default?: unknown };
@@ -226,5 +220,14 @@ export async function loadConfig(): Promise<StoreConfig> {
   } catch {
     return parseConfig(undefined);
   }
-  return parseConfig(mod.default);
+  const result = parseConfig(mod.default);
+
+  if (result.checkout === 'stripe' && !result.checkoutUrl && !checkoutUrlWarningEmitted) {
+    checkoutUrlWarningEmitted = true;
+    console.warn(
+      "[Storefront] checkout mode is 'stripe' but checkoutUrl is not set; cart will fall back to PDF until you configure it.",
+    );
+  }
+
+  return result;
 }
