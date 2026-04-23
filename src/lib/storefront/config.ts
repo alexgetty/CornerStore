@@ -4,10 +4,23 @@ import type { StoreConfig, NavItem, ResolvedNavItem, PageData, Category } from '
 
 export const CONFIG_FILENAME = 'cornerstore.config.js';
 
+let checkoutUrlWarningEmitted = false;
+
 export function parseConfig(raw: unknown): StoreConfig {
   const obj = (raw !== null && typeof raw === 'object' && !Array.isArray(raw)
     ? raw
     : {}) as Record<string, unknown>;
+
+  let checkoutMode: 'pdf' | 'stripe' = 'pdf';
+  if ('checkout' in obj) {
+    if (obj.checkout === 'pdf' || obj.checkout === 'stripe') {
+      checkoutMode = obj.checkout;
+    } else {
+      throw new Error(
+        `[Storefront] Invalid checkout value: ${JSON.stringify(obj.checkout)}. checkout must be 'pdf' or 'stripe'.`,
+      );
+    }
+  }
 
   const config: StoreConfig = {
     name: typeof obj.name === 'string' && obj.name ? obj.name : 'My Store',
@@ -19,6 +32,7 @@ export function parseConfig(raw: unknown): StoreConfig {
       ? obj.footerNav.map(parseNavItem).filter((item): item is NavItem => item !== null)
       : [],
     listings: { views: ['card'] },
+    checkout: checkoutMode,
   };
 
   if (typeof obj.contact === 'string' && obj.contact) {
@@ -67,6 +81,13 @@ export function parseConfig(raw: unknown): StoreConfig {
 
   if (typeof obj.checkoutUrl === 'string' && obj.checkoutUrl) {
     config.checkoutUrl = obj.checkoutUrl;
+  }
+
+  if (config.checkout === 'stripe' && !config.checkoutUrl && !checkoutUrlWarningEmitted) {
+    checkoutUrlWarningEmitted = true;
+    console.warn(
+      "[Storefront] checkout mode is 'stripe' but checkoutUrl is not set; cart will fall back to PDF until you configure it.",
+    );
   }
 
   return config;

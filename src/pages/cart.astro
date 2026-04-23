@@ -8,7 +8,7 @@ const listings = await getListings();
 const minCartSizeRaw = config.minCartSize != null
   ? decimalToRawPrice(config.minCartSize, DEFAULT_CURRENCY)
   : null;
-const checkoutEnabled = !!import.meta.env.STRIPE_SECRET_KEY;
+const checkoutEnabled = config.checkout === 'stripe' && !!config.checkoutUrl;
 ---
 
 <ContentPage title="Cart" hasExplicitTitle>

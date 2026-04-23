@@ -49,6 +49,7 @@ export interface StoreConfig {
   shippingFlat?: number;
   shippingFreeThreshold?: number;
   checkoutUrl?: string;
+  checkout: 'pdf' | 'stripe';
 }
 
 export interface PageData {

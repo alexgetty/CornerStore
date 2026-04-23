@@ -23,6 +23,7 @@ describe('parseConfig', () => {
       nav: [],
       footerNav: [],
       listings: { views: ['card'] },
+      checkout: 'pdf',
     });
   });
 
@@ -34,6 +35,7 @@ describe('parseConfig', () => {
       nav: [],
       footerNav: [],
       listings: { views: ['card'] },
+      checkout: 'pdf',
     });
   });
 
@@ -51,6 +53,7 @@ describe('parseConfig', () => {
       nav: [],
       footerNav: [],
       listings: { views: ['card'] },
+      checkout: 'pdf',
     });
   });
 
@@ -462,6 +465,101 @@ describe('parseConfig', () => {
       expect(config.checkoutUrl).toBeUndefined();
     });
   });
+
+  // ── checkout mode ─────────────────────────────────────────────────────
+
+  describe('checkout mode config', () => {
+    beforeEach(() => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    it('defaults checkout to "pdf" when absent', () => {
+      const config = parseConfig({});
+      expect(config.checkout).toBe('pdf');
+    });
+
+    it('accepts checkout: "pdf"', () => {
+      const config = parseConfig({ checkout: 'pdf' });
+      expect(config.checkout).toBe('pdf');
+    });
+
+    it('accepts checkout: "stripe" with checkoutUrl', () => {
+      const config = parseConfig({
+        checkout: 'stripe',
+        checkoutUrl: 'https://api.example.com/checkout',
+      });
+      expect(config.checkout).toBe('stripe');
+    });
+
+    it('rejects checkout: "paypal" with a clear error', () => {
+      expect(() => parseConfig({ checkout: 'paypal' })).toThrow(
+        /checkout.*must be.*'pdf'.*'stripe'/i,
+      );
+    });
+
+    it('rejects checkout: empty string with a clear error', () => {
+      expect(() => parseConfig({ checkout: '' })).toThrow(
+        /checkout.*must be.*'pdf'.*'stripe'/i,
+      );
+    });
+
+    it('rejects checkout when non-string with a clear error', () => {
+      expect(() => parseConfig({ checkout: 42 })).toThrow(
+        /checkout.*must be.*'pdf'.*'stripe'/i,
+      );
+      expect(() => parseConfig({ checkout: true })).toThrow(
+        /checkout.*must be.*'pdf'.*'stripe'/i,
+      );
+      expect(() => parseConfig({ checkout: null })).toThrow(
+        /checkout.*must be.*'pdf'.*'stripe'/i,
+      );
+    });
+
+    it('warns when checkout is "stripe" and checkoutUrl is missing', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      parseConfig({ checkout: 'stripe' });
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("checkout mode is 'stripe' but checkoutUrl is not set"),
+      );
+    });
+
+    it('warns when checkout is "stripe" and checkoutUrl is empty string', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      parseConfig({ checkout: 'stripe', checkoutUrl: '' });
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("checkout mode is 'stripe' but checkoutUrl is not set"),
+      );
+    });
+
+    it('does not warn when checkout is "stripe" and checkoutUrl is set', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      parseConfig({ checkout: 'stripe', checkoutUrl: 'https://api.example.com/checkout' });
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not warn when checkout is "pdf" and checkoutUrl is blank', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      parseConfig({ checkout: 'pdf' });
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not warn when checkout defaults to "pdf" and checkoutUrl is blank', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      parseConfig({});
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('warns only once across repeated parseConfig calls in the same process', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      parseConfig({ checkout: 'stripe' });
+      parseConfig({ checkout: 'stripe' });
+      parseConfig({ checkout: 'stripe', checkoutUrl: '' });
+      const stripeWarnings = warnSpy.mock.calls.filter(
+        (call) => typeof call[0] === 'string' && call[0].includes("checkout mode is 'stripe'"),
+      );
+      expect(stripeWarnings).toHaveLength(1);
+    });
+  });
 });
 
 // ─── resolveNavItem ─────────────────────────────────────────────────────────
@@ -526,6 +624,7 @@ describe('getNav', () => {
         { label: 'FAQ', page: 'faq' },
       ],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, pages);
     expect(result.nav).toEqual([
       { label: 'Shop', href: '/' },
@@ -543,6 +642,7 @@ describe('getNav', () => {
       nav: [],
       footerNav: [],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, new Map());
     expect(result.nav).toEqual([]);
     expect(result.footerNav).toEqual([]);
@@ -556,6 +656,7 @@ describe('getNav', () => {
       nav: [],
       footerNav: [{ label: 'Home', page: 'index' }],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, pages);
     expect(result.footerNav).toEqual([{ label: 'Home', href: '/' }]);
   });
@@ -568,6 +669,7 @@ describe('getNav', () => {
       nav: [{ label: 'About', page: 'about' }],
       footerNav: [],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, pages);
     expect(result.nav).toEqual([{ label: 'About', href: '/about' }]);
   });
@@ -580,6 +682,7 @@ describe('getNav', () => {
       nav: [{ label: 'About', page: 'about' }],
       footerNav: [],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, new Map());
     expect(result.nav).toEqual([]);
   });
@@ -591,6 +694,7 @@ describe('getNav', () => {
       nav: [{ label: 'Blog', page: 'blog', path: '/writing' }],
       footerNav: [],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, new Map());
     expect(result.nav).toEqual([{ label: 'Blog', href: '/writing' }]);
   });
@@ -603,6 +707,7 @@ describe('getNav', () => {
       nav: [{ label: 'About', page: 'about' }],
       footerNav: [{ label: 'FAQ', page: 'faq' }],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, new Map());
     expect(warnSpy).toHaveBeenCalledTimes(2);
     expect(warnSpy).toHaveBeenCalledWith('[Storefront] Warning: nav references "about" but pages/about.mdx does not exist');
@@ -620,6 +725,7 @@ describe('getNav', () => {
       ],
       footerNav: [],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, new Map());
     expect(result.nav).toEqual([]);
   });
@@ -637,6 +743,7 @@ describe('getNav', () => {
       ],
       footerNav: [],
       listings: { views: ['card'] },
+    checkout: 'pdf' as const,
     }, pages);
     expect(result.nav).toEqual([
       { label: 'About', href: '/about' },
@@ -653,6 +760,7 @@ describe('getNav', () => {
         nav: [{ label: 'Shop', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       new Map(),
       {
@@ -681,6 +789,7 @@ describe('getNav', () => {
         nav: [{ label: 'Browse', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       new Map(),
       {
@@ -710,6 +819,7 @@ describe('getNav', () => {
         nav: [{ label: 'Browse', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       new Map(),
       {
@@ -736,6 +846,7 @@ describe('getNav', () => {
         nav: [{ label: 'Shop', page: 'home', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       pages,
       {
@@ -760,6 +871,7 @@ describe('getNav', () => {
         nav: [{ label: 'Info', dropdown: ['faq', 'about'] }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       pages,
     );
@@ -783,6 +895,7 @@ describe('getNav', () => {
         nav: [{ label: 'Info', dropdown: ['faq', 'missing'] }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       pages,
     );
@@ -801,6 +914,7 @@ describe('getNav', () => {
         nav: [{ label: 'Browse', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       new Map(),
       {
@@ -819,6 +933,7 @@ describe('getNav', () => {
         nav: [{ label: 'Stuff', dropdown: ['home'] }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       pages,
     );
@@ -834,6 +949,7 @@ describe('getNav', () => {
         nav: [{ label: 'Browse', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       new Map(),
     );
@@ -848,6 +964,7 @@ describe('getNav', () => {
         nav: [{ label: 'Shop', page: 'shop', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       new Map(),
       {
@@ -870,6 +987,7 @@ describe('getNav', () => {
         nav: [{ label: 'Browse', dropdown: 'categories' }],
         footerNav: [],
         listings: { views: ['card'] },
+      checkout: 'pdf' as const,
       },
       new Map(),
       {
