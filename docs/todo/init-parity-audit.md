@@ -2,159 +2,99 @@
 
 ## Status
 
-Open. Critical for the primary distribution path (`cornerstore init`).
+Open. The original audit (pre-2026-04-23) was written under a wrong architectural assumption and has been rewritten. Most of the critical gaps it described are now resolved; new gaps discovered during verification are recorded below.
 
 ## Why this exists
 
-`CLAUDE.md` mandates init parity: every feature that touches consumer-visible surface must update `bin/init.mjs` in the same commit. The rule has been broken repeatedly. This audit lists every currently-known gap between what the library supports and what init actually produces. Close all of them before shipping any new feature.
+`CLAUDE.md` mandates init parity: every feature that touches consumer-visible surface must update `bin/init.mjs` in the same commit. This audit tracks every currently-known gap between what the library supports and what `cornerstore init` actually produces.
 
-## Critical gaps
+## Architecture (current, correct)
 
-### 1. Checkout endpoint + Astro output mode — consumer projects cannot check out
+Corner Store is a **bring-your-own-server** model:
 
-**Symptom:** A fresh `cornerstore init` project with `STRIPE_SECRET_KEY` set renders the Checkout button as active, but clicking it POSTs to `/api/checkout` which returns 404. Checkout is completely broken.
+- The consumer's storefront is a pure static Astro site. No adapter, no server endpoints scaffolded, `output: 'static'`.
+- The consumer runs a **separate server** (their own host, their own deployment) that imports `createCheckoutHandler` from `corner-store/checkout` and exposes a POST endpoint.
+- The storefront's cart POSTs to that endpoint via a `checkoutUrl` the maker configures in `cornerstore.config.js`.
+- Store operators who don't want server-side checkout run in PDF mode: the cart generates a downloadable order form locally and the consumer never needs to stand up a server.
 
-**Root cause:**
-- Commit `ea84cd6` (April 18) removed `src/pages/api/checkout.ts` from the library and exported `createCheckoutHandler` as a factory for consumers to mount.
-- `bin/init.mjs` was never updated to scaffold the route file on the consumer side.
-- Scaffolded `astro.config.mjs` uses `output: 'static'`, which cannot host API routes at all. Even if a route file existed, Astro would ignore it.
-- Scaffolded `cart.astro` at line 400 computes `checkoutEnabled = !!import.meta.env.STRIPE_SECRET_KEY` — the UI lies to the user, claiming checkout is active whenever the env var is set.
-- `checkoutUrl` config key exists in `StoreConfig` but init never writes it; default is `/api/checkout`.
+The previous version of this audit proposed adding an Astro adapter (Netlify/Vercel/etc.) and scaffolding `src/pages/api/checkout.ts` into consumer projects. That was wrong — it conflated the factory's consumers (your server, not the storefront) with the storefront itself. The BYO-server model is what the `createCheckoutHandler` export has always been designed for.
 
-**Fix (multi-step):**
+## Resolved gaps
 
-1. Pick a default server adapter for scaffolded projects. Recommend Netlify — it has first-class Astro support, free tier, and works for most indie makers. If Netlify isn't acceptable, the alternatives are Vercel, Cloudflare, or a standalone Node server.
+### ✅ Gap 1: Checkout mode config and cart signal parity
 
-2. Update scaffolded `astro.config.mjs`:
-   ```js
-   import { defineConfig } from 'astro/config';
-   import mdx from '@astrojs/mdx';
-   import netlify from '@astrojs/netlify';
+**Shipped in:** `2b904b3`, `b057bd0`, `8bd280c` (library), `9b6f330` (init).
 
-   export default defineConfig({
-     output: 'hybrid',
-     adapter: netlify(),
-     integrations: [mdx()],
-     // ...theme-watcher plugin as today
-   });
-   ```
-   The site stays mostly static; only the checkout route runs server-side via `export const prerender = false`.
+**What was done:**
+- Added `checkout: 'pdf' | 'stripe'` config key to `StoreConfig` (default `'pdf'`).
+- Cart's effective signal is now `checkoutEnabled = config.checkout === 'stripe' && !!config.checkoutUrl` — replacing the old `!!import.meta.env.STRIPE_SECRET_KEY` sniff that lived in both the library cart page and the scaffolded cart page.
+- `loadConfig` emits a one-shot build warning when `checkout === 'stripe'` and `checkoutUrl` is blank; runtime gracefully falls back to PDF (since the signal evaluates false). This lets makers scaffold first and stand up the server later.
+- `parseConfig` throws on invalid `checkout` values (no silent fallback). `loadConfig`'s try/catch was narrowed so validation errors propagate while missing-file fallback is preserved.
+- `bin/init.mjs` prompts for checkout style, conditionally prompts for `checkoutUrl`, and writes matching config.
+- `bin/init.mjs` no longer prompts for or scaffolds `STRIPE_SECRET_KEY` — that secret lives on the consumer's separate server, not in the storefront.
+- Scaffold logic extracted into `bin/scaffold.mjs` for testability; `tests/unit/bin/init.test.ts` covers all four init modes (pdf, stripe+URL, stripe+blank, re-init round-trip).
 
-3. Scaffold `src/pages/api/checkout.ts`:
-   ```ts
-   export const prerender = false;
-   import type { APIRoute } from 'astro';
-   import { createCheckoutHandler } from 'corner-store/checkout';
-   import { loadConfig } from 'corner-store';
+### ✅ Gap 2: Missing optional config keys
 
-   const config = await loadConfig();
-   const handler = createCheckoutHandler({
-     stripeKey: import.meta.env.STRIPE_SECRET_KEY,
-     wholesaleMargin: config.wholesaleMargin,
-     minCartSize: config.minCartSize,
-     shippingFlat: config.shippingFlat,
-     shippingFreeThreshold: config.shippingFreeThreshold,
-   });
+**Shipped in:** `9b6f330`.
 
-   export const POST: APIRoute = async ({ request, url }) => {
-     const body = await request.json();
-     return handler(body, url.origin);
-   };
-   ```
+The scaffolded `cornerstore.config.js` now includes a commented "Optional" block with `logo`, `wholesaleMargin`, `shippingFlat`, `shippingFreeThreshold`. Consumers discover them by reading the generated file rather than having to hunt through library types.
 
-4. Add `@astrojs/netlify` to the scaffolded `package.json` dependencies.
+### ✅ Gap 3: Category nav dropdown example
 
-5. Document deployment: add `docs/deployment.md` with per-platform snippets (Netlify default, Vercel / Cloudflare / Node as alternatives).
+**Shipped in:** `9b6f330`.
 
-6. Consider: print a loud message at the end of `cornerstore init` saying "Checkout is configured for Netlify by default. See docs/deployment.md to switch hosts."
+The scaffolded config now includes a commented example of the `dropdown: 'categories'` nav item shape.
 
-**Red team this:** Any indie maker trying this package right now runs init, sets STRIPE_SECRET_KEY, opens their site, adds items to cart, clicks checkout — and nothing happens. That's the current state.
+## Still open
 
-### 2. Missing config keys in scaffolded cornerstore.config.js
+### Gap A: Scaffolded project's initial build has pre-existing errors
 
-These exist in `StoreConfig` and affect cart / checkout behavior, but init never writes them (and never prompts for them):
+**Discovered:** during `9b6f330` verification (definition-of-done test per CLAUDE.md).
 
-- `wholesaleMargin` — multiplies catalog price for wholesale pricing mode. Used by both cart and Stripe handler.
-- `shippingFlat` — flat shipping rate.
-- `shippingFreeThreshold` — cart subtotal above which shipping is free.
-- `checkoutUrl` — where the cart POSTs for checkout. Default `/api/checkout` is brittle if host routing differs.
-- `logo` — optional logo path for Nav.
+**Symptoms:** After `cornerstore init` in a fresh temp directory, `npx astro check` reports:
+- TypeScript strictness errors in scaffolded `src/pages/[slug].astro` and `src/pages/category/[slug].astro` (missing null-guards on values the templates treat as defined).
+- A name collision involving `Cart` in scaffolded `src/pages/cart.astro`.
+- Roughly 8 errors total.
 
-**Fix:** Either prompt for each at init time (or a subset — at minimum wholesaleMargin and shipping) OR include commented-out defaults in the scaffolded `cornerstore.config.js` so users can discover them:
-```js
-export default {
-  name: "...",
-  home: 'home',
-  nav: [...],
-  contact: "...",
-  listings: { views: ['card', 'table'] },
-  minCartSize: 50,
-  // Optional:
-  // logo: '/logo.svg',
-  // wholesaleMargin: 0.5,                 // 50% of retail for wholesale customers
-  // shippingFlat: 9.99,
-  // shippingFreeThreshold: 100,
-  // checkoutUrl: '/api/checkout',
-};
-```
+**Verified pre-existing:** the same errors reproduce against the pre-Task-2 scaffold output (`8bd280c:bin/init.mjs`). Task 2 did not introduce them.
 
-The commented approach is less invasive and self-documenting. Prompts are better UX for users who don't read the config file.
+**Why this matters:** CLAUDE.md's "definition of done" test requires a scaffolded project to actually build. Right now it doesn't. The checkout-mode feature is correctly wired, but a maker running `cornerstore init` today still can't `astro build` successfully without hand-editing the scaffolded pages.
 
-### 3. Category nav scaffolding
+**Fix:** investigate each error individually. Likely candidates:
+- The `Cart` collision may be a symbol shadow between `import { Cart } from 'corner-store/components'` and something else the file imports or declares. Read the scaffolded output at HEAD.
+- The `[slug].astro` and `category/[slug].astro` null-guard errors suggest the templates assume `getEntry` or similar returns non-null. Either tighten the scaffolded code or loosen `tsconfig` strictness for scaffolded projects (the latter is backward, prefer the former).
 
-`StoreConfig.nav` supports `dropdown: 'categories' | string[]` to render a category menu. Init doesn't scaffold this and there's no example. Consumers must discover it by reading the library types.
+### Gap B: Consumer documentation
 
-**Fix:** Include a commented example in the scaffolded `cornerstore.config.js` showing the dropdown shape:
-```js
-// Example category dropdown:
-// { label: 'Products', dropdown: 'categories' }
-```
+**Explicit deferral:** Alex is the only user of this package and will write documentation before making it public. Not an active item while the package is pre-public. Re-open when the package is about to be distributed externally.
 
-### 4. Missing documentation
+## Maintenance follow-ups (non-blocking)
 
-`docs/SETUP.md` was deleted rather than updated — it was too far out of sync to retrofit, and the project is still WIP. A full consumer-facing docs rewrite is deferred until the cart/checkout/catalog machinery stabilizes. For now, there is NO consumer onboarding doc. When init runs, the user has no guide to read.
+Tracked in dedicated todo files:
 
-**Init parity implication:** when the new docs are written, any command, config key, or file init produces must be documented. Init-parity-audit will need to be revisited then to ensure whatever docs ship match what init scaffolds.
-
-## Definition of done (whole audit, not per item)
-
-Close the audit by running this test end-to-end:
-
-1. `npm run build:lib && npm run build:cli && npm link` in this repo.
-2. In a fresh temp directory: `cornerstore init`, follow prompts.
-3. Set `STRIPE_SECRET_KEY` in the scaffolded `.env`.
-4. `npm run dev` in the scaffolded project.
-5. Open the site, browse products, add to cart, click Checkout.
-6. Verify a Stripe Checkout session URL comes back and redirects correctly.
-7. Verify `/product-names.json` returns the SKU→name map.
-8. Verify hidden and status-disabled items flow correctly through the cart banner.
-
-If any step fails, init is still out of parity.
+- `docs/todo/scaffold-maintenance.md` — small cleanups (quoting style, duplicated defaults, brittle test assertions, dead vars, validation asymmetry).
+- `docs/todo/scaffold-emission-strategy.md` — pick a single convention for how scaffolded files are emitted (inline strings vs. builder functions vs. static stubs).
 
 ## Preventing recurrence
 
-CLAUDE.md has been updated with a mandatory Init Parity section and a violation history. Future agents reading CLAUDE.md cannot miss the rule. The "Definition of done test" at the top of this audit is also in CLAUDE.md — it must be run before any feature claims completion.
+The `CLAUDE.md` "Init Parity" section and the definition-of-done test remain the source of truth. Consider adding a CI job that runs `cornerstore init` in a temp directory and asserts the scaffolded project passes `astro check`. That would catch gap-A-class regressions automatically.
 
-Consider adding a CI step that:
-- Runs `cornerstore init` into a temp directory inside a sandbox.
-- Runs `npm install && npm run build` in that directory.
-- Fails if the scaffolded project can't build.
+## Definition of done (whole audit)
 
-That would make init drift impossible to merge.
+Close the audit when:
 
-## Files you'll touch (likely)
+1. `npm run build:lib && npm run build:cli && npm link` (in this repo) — clean.
+2. `cornerstore init` in a fresh temp directory with each mode (pdf, stripe+URL, stripe+blank) — produces the expected files.
+3. `npm install` in the scaffolded project — clean.
+4. `npx astro check` in the scaffolded project — clean (this is currently Gap A).
+5. `npx astro build` in the scaffolded project — clean.
+6. For pdf mode: open the dev server, add items to cart, click "Submit Order", confirm a PDF downloads.
+7. For stripe mode with URL set: open the dev server, add items to cart, click "Checkout", confirm the POST hits the configured `checkoutUrl` (mock it with a local server for the test).
 
-- Edit: `bin/init.mjs` (scaffold api/checkout.ts, update astro.config scaffold with adapter, expand config scaffold with commented keys)
-- Edit: `package.json` (add `@astrojs/netlify` to consumer dep list in the scaffolded package.json)
-- New: `docs/deployment.md` (per-platform notes)
+Gaps A above is the last item blocking this.
 
-## Don't touch
+## Related todos (do NOT merge into this audit)
 
-- Any of the library source code. This is purely scaffolding drift.
-- Existing scaffolded files beyond what's listed above — no cosmetic refactors.
-- The Storefront repo's own `astro.config.mjs` — the library itself doesn't need to be hybrid.
-
-## Related todos (do NOT merge)
-
-- Cart checkout unavailable handling (H5) — resolved, archived at `docs/archive/done/cart-checkout-unavailable-handling.md`. The work added server-side hidden/status guards in both `checkout.ts` and `handler.ts`; init-parity for `src/pages/api/checkout.ts` scaffolding remains open here (gap #1).
-- `cart-listings-test-coverage.md` (C3) — the test infrastructure. Separate from init.
+- `cart-listings-test-coverage.md` (C3) — test infrastructure. Separate from init.
+- `docs/archive/done/cart-checkout-unavailable-handling.md` (H5) — resolved; referenced for history only.
