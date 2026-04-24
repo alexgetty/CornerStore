@@ -1,10 +1,9 @@
 ---
 import ContentPage from 'corner-store/layouts/ContentPage';
 import { Listings, Listing } from 'corner-store/components';
-import { loadConfig, getCategories, loadCategoryPages } from 'corner-store';
+import { getCategories, loadCategoryPages } from 'corner-store';
 
 export async function getStaticPaths() {
-  const config = await loadConfig();
   const categories = await getCategories();
   const categoryPages = await loadCategoryPages();
 
@@ -13,7 +12,7 @@ export async function getStaticPaths() {
   for (const [slug, catPage] of categoryPages) {
     paths.push({
       params: { slug },
-      props: { page: catPage, isMdx: true },
+      props: { page: catPage, categoryName: '', isMdx: true },
     });
   }
 
@@ -21,7 +20,7 @@ export async function getStaticPaths() {
     if (!categoryPages.has(cat.slug)) {
       paths.push({
         params: { slug: cat.slug },
-        props: { categoryName: cat.name, isMdx: false },
+        props: { page: null, categoryName: cat.name, isMdx: false },
       });
     }
   }
@@ -30,11 +29,11 @@ export async function getStaticPaths() {
 }
 
 const { page, categoryName, isMdx } = Astro.props;
-const slug = Astro.params.slug;
+const slug = Astro.params.slug ?? '';
 
-let Content = null;
+let Content: any = null;
 if (isMdx) {
-  const mdxModules = import.meta.glob('/pages/category/*.mdx');
+  const mdxModules = import.meta.glob<{ default: any }>('/pages/category/*.mdx');
   const loader = mdxModules[`/pages/category/${slug}.mdx`];
   if (loader) {
     const mod = await loader();
@@ -43,12 +42,12 @@ if (isMdx) {
 }
 ---
 
-{isMdx && Content ? (
+{isMdx && Content && page ? (
   <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
     <Content components={{ Listings, Listing }} />
   </ContentPage>
 ) : (
-  <ContentPage title={categoryName}>
-    <Listings categories={[categoryName]} />
+  <ContentPage title={categoryName ?? slug}>
+    <Listings categories={categoryName ? [categoryName] : []} />
   </ContentPage>
 )}

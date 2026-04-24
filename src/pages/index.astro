@@ -7,10 +7,10 @@ const config = await loadConfig();
 const pages = await loadPages(config);
 const homePage = pages.get(config.home);
 
-const mdxModules = import.meta.glob('/pages/*.mdx');
+const mdxModules = import.meta.glob<{ default: any }>('/pages/*.mdx');
 const homeModule = mdxModules[`/pages/${config.home}.mdx`];
 
-let Content = null;
+let Content: any = null;
 if (homeModule) {
   const mod = await homeModule();
   Content = mod.default;

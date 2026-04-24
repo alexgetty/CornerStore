@@ -17,11 +17,20 @@ export async function getStaticPaths() {
 
 const { page } = Astro.props;
 
-const mdxModules = import.meta.glob('/pages/*.mdx');
-const mod = await mdxModules[`/pages/${page.slug}.mdx`]();
-const Content = mod.default;
+const mdxModules = import.meta.glob<{ default: any }>('/pages/*.mdx');
+const loader = mdxModules[`/pages/${page.slug}.mdx`];
+
+let Content: any = null;
+if (loader) {
+  const mod = await loader();
+  Content = mod.default;
+}
 ---
 
 <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
-  <Content components={{ Listings, Listing }} />
+  {Content ? (
+    <Content components={{ Listings, Listing }} />
+  ) : (
+    <p>Create <code>pages/{page.slug}.mdx</code> to fill in this page.</p>
+  )}
 </ContentPage>
