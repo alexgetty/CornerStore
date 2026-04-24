@@ -317,7 +317,78 @@
 
   .cs-cart-row.cs-cart-unavailable {
     opacity: 0.4;
-    pointer-events: none;
+  }
+
+  .cs-cart-status-label {
+    font-size: var(--cs-font-size-small, 0.875rem);
+    color: var(--cs-muted-text-color);
+    font-style: italic;
+  }
+
+  .cs-clear-cart-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .cs-clear-cart {
+    background: none;
+    border: none;
+    padding: 0.25rem 0;
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-muted-text-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    transition: color var(--cs-transition-fast);
+  }
+
+  .cs-clear-cart:hover,
+  .cs-clear-cart:focus-visible {
+    color: var(--cs-error-color, #c00);
+  }
+
+  .cs-clear-cart-confirm {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-body-text-color);
+  }
+
+  .cs-clear-cart-confirm[hidden] {
+    display: none;
+  }
+
+  .cs-clear-cart-prompt {
+    color: var(--cs-body-text-color);
+  }
+
+  .cs-clear-cart-yes,
+  .cs-clear-cart-cancel {
+    padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
+    font-size: var(--cs-font-size-small);
+    font-weight: var(--cs-emphasis-font-weight);
+    border: 1px solid var(--cs-border-color);
+    border-radius: var(--cs-button-border-radius);
+    background: var(--cs-surface-color, #fff);
+    color: var(--cs-body-text-color);
+    cursor: pointer;
+    transition: background-color var(--cs-transition-fast);
+  }
+
+  .cs-clear-cart-yes:hover,
+  .cs-clear-cart-yes:focus-visible {
+    background-color: var(--cs-error-bg, #fff0f0);
+    border-color: var(--cs-error-color, #c00);
+    color: var(--cs-error-color, #c00);
+  }
+
+  .cs-clear-cart-cancel:hover,
+  .cs-clear-cart-cancel:focus-visible {
+    background-color: var(--cs-background);
   }
 
   @media print {
@@ -328,6 +399,7 @@
     .cs-remove-btn,
     .cs-qty-btn,
     .cs-order-actions,
+    .cs-clear-cart-row,
     .cs-mailto-section,
     .cs-order-errors,
     .cs-min-cart-notice,

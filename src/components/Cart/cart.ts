@@ -5,7 +5,7 @@ import {
 } from '../../lib/validation/index.js';
 import type { ValidationItem } from '../../lib/validation/types.js';
 import { formatPrice, decimalToRawPrice, DEFAULT_CURRENCY } from '../../lib/storefront/pricing.js';
-import { getCart, setItem, removeItem, CART_STORAGE_KEY, CART_EVENT } from '../../lib/cart/store.js';
+import { getCart, setItem, removeItem, clear, CART_STORAGE_KEY, CART_EVENT } from '../../lib/cart/store.js';
 
 const root = document.querySelector<HTMLElement>('.cs-cart');
 if (root) init(root);
@@ -36,6 +36,10 @@ function init(root: HTMLElement) {
   const banner = root.querySelector('.cs-cart-unavailable-banner') as HTMLElement;
   const clearUnavailableBtn = root.querySelector('.cs-clear-unavailable') as HTMLButtonElement | null;
   const unavailableNotice = root.querySelector('.cs-unavailable-notice') as HTMLElement | null;
+  const clearCartBtn = root.querySelector('.cs-clear-cart') as HTMLButtonElement | null;
+  const clearCartConfirm = root.querySelector('.cs-clear-cart-confirm') as HTMLElement | null;
+  const clearCartYesBtn = root.querySelector('.cs-clear-cart-yes') as HTMLButtonElement | null;
+  const clearCartCancelBtn = root.querySelector('.cs-clear-cart-cancel') as HTMLButtonElement | null;
 
   // Module-scoped list of unavailable SKUs currently in the cart. Updated by
   // hydrateFromCart. Drives the submit-gating + the "Remove unavailable items"
@@ -70,6 +74,7 @@ function init(root: HTMLElement) {
     rows.forEach((row) => {
       row.hidden = true;
       row.classList.remove('cs-cart-unavailable');
+      row.removeAttribute('aria-disabled');
     });
 
     for (const item of cart.items) {
@@ -86,6 +91,7 @@ function init(root: HTMLElement) {
         // Status product: row exists but product is unavailable
         row.hidden = false;
         row.classList.add('cs-cart-unavailable');
+        row.setAttribute('aria-disabled', 'true');
         hasItems = true;
         unavailableItems.push(row.dataset.name || item.sku);
         nextUnavailableSkus.push(item.sku);
@@ -137,12 +143,18 @@ function init(root: HTMLElement) {
   }
 
   // --- Quantity controls ---
+  //
+  // Status rows render a status label instead of qty controls (see
+  // Cart.astro), so they have no .cs-qty-input, .cs-qty-down, or .cs-qty-up
+  // elements to wire. Guard on row.dataset.status and bail early. The remove
+  // button is wired separately below so unavailable rows can still be cleared.
 
   rows.forEach((row) => {
+    if (row.dataset.status) return;
+
     const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
     const downBtn = row.querySelector('.cs-qty-down') as HTMLButtonElement;
     const upBtn = row.querySelector('.cs-qty-up') as HTMLButtonElement;
-    const removeBtn = row.querySelector('.cs-remove-btn') as HTMLButtonElement;
     const moq = row.dataset.moq ? Number(row.dataset.moq) : null;
     const sku = row.dataset.sku ?? '';
 
@@ -176,9 +188,21 @@ function init(root: HTMLElement) {
         setItem(sku, val, 'wholesale');
       }
     });
+  });
+
+  // --- Remove buttons ---
+  //
+  // Second pass wires remove buttons on every row, including status/unavailable
+  // rows, so users can always clear dead items.
+
+  rows.forEach((row) => {
+    const removeBtn = row.querySelector<HTMLButtonElement>('.cs-remove-btn');
+    if (!removeBtn) return;
+    const sku = row.dataset.sku ?? '';
 
     removeBtn.addEventListener('click', () => {
-      input.value = '0';
+      const input = row.querySelector<HTMLInputElement>('.cs-qty-input');
+      if (input) input.value = '0';
       removeItem(sku, 'wholesale');
     });
   });
@@ -318,6 +342,51 @@ function init(root: HTMLElement) {
     });
   }
 
+  // --- Clear entire cart ---
+  //
+  // Inline confirm pattern: "Clear cart" button toggles to a "Clear entire
+  // cart? Yes, clear | Cancel" prompt. Confirm calls store.clear() which wipes
+  // localStorage and fires CART_EVENT. The CART_EVENT listener re-runs
+  // hydrateFromCart, which hides .cs-cart-content (empty state) and thereby
+  // hides the clear-cart row. No manual reset needed on success.
+  //
+  // Edge case: if another action mutates the cart while the prompt is open
+  // (e.g. user removes a different row), we leave the prompt visible as long
+  // as the cart still has items. resetClearCartConfirm() is only called on
+  // Cancel and on mount.
+
+  function resetClearCartConfirm() {
+    if (clearCartBtn) clearCartBtn.hidden = false;
+    if (clearCartConfirm) clearCartConfirm.hidden = true;
+  }
+
+  resetClearCartConfirm();
+
+  if (clearCartBtn && clearCartConfirm) {
+    clearCartBtn.addEventListener('click', () => {
+      clearCartBtn.hidden = true;
+      clearCartConfirm.hidden = false;
+      clearCartYesBtn?.focus();
+    });
+  }
+
+  if (clearCartCancelBtn) {
+    clearCartCancelBtn.addEventListener('click', () => {
+      resetClearCartConfirm();
+      clearCartBtn?.focus();
+    });
+  }
+
+  if (clearCartYesBtn) {
+    clearCartYesBtn.addEventListener('click', () => {
+      // Reset the confirm UI BEFORE clearing so that if the user later re-adds
+      // items and hydrateFromCart unhides .cs-cart-content, they see the
+      // initial "Clear cart" button rather than the stale Yes/Cancel prompt.
+      resetClearCartConfirm();
+      clear();
+    });
+  }
+
   // --- Submit ---
 
   submitBtn.addEventListener('click', async () => {
@@ -389,7 +458,7 @@ function init(root: HTMLElement) {
       const pdfContent = contentEl.cloneNode(true) as HTMLElement;
 
       pdfContent.querySelectorAll(
-        '.cs-order-actions, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-qty-btn, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary, .cs-continue-shopping',
+        '.cs-order-actions, .cs-clear-cart-row, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-qty-btn, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary, .cs-continue-shopping',
       ).forEach((el) => el.remove());
 
       pdfContent.querySelectorAll('.cs-cart-row[hidden]').forEach((row) => row.remove());

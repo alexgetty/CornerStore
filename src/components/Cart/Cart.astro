@@ -95,6 +95,7 @@ const hasWholesale = wholesaleMargin != null;
                     <strong>{listing.name}</strong>
                     <span class="cs-cart-sku">{listing.sku}</span>
                     {listing.moq && <span class="cs-cart-moq">Min {listing.moq}</span>}
+                    {listing.status && <span class="cs-sr-only">Unavailable: {listing.status}</span>}
                   </div>
                 </div>
               </td>
@@ -107,21 +108,29 @@ const hasWholesale = wholesaleMargin != null;
                 <td class="cs-col-price">{listing.price}</td>
               )}
               <td class="cs-col-qty">
-                <div class="cs-qty-control">
-                  <button type="button" class="cs-qty-btn cs-qty-down" aria-label="Decrease quantity">-</button>
-                  <input
-                    type="number"
-                    class="cs-qty-input"
-                    min="0"
-                    step={listing.moq ?? 1}
-                    value="0"
-                    aria-label={`Quantity for ${listing.name}`}
-                  />
-                  <button type="button" class="cs-qty-btn cs-qty-up" aria-label="Increase quantity">+</button>
-                </div>
+                {listing.status ? (
+                  <span class="cs-cart-status-label">{listing.status}</span>
+                ) : (
+                  <div class="cs-qty-control">
+                    <button type="button" class="cs-qty-btn cs-qty-down" aria-label="Decrease quantity">-</button>
+                    <input
+                      type="number"
+                      class="cs-qty-input"
+                      min="0"
+                      step={listing.moq ?? 1}
+                      value="0"
+                      aria-label={`Quantity for ${listing.name}`}
+                    />
+                    <button type="button" class="cs-qty-btn cs-qty-up" aria-label="Increase quantity">+</button>
+                  </div>
+                )}
               </td>
               <td class="cs-col-total">
-                <span class="cs-line-total">$0.00</span>
+                {listing.status ? (
+                  <span class="cs-line-total">&mdash;</span>
+                ) : (
+                  <span class="cs-line-total">$0.00</span>
+                )}
               </td>
               <td class="cs-col-remove">
                 <button type="button" class="cs-remove-btn" aria-label={`Remove ${listing.name}`}>&times;</button>
@@ -156,6 +165,15 @@ const hasWholesale = wholesaleMargin != null;
         {checkoutEnabled ? 'Checkout' : 'Submit Order'}
       </button>
       <a href="/" class="cs-continue-shopping">Continue shopping</a>
+    </div>
+
+    <div class="cs-clear-cart-row">
+      <button type="button" class="cs-clear-cart">Clear cart</button>
+      <span class="cs-clear-cart-confirm" hidden role="group" aria-label="Confirm clear cart">
+        <span class="cs-clear-cart-prompt">Clear entire cart?</span>
+        <button type="button" class="cs-clear-cart-yes">Yes, clear</button>
+        <button type="button" class="cs-clear-cart-cancel">Cancel</button>
+      </span>
     </div>
 
     <div class="cs-checkout-error" hidden></div>
