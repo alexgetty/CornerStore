@@ -12,6 +12,9 @@ import {
   buildConfigFile,
   buildCartPage,
   buildEnvFile,
+  buildIndexPage,
+  buildSlugPage,
+  buildCategorySlugPage,
 } from './scaffold.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -261,122 +264,13 @@ await safeWrite(join(dir, 'pages', 'terms-of-service.mdx'), tosStub);
 
 
 // src/pages/index.astro
-await safeWrite(join(dir, 'src', 'pages', 'index.astro'), `---
-import ContentPage from 'corner-store/layouts/ContentPage';
-import { Listings, Listing } from 'corner-store/components';
-import { loadConfig, loadPages } from 'corner-store';
-
-const config = await loadConfig();
-const pages = await loadPages(config);
-const homePage = pages.get(config.home);
-
-const mdxModules = import.meta.glob('/pages/*.mdx');
-const homeModule = mdxModules[\`/pages/\${config.home}.mdx\`];
-
-let Content = null;
-if (homeModule) {
-  const mod = await homeModule();
-  Content = mod.default;
-}
----
-
-{Content ? (
-  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
-    <Content components={{ Listings, Listing }} />
-  </ContentPage>
-) : (
-  <ContentPage title={config.name}>
-    <p>Create <code>pages/{config.home}.mdx</code> to get started.</p>
-  </ContentPage>
-)}
-`);
+await safeWrite(join(dir, 'src', 'pages', 'index.astro'), buildIndexPage());
 
 // src/pages/[slug].astro
-await safeWrite(join(dir, 'src', 'pages', '[slug].astro'), `---
-import ContentPage from 'corner-store/layouts/ContentPage';
-import { Listings, Listing } from 'corner-store/components';
-import { loadConfig, loadPages } from 'corner-store';
-
-export async function getStaticPaths() {
-  const config = await loadConfig();
-  const pages = await loadPages(config);
-
-  return [...pages.entries()]
-    .filter(([slug]) => slug !== config.home)
-    .map(([slug, page]) => ({
-      params: { slug },
-      props: { page },
-    }));
-}
-
-const { page } = Astro.props;
-
-const mdxModules = import.meta.glob('/pages/*.mdx');
-const mod = await mdxModules[\`/pages/\${page.slug}.mdx\`]();
-const Content = mod.default;
----
-
-<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
-  <Content components={{ Listings, Listing }} />
-</ContentPage>
-`);
+await safeWrite(join(dir, 'src', 'pages', '[slug].astro'), buildSlugPage());
 
 // src/pages/category/[slug].astro
-await safeWrite(join(dir, 'src', 'pages', 'category', '[slug].astro'), `---
-import ContentPage from 'corner-store/layouts/ContentPage';
-import { Listings, Listing } from 'corner-store/components';
-import { loadConfig, getCategories, loadCategoryPages } from 'corner-store';
-
-export async function getStaticPaths() {
-  const config = await loadConfig();
-  const categories = await getCategories();
-  const categoryPages = await loadCategoryPages();
-
-  const paths = [];
-
-  for (const [slug, catPage] of categoryPages) {
-    paths.push({
-      params: { slug },
-      props: { page: catPage, isMdx: true },
-    });
-  }
-
-  for (const cat of categories) {
-    if (!categoryPages.has(cat.slug)) {
-      paths.push({
-        params: { slug: cat.slug },
-        props: { categoryName: cat.name, isMdx: false },
-      });
-    }
-  }
-
-  return paths;
-}
-
-const { page, categoryName, isMdx } = Astro.props;
-const slug = Astro.params.slug;
-
-let Content = null;
-if (isMdx) {
-  const mdxModules = import.meta.glob('/pages/category/*.mdx');
-  const loader = mdxModules[\`/pages/category/\${slug}.mdx\`];
-  if (loader) {
-    const mod = await loader();
-    Content = mod.default;
-  }
-}
----
-
-{isMdx && Content ? (
-  <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
-    <Content components={{ Listings, Listing }} />
-  </ContentPage>
-) : (
-  <ContentPage title={categoryName}>
-    <Listings categories={[categoryName]} />
-  </ContentPage>
-)}
-`);
+await safeWrite(join(dir, 'src', 'pages', 'category', '[slug].astro'), buildCategorySlugPage());
 
 // src/pages/404.astro
 await safeWrite(join(dir, 'src', 'pages', '404.astro'), `---

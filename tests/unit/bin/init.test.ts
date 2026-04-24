@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 // @ts-expect-error — .mjs has no type declarations
-import { parseCheckoutStyle, buildConfigFile, buildCartPage, buildEnvFile, deriveAnswersFromExistingConfig } from '../../../bin/scaffold.mjs';
+import { parseCheckoutStyle, buildConfigFile, buildCartPage, buildEnvFile, deriveAnswersFromExistingConfig, buildIndexPage, buildSlugPage, buildCategorySlugPage } from '../../../bin/scaffold.mjs';
 
 describe('bin/scaffold.mjs', () => {
   describe('parseCheckoutStyle', () => {
@@ -195,6 +195,111 @@ describe('bin/scaffold.mjs', () => {
       });
       expect(answers.checkoutStyle).toBe('stripe');
       expect(answers.checkoutUrl).toBe('');
+    });
+  });
+
+  describe('buildCartPage — astro check safety', () => {
+    it('does not import the Cart component under the bare name Cart (collides with filename-derived identifier)', () => {
+      // `src/pages/cart.astro` is compiled to a module whose default export is
+      // named Cart (PascalCase of the filename), so `import { Cart }` collides
+      // with that auto-generated declaration (TS 2440).
+      const out = buildCartPage();
+      expect(out).not.toMatch(/import\s*\{\s*Cart\s*\}\s*from\s*'corner-store\/components'/);
+    });
+
+    it('imports the cart component under an alias (CartPage) to avoid the collision', () => {
+      const out = buildCartPage();
+      expect(out).toMatch(/import\s*\{\s*Cart\s+as\s+CartPage\s*\}\s*from\s*'corner-store\/components'/);
+      // and the rendered JSX tag uses the alias
+      expect(out).toMatch(/<CartPage\b/);
+      expect(out).not.toMatch(/<Cart\s/);
+      expect(out).not.toMatch(/<Cart>/);
+    });
+  });
+
+  describe('buildIndexPage — astro check safety', () => {
+    it('is exported', () => {
+      expect(typeof buildIndexPage).toBe('function');
+    });
+
+    it('types import.meta.glob so mod.default is not `unknown`', () => {
+      const out = buildIndexPage();
+      // typed glob with a module shape, or an explicit cast at the call site
+      expect(out).toMatch(/import\.meta\.glob<\{\s*default:\s*any\s*\}>\(/);
+    });
+
+    it('guards the homeModule lookup before invoking it', () => {
+      const out = buildIndexPage();
+      // the lookup may return undefined — guard before await/call
+      expect(out).toMatch(/if\s*\(\s*homeModule\s*\)/);
+    });
+  });
+
+  describe('buildSlugPage — astro check safety', () => {
+    it('is exported', () => {
+      expect(typeof buildSlugPage).toBe('function');
+    });
+
+    it('types import.meta.glob so mod.default is not `unknown`', () => {
+      const out = buildSlugPage();
+      expect(out).toMatch(/import\.meta\.glob<\{\s*default:\s*any\s*\}>\(/);
+    });
+
+    it('guards the loader lookup before invoking it', () => {
+      const out = buildSlugPage();
+      expect(out).toMatch(/const\s+loader\s*=\s*mdxModules\[/);
+      expect(out).toMatch(/if\s*\(\s*loader\s*\)/);
+    });
+
+    it('does NOT directly call mdxModules[...]() without a guard (runtime + TS unsafe)', () => {
+      const out = buildSlugPage();
+      expect(out).not.toMatch(/await\s+mdxModules\[[^\]]+\]\(\)/);
+    });
+  });
+
+  describe('buildCategorySlugPage — astro check safety', () => {
+    it('is exported', () => {
+      expect(typeof buildCategorySlugPage).toBe('function');
+    });
+
+    it('types import.meta.glob so mod.default is not `unknown`', () => {
+      const out = buildCategorySlugPage();
+      expect(out).toMatch(/import\.meta\.glob<\{\s*default:\s*any\s*\}>\(/);
+    });
+
+    it('guards the MDX branch against undefined page in JSX (narrows before use)', () => {
+      const out = buildCategorySlugPage();
+      // the MDX branch must test `page` in the condition so TS narrows it
+      expect(out).toMatch(/isMdx\s*&&\s*Content\s*&&\s*page\s*\?/);
+    });
+
+    it('provides a non-undefined string for the fallback ContentPage title', () => {
+      const out = buildCategorySlugPage();
+      // must not pass the raw (possibly undefined) categoryName directly
+      expect(out).not.toMatch(/<ContentPage\s+title=\{\s*categoryName\s*\}/);
+    });
+
+    it('provides a string[] (never (string | undefined)[]) for Listings.categories', () => {
+      const out = buildCategorySlugPage();
+      // must not pass [categoryName] directly
+      expect(out).not.toMatch(/<Listings\s+categories=\{\s*\[\s*categoryName\s*\]\s*\}/);
+    });
+
+    it('does not declare an unused `config` local (ts6133)', () => {
+      const out = buildCategorySlugPage();
+      // Any `const config = await loadConfig()` outside getStaticPaths is unused
+      // (only categories/pages are needed for the paths + render).
+      // We allow it inside getStaticPaths (it's read) but not at module scope.
+      // Simplest assertion: no top-level module-scope `const config = await loadConfig`.
+      // getStaticPaths is an `export async function` — we look for the pattern
+      // outside that function by checking there's no such line *after* the frontmatter
+      // closer. A loose but sufficient check: the frontmatter (between --- lines)
+      // contains no `const config = await loadConfig();` at indent 0 outside getStaticPaths.
+      //
+      // Easier: we simply forbid the whole `loadConfig` import if it's unused.
+      // Since the scaffolded file historically imported it only for the unused local,
+      // dropping the import is the right call.
+      expect(out).not.toMatch(/\bloadConfig\b/);
     });
   });
 

@@ -73,9 +73,13 @@ export function buildConfigFile(answers) {
 }
 
 export function buildCartPage() {
+  // Note: imported as CartPage, not Cart, because the page filename is
+  // `cart.astro` and astro/language-server auto-generates a local `Cart`
+  // identifier from the filename (PascalCase). `import { Cart }` collides
+  // with it (ts2440).
   return `---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { Cart } from 'corner-store/components';
+import { Cart as CartPage } from 'corner-store/components';
 import { loadConfig, getListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
 
 const config = await loadConfig();
@@ -87,7 +91,7 @@ const checkoutEnabled = config.checkout === 'stripe' && !!config.checkoutUrl;
 ---
 
 <ContentPage title="Cart" hasExplicitTitle>
-  <Cart
+  <CartPage
     storeName={config.name}
     contact={config.contact ?? ''}
     listings={listings}
@@ -101,6 +105,135 @@ const checkoutEnabled = config.checkout === 'stripe' && !!config.checkoutUrl;
     checkoutUrl={config.checkoutUrl}
   />
 </ContentPage>
+`;
+}
+
+export function buildIndexPage() {
+  return `---
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { loadConfig, loadPages } from 'corner-store';
+
+const config = await loadConfig();
+const pages = await loadPages(config);
+const homePage = pages.get(config.home);
+
+const mdxModules = import.meta.glob<{ default: any }>('/pages/*.mdx');
+const homeModule = mdxModules[\`/pages/\${config.home}.mdx\`];
+
+let Content: any = null;
+if (homeModule) {
+  const mod = await homeModule();
+  Content = mod.default;
+}
+---
+
+{Content ? (
+  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
+    <Content components={{ Listings, Listing }} />
+  </ContentPage>
+) : (
+  <ContentPage title={config.name}>
+    <p>Create <code>pages/{config.home}.mdx</code> to get started.</p>
+  </ContentPage>
+)}
+`;
+}
+
+export function buildSlugPage() {
+  return `---
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { loadConfig, loadPages } from 'corner-store';
+
+export async function getStaticPaths() {
+  const config = await loadConfig();
+  const pages = await loadPages(config);
+
+  return [...pages.entries()]
+    .filter(([slug]) => slug !== config.home)
+    .map(([slug, page]) => ({
+      params: { slug },
+      props: { page },
+    }));
+}
+
+const { page } = Astro.props;
+
+const mdxModules = import.meta.glob<{ default: any }>('/pages/*.mdx');
+const loader = mdxModules[\`/pages/\${page.slug}.mdx\`];
+
+let Content: any = null;
+if (loader) {
+  const mod = await loader();
+  Content = mod.default;
+}
+---
+
+<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
+  {Content ? (
+    <Content components={{ Listings, Listing }} />
+  ) : (
+    <p>Create <code>pages/{page.slug}.mdx</code> to fill in this page.</p>
+  )}
+</ContentPage>
+`;
+}
+
+export function buildCategorySlugPage() {
+  return `---
+import ContentPage from 'corner-store/layouts/ContentPage';
+import { Listings, Listing } from 'corner-store/components';
+import { getCategories, loadCategoryPages } from 'corner-store';
+
+export async function getStaticPaths() {
+  const categories = await getCategories();
+  const categoryPages = await loadCategoryPages();
+
+  const paths = [];
+
+  for (const [slug, catPage] of categoryPages) {
+    paths.push({
+      params: { slug },
+      props: { page: catPage, categoryName: '', isMdx: true },
+    });
+  }
+
+  for (const cat of categories) {
+    if (!categoryPages.has(cat.slug)) {
+      paths.push({
+        params: { slug: cat.slug },
+        props: { page: null, categoryName: cat.name, isMdx: false },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { page, categoryName, isMdx } = Astro.props;
+const slug = Astro.params.slug ?? '';
+
+let Content: any = null;
+if (isMdx) {
+  const mdxModules = import.meta.glob<{ default: any }>('/pages/category/*.mdx');
+  const loader = mdxModules[\`/pages/category/\${slug}.mdx\`];
+  if (loader) {
+    const mod = await loader();
+    Content = mod.default;
+  }
+}
+---
+
+{isMdx && Content && page ? (
+  <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
+    <Content components={{ Listings, Listing }} />
+  </ContentPage>
+) : (
+  <ContentPage title={categoryName ?? slug}>
+    <Listings categories={categoryName ? [categoryName] : []} />
+  </ContentPage>
+)}
 `;
 }
 
