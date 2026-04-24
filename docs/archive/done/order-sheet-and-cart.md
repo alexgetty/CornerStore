@@ -1,5 +1,11 @@
 # Order Sheet and Cart
 
+## Archived — feature removed and superseded
+
+Commit `212c53a` removed the OrderSheet component entirely. The multi-item purchasing problem described in Stage 1 is now solved by the Cart component with PDF/Stripe checkout modes: a maker can run `checkout: 'pdf'` to generate downloadable order forms (Stage 1's intent) or `checkout: 'stripe'` for server-backed checkout (Stages 2/3's intent). See the checkout config shipped in commit `2b904b3` and scaffolded in `9b6f330`. Archived as obsolete.
+
+---
+
 Multi-item purchasing for Corner Store. Three stages, each building on the last. Stage 1 is the launch blocker. Stages 2 and 3 are future work.
 
 ## The Problem

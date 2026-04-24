@@ -1,5 +1,15 @@
 # Product Visibility & Status Cleanup
 
+## Archived — resolved
+
+- The `orderSheet` boolean was removed alongside the OrderSheet feature in commit `212c53a`.
+- The `storefront` boolean was also removed (no matches in current `src/` as of commit `38b4804`).
+- The `status` field is implemented and acted on by the cart (see `docs/todo/cart-unavailable-row-disabling.md` and commit `b90cbd6` checkout-unavailable handling).
+
+Archived — all three concerns closed.
+
+---
+
 ## Problem
 
 The current codebase has overlapping, partially-implemented concepts for product visibility and availability:

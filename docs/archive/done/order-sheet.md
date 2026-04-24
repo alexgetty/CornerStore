@@ -1,5 +1,11 @@
 # Order Sheet
 
+## Archived — feature removed
+
+Commit `212c53a` removed the OrderSheet component (`src/components/OrderSheet` and `src/pages/order-sheet.astro` deleted). Multi-item purchasing is now handled by the Cart component with PDF or Stripe checkout modes (see `docs/archive/done/cart-system.md` and the `checkout: 'pdf' | 'stripe'` config shipped in commit `2b904b3`). Archived as obsolete.
+
+---
+
 ## Background
 
 Wholesale buyers need a way to build custom multi-item orders beyond the curated starter packs on the storefront. The order sheet is a browsable catalog page with an interactive PDF download flow.

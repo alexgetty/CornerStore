@@ -1,5 +1,13 @@
 # Red Team Audit: Catalog Build Process
 
+## Archived — superseded
+
+This audit was the initial red-team review of the catalog build work. Findings were rolled into `docs/todo/catalog-red-team.md`, which tracked the follow-up implementation (19 commits, 265→312 tests) and closed most items. Keeping this doc open duplicates that tracker. Archived as historical record.
+
+See `docs/todo/catalog-red-team.md` for the authoritative state.
+
+---
+
 **Date:** 2026-04-10
 **Scope:** 14 commits on `worktree-product-catalog-sync` (main..HEAD), 103 files changed. Full CSV-based catalog system replacing old Stripe-fetched listing model.
 **Baseline:** 215 tests passing, 100% coverage on included files.

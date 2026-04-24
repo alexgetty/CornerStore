@@ -1,5 +1,11 @@
 # Category Filtering for Listings
 
+## Archived — superseded
+
+The premise ("no category concept on the `Listing` type") is no longer true. The CSV-based catalog (`product-catalog-sync.md`) introduced a category column and filtering flows through that schema. `<Listings categories={...} />` is live and used by scaffolded `category/[slug].astro`. Archived as obsolete.
+
+---
+
 ## Summary
 
 `<Listings />` component accepts a `category` prop but has no filtering implementation. There is no category concept on the `Listing` type or in the Stripe data flow yet.
