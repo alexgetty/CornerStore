@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-// @ts-expect-error — .mjs has no type declarations
 import { parseCheckoutStyle, buildConfigFile, buildCartPage, buildEnvFile, deriveAnswersFromExistingConfig, buildIndexPage, buildSlugPage, buildCategorySlugPage } from '../../../bin/scaffold.mjs';
 
 describe('bin/scaffold.mjs', () => {

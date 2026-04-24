@@ -326,10 +326,8 @@ export const GET: APIRoute = () => getProductNamesResponse();
 
 // Link corner-store first (before npm install), so npm doesn't try to fetch it from the registry
 console.log('  Installing dependencies...\n');
-let linked = false;
 try {
   execFileSync('npm', ['link', 'corner-store'], { cwd: dir, stdio: 'pipe' });
-  linked = true;
 } catch {
   // Not linked globally — npm install will try the registry
 }
