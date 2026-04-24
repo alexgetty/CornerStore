@@ -1,6 +1,6 @@
 ---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import CartPage from '../components/Cart/Cart.astro';
+import { Cart as CartPage } from 'corner-store/components';
 import { loadConfig, getListings, decimalToRawPrice, DEFAULT_CURRENCY } from 'corner-store';
 
 const config = await loadConfig();

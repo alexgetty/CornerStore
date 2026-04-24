@@ -70,3 +70,23 @@ describe('library src/pages/category/[slug].astro — astro check safety', () =>
     expect(out).not.toMatch(/\bloadConfig\b/);
   });
 });
+
+describe('library src/pages/cart.astro — scaffold-parity import shape', () => {
+  // The scaffolded consumer cart page imports Cart via the package entrypoint
+  // (`corner-store/components`) and aliases it to CartPage to avoid the auto-
+  // generated-const collision. The library's own cart page must mirror that
+  // shape so library edits cannot drift from the scaffolded pattern.
+  it('imports Cart as CartPage from corner-store/components', () => {
+    const out = readPage('cart.astro');
+    expect(out).toContain(
+      "import { Cart as CartPage } from 'corner-store/components';",
+    );
+  });
+
+  it('does not use the legacy relative Cart import', () => {
+    const out = readPage('cart.astro');
+    expect(out).not.toContain(
+      "import CartPage from '../components/Cart/Cart.astro';",
+    );
+  });
+});
