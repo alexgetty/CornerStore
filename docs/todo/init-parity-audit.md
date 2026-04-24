@@ -62,7 +62,29 @@ The scaffolded config now includes a commented example of the `dropdown: 'catego
 
 Archived original investigation doc: `docs/archive/done/astro-check-page-errors.md`.
 
+## Verified 2026-04-24
+
+Automated DoD steps 1–5 all pass for all three init modes (pdf, stripe+URL, stripe+blank):
+
+- `npm run build:lib && npm run build:cli` — clean.
+- `corner-store init` in a fresh temp dir — produces expected files for each mode.
+- `npm install` in the scaffolded project (tarball install via `npm pack`) — clean.
+- `npx astro check` — 0 errors / 0 warnings / 0 hints across all three modes.
+- `npx astro build` — 11 pages built, clean.
+
+Two non-blocking findings surfaced during verification, tracked separately:
+
+- `docs/todo/scaffold-astro-check-deps.md` — scaffold doesn't ship `@astrojs/check` + `typescript`, so `npx astro check` prompts for install on first run.
+- `docs/todo/scaffold-npm-link-build.md` — `astro build` in a scaffolded project fails when `corner-store` is installed via `npm link` (symlink). Real consumers installing via tarball / registry are unaffected. Dev-workflow issue only.
+
 ## Still open
+
+### Manual DoD steps
+
+Not yet verified (require browser interaction):
+
+- Step 6 (pdf mode): open dev server, add items to cart, click "Submit Order", confirm a PDF downloads.
+- Step 7 (stripe mode): open dev server, add items to cart, click "Checkout", confirm the POST hits the configured `checkoutUrl` (mock with a local server).
 
 ### Gap B: Consumer documentation
 
