@@ -3,13 +3,21 @@ import "./CartWidget.css";
 
 interface Props {
   priceMap: Record<string, number>;
+  disabledSkus?: string[];
   currency: string;
 }
 
-const { priceMap, currency } = Astro.props;
+const { priceMap, disabledSkus, currency } = Astro.props;
 ---
 
-<a href="/cart" class="cs-cart-widget" aria-label="Shopping cart" data-currency={currency} data-prices={JSON.stringify(priceMap)}>
+<a
+  href="/cart"
+  class="cs-cart-widget"
+  aria-label="Shopping cart"
+  data-currency={currency}
+  data-prices={JSON.stringify(priceMap)}
+  data-disabled-skus={JSON.stringify(disabledSkus ?? [])}
+>
   <span class="cs-cart-icon-wrap">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M6 6V5a4 4 0 1 1 8 0v1" />

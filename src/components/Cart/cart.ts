@@ -3,9 +3,10 @@ import {
   snapToMoq,
   calculateLineTotal,
 } from '../../lib/validation/index.js';
-import type { ValidationItem } from '../../lib/validation/types.js';
 import { formatPrice, decimalToRawPrice, DEFAULT_CURRENCY } from '../../lib/storefront/pricing.js';
 import { getCart, setItem, removeItem, clear, CART_STORAGE_KEY, CART_EVENT } from '../../lib/cart/store.js';
+import { computeCartVisibility } from '../../lib/cart/visibility.js';
+import type { CartItem } from '../../lib/cart/types.js';
 
 const root = document.querySelector<HTMLElement>('.cs-cart');
 if (root) init(root);
@@ -17,6 +18,8 @@ function init(root: HTMLElement) {
   const storeName = root.dataset.storeName ?? '';
   const checkoutEnabled = root.dataset.checkoutEnabled === 'true';
   const checkoutUrl = root.dataset.checkoutUrl || '/api/checkout';
+  const priceMap: Record<string, number> = JSON.parse(root.dataset.prices ?? '{}');
+  const disabledSkus = new Set<string>(JSON.parse(root.dataset.disabledSkus ?? '[]'));
 
   const emptyEl = root.querySelector('.cs-cart-empty') as HTMLElement;
   const contentEl = root.querySelector('.cs-cart-content') as HTMLElement;
@@ -220,36 +223,36 @@ function init(root: HTMLElement) {
     input.classList.toggle('cs-invalid', !validateQuantity(qty, moq));
   }
 
-  function getVisibleItems(): ValidationItem[] {
-    return Array.from(rows)
-      .filter((row) => !row.hidden && !row.classList.contains('cs-cart-unavailable'))
-      .map((row) => {
-        const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-        return {
-          sku: row.dataset.sku ?? '',
-          name: row.querySelector('strong')?.textContent ?? '',
-          rawPrice: Number(row.dataset.rawPrice),
-          moq: row.dataset.moq ? Number(row.dataset.moq) : null,
-          quantity: parseInt(input.value) || 0,
-        };
-      });
+  function getVisibleItems(): CartItem[] {
+    const cart = getCart('wholesale');
+    return computeCartVisibility({
+      items: cart.items,
+      priceMap,
+      disabledSkus,
+    }).visibleItems;
   }
 
   function updateTotals() {
-    const items = getVisibleItems();
+    const cart = getCart('wholesale');
+    const { visibleItems, subtotal } = computeCartVisibility({
+      items: cart.items,
+      priceMap,
+      disabledSkus,
+    });
 
-    const subtotal = items.reduce(
-      (sum, i) => sum + calculateLineTotal(i.rawPrice, i.quantity),
-      0,
-    );
     subtotalEl.textContent = formatPrice(subtotal, currency);
 
-    // Validation
+    // Validation: look up MOQ and display name from the rendered row's
+    // dataset. Rows for visibleItems always exist in rowMap since helper
+    // only returns SKUs present in priceMap (= rendered listings).
     const errors: string[] = [];
 
-    for (const item of items) {
-      if (!validateQuantity(item.quantity, item.moq)) {
-        errors.push(`${item.name}: minimum order quantity is ${item.moq}`);
+    for (const item of visibleItems) {
+      const row = rowMap.get(item.sku);
+      const moq = row?.dataset.moq ? Number(row.dataset.moq) : null;
+      const name = row?.dataset.name ?? item.sku;
+      if (!validateQuantity(item.quantity, moq)) {
+        errors.push(`${name}: minimum order quantity is ${moq}`);
       }
     }
 

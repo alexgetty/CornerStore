@@ -4,3 +4,5 @@ export { wholesaleRules, dtcRules } from './rules.js';
 export { getSummary } from './summary.js';
 export { parseCheckoutRequest, buildLineItems } from './checkout.js';
 export type { CheckoutItem } from './checkout.js';
+export { computeCartVisibility } from './visibility.js';
+export type { CartVisibilityInput, CartVisibilityResult } from './visibility.js';

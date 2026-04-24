@@ -23,15 +23,17 @@ const { nav, footerNav } = getNav(config, pages, {
 
 const listings = await getListings();
 const priceMap: Record<string, number> = {};
+const disabledSkus: string[] = [];
 for (const listing of listings) {
   priceMap[listing.sku] = config.wholesaleMargin != null
     ? Math.round(listing.rawPrice * config.wholesaleMargin)
     : listing.rawPrice;
+  if (listing.status != null) disabledSkus.push(listing.sku);
 }
 ---
 
 <Base title={`${title} — ${config.name}`} description={description}>
-  <Nav storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} priceMap={priceMap} currency={DEFAULT_CURRENCY} />
+  <Nav storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} priceMap={priceMap} disabledSkus={disabledSkus} currency={DEFAULT_CURRENCY} />
   <main id="main-content">
     <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
     <slot />

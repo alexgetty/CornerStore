@@ -9,10 +9,11 @@ interface Props {
   nav: ResolvedNavItem[];
   currentPath?: string;
   priceMap?: Record<string, number>;
+  disabledSkus?: string[];
   currency?: string;
 }
 
-const { storeName, logo, nav, currentPath, priceMap, currency } = Astro.props;
+const { storeName, logo, nav, currentPath, priceMap, disabledSkus, currency } = Astro.props;
 
 function normalizePath(p: string): string {
   return p === '/' ? p : p.replace(/\/$/, '');
@@ -74,7 +75,7 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
       </nav>
     )}
     {priceMap && currency && (
-      <CartWidget priceMap={priceMap} currency={currency} />
+      <CartWidget priceMap={priceMap} disabledSkus={disabledSkus} currency={currency} />
     )}
   </div>
 </header>

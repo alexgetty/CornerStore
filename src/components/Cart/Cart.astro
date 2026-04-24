@@ -32,6 +32,15 @@ const {
 } = Astro.props;
 
 const hasWholesale = wholesaleMargin != null;
+
+const priceMap: Record<string, number> = {};
+const disabledSkus: string[] = [];
+for (const listing of listings) {
+  priceMap[listing.sku] = hasWholesale
+    ? Math.round(listing.rawPrice * wholesaleMargin!)
+    : listing.rawPrice;
+  if (listing.status != null) disabledSkus.push(listing.sku);
+}
 ---
 
 <div
@@ -44,6 +53,8 @@ const hasWholesale = wholesaleMargin != null;
   data-shipping-flat={shippingFlat ?? ''}
   data-shipping-free-threshold={shippingFreeThreshold ?? ''}
   data-checkout-url={checkoutUrl ?? ''}
+  data-prices={JSON.stringify(priceMap)}
+  data-disabled-skus={JSON.stringify(disabledSkus)}
 >
   <p class="cs-cart-empty">Your cart is empty. <a href="/">Continue shopping</a></p>
 
