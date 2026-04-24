@@ -2,7 +2,13 @@
 
 ## Status
 
-Open. Surfaced when `tsconfig.json` was updated to exclude `coverage/` (previously `astro check` OOM-crashed scanning `coverage/prettify.js` and never completed). With the OOM unblocked, `astro check` now runs and reports 7 real errors that were masked for an unknown period.
+**Resolved.** Closed by commits `3bbd12d` (fixed scaffolded output via `bin/scaffold.mjs`) and `9e68b3c` (ported the same fixes to the library's own `src/pages/*.astro`). `npm run typecheck` is clean on `main` (0 errors, 0 warnings; 4 pre-existing unused-var hints in unrelated files remain).
+
+Implementation chose a slightly different approach than this doc proposed: `import.meta.glob<{ default: any }>(...)` rather than `AstroInstance`, and a unified props shape with sentinels for `category/[slug].astro` rather than a discriminated union. Both work. The fix also added `if (loader)` guards in `[slug].astro` and `category/[slug].astro`, addressing the latent runtime hazard this doc flagged.
+
+## Original context (preserved for history)
+
+Surfaced when `tsconfig.json` was updated to exclude `coverage/` (previously `astro check` OOM-crashed scanning `coverage/prettify.js` and never completed). With the OOM unblocked, `astro check` ran and reported 7 real errors that had been masked for an unknown period.
 
 ## Problem
 

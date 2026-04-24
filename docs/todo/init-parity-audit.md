@@ -46,24 +46,23 @@ The scaffolded `cornerstore.config.js` now includes a commented "Optional" block
 
 The scaffolded config now includes a commented example of the `dropdown: 'categories'` nav item shape.
 
+## Resolved
+
+### ✅ Gap A: Scaffolded project's initial build errors
+
+**Shipped in:** `3bbd12d` (scaffold templates) and `9e68b3c` (library's own `src/pages/*`).
+
+**What was done:**
+- Typed `import.meta.glob<{ default: any }>(...)` so dynamic module access type-checks.
+- Added `if (loader)` guards before invoking dynamic MDX loaders. Closed a latent runtime hazard, not just a TS error.
+- Resolved the `Cart` filename-collision in scaffolded `cart.astro` by aliasing the import: `import { Cart as CartPage }`. Library's own `src/pages/cart.astro` aligned with the same pattern in commit `2bea35e`.
+- Unified the `getStaticPaths` prop shape in `category/[slug].astro` so TypeScript can narrow inside the JSX branch.
+- Extracted the scaffold templates into builder functions in `bin/scaffold.mjs` (`buildIndexPage`, `buildSlugPage`, `buildCategorySlugPage`, updated `buildCartPage`), advancing the scaffold-emission-strategy follow-up.
+- `npm run typecheck` clean in repo; fresh `cornerstore init` scaffold passes `astro check` with 0 errors.
+
+Archived original investigation doc: `docs/archive/done/astro-check-page-errors.md`.
+
 ## Still open
-
-### Gap A: Scaffolded project's initial build has pre-existing errors
-
-**Discovered:** during `9b6f330` verification (definition-of-done test per CLAUDE.md).
-
-**Symptoms:** After `cornerstore init` in a fresh temp directory, `npx astro check` reports:
-- TypeScript strictness errors in scaffolded `src/pages/[slug].astro` and `src/pages/category/[slug].astro` (missing null-guards on values the templates treat as defined).
-- A name collision involving `Cart` in scaffolded `src/pages/cart.astro`.
-- Roughly 8 errors total.
-
-**Verified pre-existing:** the same errors reproduce against the pre-Task-2 scaffold output (`8bd280c:bin/init.mjs`). Task 2 did not introduce them.
-
-**Why this matters:** CLAUDE.md's "definition of done" test requires a scaffolded project to actually build. Right now it doesn't. The checkout-mode feature is correctly wired, but a maker running `cornerstore init` today still can't `astro build` successfully without hand-editing the scaffolded pages.
-
-**Fix:** investigate each error individually. Likely candidates:
-- The `Cart` collision may be a symbol shadow between `import { Cart } from 'corner-store/components'` and something else the file imports or declares. Read the scaffolded output at HEAD.
-- The `[slug].astro` and `category/[slug].astro` null-guard errors suggest the templates assume `getEntry` or similar returns non-null. Either tighten the scaffolded code or loosen `tsconfig` strictness for scaffolded projects (the latter is backward, prefer the former).
 
 ### Gap B: Consumer documentation
 

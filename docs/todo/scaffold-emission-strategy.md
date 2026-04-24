@@ -2,7 +2,13 @@
 
 ## Status
 
-Open. Non-blocking. Surfaced by Task 2 code review of the `checkout` mode init work (`9b6f330`).
+Partially advanced. Non-blocking.
+
+Commit `3bbd12d` (Gap A fix) opportunistically migrated the three remaining multi-line dynamic Astro page templates (`index.astro`, `[slug].astro`, `category/[slug].astro`) from inline heredocs in `bin/init.mjs` into builder functions in `bin/scaffold.mjs`. Combined with the pre-existing `buildCartPage`, all four non-trivial scaffolded Astro pages now flow through `scaffold.mjs`.
+
+**Still inline in `bin/init.mjs`:** `404.astro`, `success.astro`, `cancel.astro`. These are short (10 lines each), static-with-one-`${storeName}`-interpolation, and fit Option C's "<10 lines" allowance. A final migration to `bin/scaffold.mjs:buildStatusPage(kind, storeName)` or to `bin/stubs/` with a substitution pass remains an option but is no longer necessary for consistency.
+
+Decision that still needs to happen: codify the convention in CLAUDE.md so future contributors know which mechanism to use.
 
 ## Problem
 

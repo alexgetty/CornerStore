@@ -51,13 +51,9 @@ Individual cleanup items that don't justify their own tracking docs. Pick off op
 
 **Priority:** Low. Current tests work; refactor opportunistically.
 
-### 4. Dead variable in `bin/init.mjs`
+### 4. ~~Dead variable in `bin/init.mjs`~~ ✅ Done
 
-**File:** `bin/init.mjs` — `let linked = false;` is assigned but never read. Pre-existing.
-
-**Fix:** Delete it along with the branch that sets it to `true`, or wire up the intended use.
-
-**Priority:** Trivial. Delete next time the file is touched.
+**Resolved in:** `84a392e`. `let linked = false` and its assignment removed. Surrounding `try/catch` kept (independent purpose: tolerate missing global link so subsequent `npm install` can fetch from registry).
 
 ### 5. Validation asymmetry in `parseConfig`
 
