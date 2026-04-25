@@ -1,12 +1,17 @@
 import {
   validateQuantity,
-  snapToMoq,
   calculateLineTotal,
 } from '../../lib/validation/index.js';
 import { formatPrice, decimalToRawPrice, DEFAULT_CURRENCY } from '../../lib/storefront/pricing.js';
 import { getCart, setItem, removeItem, clear, CART_STORAGE_KEY, CART_EVENT } from '../../lib/cart/store.js';
 import { computeCartVisibility } from '../../lib/cart/visibility.js';
 import type { CartItem } from '../../lib/cart/types.js';
+import {
+  classifyCartControlTarget,
+  nextQuantity,
+  type CartControlAction,
+} from '../CartControl/cart-control-actions.js';
+import { resolveCartMutation } from './cart-row-actions.js';
 
 const root = document.querySelector<HTMLElement>('.cs-cart');
 if (root) init(root);
@@ -104,8 +109,7 @@ function init(root: HTMLElement) {
       row.hidden = false;
       hasItems = true;
 
-      const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-      input.value = String(item.quantity);
+      hydrateCartControl(row, item.quantity);
       updateRow(row);
     }
 
@@ -145,76 +149,125 @@ function init(root: HTMLElement) {
     if (hasItems) updateTotals();
   }
 
-  // --- Quantity controls ---
+  // --- Quantity controls (root-level event delegation) ---
   //
-  // Status rows render a status label instead of qty controls (see
-  // Cart.astro), so they have no .cs-qty-input, .cs-qty-down, or .cs-qty-up
-  // elements to wire. Guard on row.dataset.status and bail early. The remove
-  // button is wired separately below so unavailable rows can still be cleared.
+  // One listener tree on the cart root handles click + change for every cart
+  // row's <CartControl />. Mirrors the listings-side pattern. The × remove
+  // button funnels through the same code path as a qty=0 step (see
+  // commitMutation), so cart removal logic is DRY whether triggered by ×,
+  // by stepping down from MOQ, or by typing 0.
+  //
+  // Status rows render a disabled CartControl add button (see CartControl.astro)
+  // so the disabled-button guard below skips them naturally without a
+  // row.dataset.status check.
 
-  rows.forEach((row) => {
-    if (row.dataset.status) return;
+  root.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
 
-    const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-    const downBtn = row.querySelector('.cs-qty-down') as HTMLButtonElement;
-    const upBtn = row.querySelector('.cs-qty-up') as HTMLButtonElement;
-    const moq = row.dataset.moq ? Number(row.dataset.moq) : null;
-    const sku = row.dataset.sku ?? '';
-
-    downBtn.addEventListener('click', () => {
-      const current = parseInt(input.value) || 0;
-      const next = snapToMoq(current, moq, 'down');
-      input.value = String(next);
-      updateRow(row);
-      if (next === 0) {
-        removeItem(sku, 'wholesale');
-      } else {
-        setItem(sku, next, 'wholesale');
+    // Remove button: route through the qty=0 path so the cart-mutation logic
+    // is single-sourced.
+    const removeBtn = target.closest<HTMLElement>('.cs-remove-btn');
+    if (removeBtn) {
+      const row = removeBtn.closest<HTMLElement>('.cs-cart-row');
+      if (row) {
+        const control = row.querySelector<HTMLElement>('.cs-cart-control');
+        if (control) handleCartControlAction(control, 'input', 0);
+        return;
       }
-    });
+    }
 
-    upBtn.addEventListener('click', () => {
-      const current = parseInt(input.value) || 0;
-      const next = snapToMoq(current, moq, 'up');
-      input.value = String(next);
-      updateRow(row);
-      setItem(sku, next, 'wholesale');
-    });
+    const actionEl = target.closest<HTMLElement>(
+      '.cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up',
+    );
+    if (!actionEl) return;
+    if (actionEl instanceof HTMLButtonElement && actionEl.disabled) return;
+    const control = actionEl.closest<HTMLElement>('.cs-cart-control');
+    if (!control) return;
+    const action = classifyCartControlTarget(Array.from(actionEl.classList));
+    if (!action || action === 'input') return;
 
-    input.addEventListener('change', () => {
-      const val = Math.max(0, parseInt(input.value) || 0);
-      input.value = String(val);
-      updateRow(row);
-      if (val === 0) {
-        removeItem(sku, 'wholesale');
-      } else {
-        setItem(sku, val, 'wholesale');
-      }
-    });
+    handleCartControlAction(control, action);
   });
 
-  // --- Remove buttons ---
-  //
-  // Second pass wires remove buttons on every row, including status/unavailable
-  // rows, so users can always clear dead items.
+  root.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (!target.classList.contains('cs-cart-control-input')) return;
+    const control = target.closest<HTMLElement>('.cs-cart-control');
+    if (!control) return;
 
-  rows.forEach((row) => {
-    const removeBtn = row.querySelector<HTMLButtonElement>('.cs-remove-btn');
-    if (!removeBtn) return;
-    const sku = row.dataset.sku ?? '';
+    handleCartControlAction(control, 'input', target.valueAsNumber);
+  });
 
-    removeBtn.addEventListener('click', () => {
-      const input = row.querySelector<HTMLInputElement>('.cs-qty-input');
-      if (input) input.value = '0';
+  function handleCartControlAction(
+    control: HTMLElement,
+    action: CartControlAction,
+    inputValue?: number,
+  ) {
+    const sku = control.dataset.sku ?? '';
+    if (!sku) return;
+
+    const moq = control.dataset.moq ? Number(control.dataset.moq) : null;
+    const input = control.querySelector<HTMLInputElement>('.cs-cart-control-input');
+    const current = input ? parseInt(input.value) || 0 : 0;
+
+    const next = nextQuantity(action, current, moq, inputValue);
+
+    if (input) input.value = String(next);
+
+    const row = control.closest<HTMLElement>('.cs-cart-row');
+    if (row) updateRow(row);
+
+    commitMutation(sku, next);
+  }
+
+  /**
+   * Single source of truth for cart store mutations from cart-row interactions.
+   * The × remove button, decrementing past MOQ, and typing 0 in the input all
+   * funnel here via handleCartControlAction. CART_EVENT then re-runs
+   * hydrateFromCart, which hides the row in the DOM — no manual row removal.
+   */
+  function commitMutation(sku: string, nextQty: number) {
+    const mutation = resolveCartMutation(nextQty);
+    if (mutation.op === 'remove') {
       removeItem(sku, 'wholesale');
-    });
-  });
+    } else {
+      setItem(sku, mutation.quantity, 'wholesale');
+    }
+  }
 
   // --- Row + totals helpers ---
 
+  /**
+   * Sync a CartControl's UI to a quantity value: write the input, toggle
+   * stepper vs add-to-cart button visibility. Mirrors the listings-side
+   * `hydrateCartControl` so the unified component behaves identically across
+   * mounts. Disabled (status) controls have no stepper or input — bail early.
+   */
+  function hydrateCartControl(row: HTMLElement, qty: number) {
+    const control = row.querySelector<HTMLElement>('.cs-cart-control');
+    if (!control) return;
+    const addBtn = control.querySelector<HTMLButtonElement>('.cs-cart-control-add');
+    const qtyWrap = control.querySelector<HTMLElement>('.cs-cart-control-qty');
+    const qtyInput = control.querySelector<HTMLInputElement>('.cs-cart-control-input');
+    if (addBtn?.disabled) return;
+    if (!qtyWrap || !qtyInput) return;
+
+    qtyInput.value = String(qty);
+    if (qty > 0) {
+      qtyWrap.hidden = false;
+      if (addBtn) addBtn.hidden = true;
+    } else {
+      qtyWrap.hidden = true;
+      if (addBtn) addBtn.hidden = false;
+    }
+  }
+
   function updateRow(row: HTMLElement) {
-    const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-    const lineTotalEl = row.querySelector('.cs-line-total') as HTMLElement;
+    const input = row.querySelector('.cs-cart-control-input') as HTMLInputElement | null;
+    const lineTotalEl = row.querySelector('.cs-line-total') as HTMLElement | null;
+    if (!input || !lineTotalEl) return;
     const rawPrice = Number(row.dataset.rawPrice);
     const moq = row.dataset.moq ? Number(row.dataset.moq) : null;
     const qty = parseInt(input.value) || 0;
@@ -461,12 +514,12 @@ function init(root: HTMLElement) {
       const pdfContent = contentEl.cloneNode(true) as HTMLElement;
 
       pdfContent.querySelectorAll(
-        '.cs-order-actions, .cs-clear-cart-row, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-qty-btn, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary, .cs-continue-shopping',
+        '.cs-order-actions, .cs-clear-cart-row, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary, .cs-continue-shopping',
       ).forEach((el) => el.remove());
 
       pdfContent.querySelectorAll('.cs-cart-row[hidden]').forEach((row) => row.remove());
 
-      pdfContent.querySelectorAll('.cs-qty-input').forEach((input) => {
+      pdfContent.querySelectorAll('.cs-cart-control-input').forEach((input) => {
         const val = (input as HTMLInputElement).value;
         const span = document.createElement('span');
         span.textContent = val;

@@ -8,16 +8,18 @@ Open. H6 from the catalog-visibility red-team review.
 
 When a customer has items in their cart for a SKU that subsequently becomes status-disabled (e.g. "Sold Out"), the listings page hides the cart state entirely. Both views silently drop the cart quantity during hydration:
 
-**Card view — `src/components/Listings/listings.ts:43`:**
+**Card view — `src/components/Listings/listings.ts` `hydrateCartControl`:**
 ```ts
-if (!badge || !addBtn || !qtyControl || !qtyInput) return;
-if (addBtn.disabled) return;  // ← status-disabled cards exit here, qty never shown
+const addBtn = control.querySelector<HTMLButtonElement>('.cs-cart-control-add');
+// Disabled (status/unavailable) controls only have the disabled add button.
+if (addBtn?.disabled) return;  // ← status-disabled cards exit here, qty never shown
 ```
 
-**Table view — `src/components/Listings/listings.ts:67`:**
+**Table view — same `hydrateCartControl` path applies:**
 ```ts
-const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-if (!input) return;  // ← status rows have no input (rendered as <span> instead), exit here
+// Status rows render <CartControl status=...> which emits a disabled <button>.
+// hydrateCartControl bails on addBtn.disabled before reading the qty input,
+// so the current-cart quantity never surfaces on those rows.
 ```
 
 Result: a user who had 6 units in their cart before the product became "Sold Out" sees only the "Sold Out" label on the card/row. The cart still contains those 6 units. The listings page is lying about the cart state. Discovered only by navigating to `/cart`.
@@ -26,21 +28,14 @@ Result: a user who had 6 units in their cart before the product became "Sold Out
 
 Non-destructive signal that directs the user to /cart, where H5's "Remove unavailable items" button resolves the conflict. Listings never mutate cart state — they only surface it.
 
-### 1. `src/components/Listings/ListingTable.astro:92-107`
+### 1. `src/components/Listings/ListingTable.astro` — status cell
 
-Extend the status cell so there's a second span for the indicator:
+The qty cell now always mounts `<CartControl>`; status rows get a disabled button from CartControl itself. Add a sibling `.cs-order-cart-indicator` inside `.cs-col-qty` so the "N in cart" signal has a slot:
+
 ```astro
 <td class="cs-col-qty">
-  {listing.status ? (
-    <>
-      <span class="cs-order-status">{listing.status}</span>
-      <span class="cs-order-cart-indicator" hidden></span>
-    </>
-  ) : (
-    <div class="cs-qty-control">
-      {/* existing -/input/+ markup */}
-    </div>
-  )}
+  <CartControl sku={listing.sku} name={listing.name} moq={listing.moq} status={listing.status} />
+  {listing.status && <span class="cs-order-cart-indicator" hidden></span>}
 </td>
 ```
 
@@ -48,24 +43,23 @@ Extend the status cell so there's a second span for the indicator:
 
 The card already has `<span class="cs-listing-badge" hidden></span>` at line 40. No markup change needed — just reuse it for status-disabled cards when cart qty > 0. Verify the CSS makes the badge visible even when the card renders with a disabled add button (may need a `.cs-listing[data-status] .cs-listing-badge` rule, check current state).
 
-### 3. `src/components/Listings/listings.ts:27-70` — hydration logic
+### 3. `src/components/Listings/listings.ts` — hydration logic
 
-Rewrite the card-view branch so the early return no longer drops status-disabled items:
+Rewrite the card-view branch so the early return no longer drops status-disabled items. Intercept BEFORE calling `hydrateCartControl` (which bails on disabled controls):
+
 ```ts
 root.querySelectorAll<HTMLElement>('.cs-listing').forEach((card) => {
   const sku = card.dataset.sku ?? '';
   const item = cart.items.find((i) => i.sku === sku);
   const qty = item?.quantity ?? 0;
 
-  const badge = card.querySelector('.cs-listing-badge') as HTMLElement;
-  const addBtn = card.querySelector('.cs-listing-add') as HTMLButtonElement;
-  const qtyControl = card.querySelector('.cs-listing-qty') as HTMLElement;
-  const qtyInput = card.querySelector('.cs-listing-qty-input') as HTMLInputElement;
-
-  if (!badge || !addBtn) return;
+  const badge = card.querySelector('.cs-listing-badge') as HTMLElement | null;
+  const control = card.querySelector('.cs-cart-control') as HTMLElement | null;
+  const addBtn = control?.querySelector<HTMLButtonElement>('.cs-cart-control-add');
+  if (!badge || !control) return;
 
   // Status-disabled path: surface cart qty via badge only, don't touch qty control.
-  if (addBtn.disabled) {
+  if (addBtn?.disabled) {
     if (qty > 0) {
       badge.textContent = `${qty} in cart`;
       badge.hidden = false;
@@ -78,25 +72,22 @@ root.querySelectorAll<HTMLElement>('.cs-listing').forEach((card) => {
   }
 
   // Available path: existing behavior
-  if (!qtyControl || !qtyInput) return;
-  if (qty > 0) {
-    badge.textContent = String(qty);
-    // ...rest as today
-  } else {
-    // ...rest as today
-  }
+  hydrateCartControl(control, qty);
+  // ...badge/cs-in-cart management as today
 });
 ```
 
-For the table-view branch:
+For the table-view branch, add a disabled-addBtn guard before the existing hydrate path:
+
 ```ts
 root.querySelectorAll<HTMLElement>('.cs-order-row').forEach((row) => {
   const sku = row.dataset.sku ?? '';
   const item = cart.items.find((i) => i.sku === sku);
   const qty = item?.quantity ?? 0;
-  const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
+  const control = row.querySelector('.cs-cart-control') as HTMLElement | null;
+  const addBtn = control?.querySelector<HTMLButtonElement>('.cs-cart-control-add');
 
-  if (!input) {
+  if (addBtn?.disabled) {
     // Status row: surface cart qty via indicator if there is any.
     const indicator = row.querySelector('.cs-order-cart-indicator') as HTMLElement | null;
     if (indicator) {
@@ -110,7 +101,8 @@ root.querySelectorAll<HTMLElement>('.cs-order-row').forEach((row) => {
     return;
   }
 
-  input.value = String(qty);
+  if (!control) return;
+  hydrateCartControl(control, qty);
   updateTableRow(row);
 });
 ```

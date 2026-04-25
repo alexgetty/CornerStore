@@ -1,0 +1,100 @@
+@layer package {
+  .cs-cart-control {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  /* --- Add to Cart button --- */
+
+  .cs-cart-control-add {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: var(--cs-font-size-small, 0.875rem);
+    font-weight: 600;
+    background: var(--cs-heading-text-color, #000);
+    color: var(--cs-listing-surface, #fff);
+    border: none;
+    border-radius: var(--cs-button-border-radius, 4px);
+    cursor: pointer;
+    transition: opacity var(--cs-transition-fast, 0.15s);
+  }
+
+  .cs-cart-control-add:hover {
+    opacity: 0.85;
+  }
+
+  .cs-cart-control-add:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: var(--cs-border-color, #ccc);
+    color: var(--cs-body-text-color, #333);
+  }
+
+  /* --- Stepper (qty controls) --- */
+
+  .cs-cart-control-qty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+  }
+
+  .cs-cart-control-qty[hidden] {
+    display: none;
+  }
+
+  .cs-cart-control-down,
+  .cs-cart-control-up {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--cs-border-color);
+    background: var(--cs-listing-surface, #fff);
+  }
+
+  .cs-cart-control-down {
+    border-top-left-radius: var(--cs-button-border-radius, 4px);
+    border-bottom-left-radius: var(--cs-button-border-radius, 4px);
+  }
+
+  .cs-cart-control-up {
+    border-top-right-radius: var(--cs-button-border-radius, 4px);
+    border-bottom-right-radius: var(--cs-button-border-radius, 4px);
+  }
+
+  .cs-cart-control-input {
+    flex: 1;
+    min-width: 0;
+    height: 2.25rem;
+    text-align: center;
+    font-size: var(--cs-font-size-small, 0.875rem);
+    font-weight: 600;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-style: solid;
+    border-color: var(--cs-border-color);
+    -moz-appearance: textfield;
+  }
+
+  .cs-cart-control-input::-webkit-inner-spin-button,
+  .cs-cart-control-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .cs-cart-control-input.cs-invalid {
+    border-color: var(--cs-error-color, #c00);
+    background-color: var(--cs-error-bg, #fff0f0);
+  }
+}

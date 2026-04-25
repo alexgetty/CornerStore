@@ -1,0 +1,65 @@
+---
+import "./CartControl.css";
+
+interface Props {
+  sku: string;
+  name: string;
+  quantity?: number;
+  moq?: number | null;
+  status?: string | null;
+}
+
+const { sku, name, quantity = 0, moq = null, status = null } = Astro.props;
+
+const isUnavailable = status != null && status !== '';
+const showStepper = !isUnavailable && quantity > 0;
+---
+
+<div
+  class="cs-cart-control"
+  data-sku={sku}
+  data-moq={moq ?? ''}
+>
+  {isUnavailable ? (
+    <button
+      type="button"
+      class="cs-cart-control-add"
+      disabled
+      aria-label={`${name}: ${status}`}
+    >
+      {status}
+    </button>
+  ) : (
+    <>
+      <button
+        type="button"
+        class="cs-cart-control-add"
+        hidden={showStepper}
+        aria-label={`Add ${name} to cart`}
+      >
+        Add to Cart
+      </button>
+      <div class="cs-cart-control-qty" hidden={!showStepper}>
+        <button
+          type="button"
+          class="cs-cart-control-down"
+          aria-label={`Decrease quantity of ${name}`}
+        >-</button>
+        <input
+          type="number"
+          class="cs-cart-control-input"
+          min="0"
+          step={moq ?? 1}
+          value={showStepper ? quantity : 0}
+          inputmode="numeric"
+          aria-label={`Quantity for ${name}`}
+        />
+        <button
+          type="button"
+          class="cs-cart-control-up"
+          aria-label={`Increase quantity of ${name}`}
+        >+</button>
+      </div>
+    </>
+  )}
+</div>

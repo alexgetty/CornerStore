@@ -1,5 +1,6 @@
 ---
 import "./ListingTable.css";
+import CartControl from "../CartControl/CartControl.astro";
 import type { Listing } from "../../lib/storefront";
 import { formatPrice } from "../../lib/storefront";
 
@@ -89,22 +90,12 @@ const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.ca
                 )}
                 <td class="cs-col-moq">{listing.moq ? `Min ${listing.moq}` : ''}</td>
                 <td class="cs-col-qty">
-                  {listing.status ? (
-                    <span class="cs-order-status">{listing.status}</span>
-                  ) : (
-                    <div class="cs-qty-control">
-                      <button type="button" class="cs-qty-btn cs-qty-down" aria-label="Decrease quantity">-</button>
-                      <input
-                        type="number"
-                        class="cs-qty-input"
-                        min="0"
-                        step={listing.moq ?? 1}
-                        value="0"
-                        aria-label={`Quantity for ${listing.name}`}
-                      />
-                      <button type="button" class="cs-qty-btn cs-qty-up" aria-label="Increase quantity">+</button>
-                    </div>
-                  )}
+                  <CartControl
+                    sku={listing.sku}
+                    name={listing.name}
+                    moq={listing.moq}
+                    status={listing.status}
+                  />
                 </td>
                 <td class="cs-col-total">
                   <span class="cs-line-total">$0.00</span>

@@ -94,52 +94,21 @@
     color: var(--cs-muted-text-color);
   }
 
-  .cs-qty-control {
-    display: flex;
-    align-items: center;
-  }
+  /* --- Quantity controls live in CartControl.css --- */
 
-  .cs-qty-btn {
+  /* Tighten the stepper inside a cart cell so it matches the cart's compact
+     row height (matches the ListingTable approach). */
+  .cs-cart-row .cs-cart-control-down,
+  .cs-cart-row .cs-cart-control-up {
     width: 2rem;
     height: 2rem;
-    border: 1px solid var(--cs-border-color);
-    background: var(--cs-surface-color, #fff);
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
-  .cs-qty-down {
-    border-radius: 4px 0 0 4px;
-  }
-
-  .cs-qty-up {
-    border-radius: 0 4px 4px 0;
-  }
-
-  .cs-qty-input {
-    width: 3.5rem;
+  .cs-cart-row .cs-cart-control-input {
     height: 2rem;
-    text-align: center;
-    border: 1px solid var(--cs-border-color);
-    border-left: none;
-    border-right: none;
+    width: 3.5rem;
+    flex: 0 0 auto;
     font-size: var(--cs-font-size-small);
-    -moz-appearance: textfield;
-  }
-
-  .cs-qty-input::-webkit-inner-spin-button,
-  .cs-qty-input::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  .cs-qty-input.cs-invalid {
-    border-color: var(--cs-error-color, #c00);
-    background-color: var(--cs-error-bg, #fff0f0);
   }
 
   .cs-remove-btn {
@@ -319,12 +288,6 @@
     opacity: 0.4;
   }
 
-  .cs-cart-status-label {
-    font-size: var(--cs-font-size-small, 0.875rem);
-    color: var(--cs-muted-text-color);
-    font-style: italic;
-  }
-
   .cs-clear-cart-row {
     display: flex;
     align-items: center;
@@ -397,7 +360,9 @@
     .cs-unavailable-notice,
     .cs-col-remove,
     .cs-remove-btn,
-    .cs-qty-btn,
+    .cs-cart-control-down,
+    .cs-cart-control-up,
+    .cs-cart-control-add,
     .cs-order-actions,
     .cs-clear-cart-row,
     .cs-mailto-section,
@@ -409,7 +374,7 @@
       display: none !important;
     }
 
-    .cs-qty-input {
+    .cs-cart-control-input {
       border: none;
       background: none;
       text-align: right;

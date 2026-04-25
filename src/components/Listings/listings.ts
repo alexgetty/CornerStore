@@ -1,9 +1,13 @@
-import { snapToMoq } from '../../lib/validation/quantity.js';
 import {
   validateQuantity,
   calculateLineTotal,
 } from '../../lib/validation/index.js';
 import { formatPrice } from '../../lib/storefront/pricing.js';
+import {
+  classifyCartControlTarget,
+  nextQuantity,
+  type CartControlAction,
+} from '../CartControl/cart-control-actions.js';
 
 // ---------------------------------------------------------------------------
 // Cart integration (lazy-loaded, progressive enhancement)
@@ -34,26 +38,18 @@ function hydrateFromCart(root: HTMLElement) {
     const item = cart.items.find((i) => i.sku === sku);
     const qty = item?.quantity ?? 0;
 
-    const badge = card.querySelector('.cs-listing-badge') as HTMLElement;
-    const addBtn = card.querySelector('.cs-listing-add') as HTMLButtonElement;
-    const qtyControl = card.querySelector('.cs-listing-qty') as HTMLElement;
-    const qtyInput = card.querySelector('.cs-listing-qty-input') as HTMLInputElement;
+    const badge = card.querySelector('.cs-listing-badge') as HTMLElement | null;
+    const control = card.querySelector('.cs-cart-control') as HTMLElement | null;
+    if (!badge || !control) return;
 
-    if (!badge || !addBtn || !qtyControl || !qtyInput) return;
-    if (addBtn.disabled) return;
+    hydrateCartControl(control, qty);
 
     if (qty > 0) {
       badge.textContent = String(qty);
       badge.hidden = false;
-      addBtn.hidden = true;
-      qtyControl.hidden = false;
-      qtyInput.value = String(qty);
       card.classList.add('cs-in-cart');
     } else {
       badge.hidden = true;
-      addBtn.hidden = false;
-      qtyControl.hidden = true;
-      qtyInput.value = '0';
       card.classList.remove('cs-in-cart');
     }
   });
@@ -63,16 +59,39 @@ function hydrateFromCart(root: HTMLElement) {
     const sku = row.dataset.sku ?? '';
     const item = cart.items.find((i) => i.sku === sku);
     const qty = item?.quantity ?? 0;
-    const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-    if (!input) return;
-    input.value = String(qty);
+    const control = row.querySelector('.cs-cart-control') as HTMLElement | null;
+    if (!control) return;
+    hydrateCartControl(control, qty);
     updateTableRow(row);
   });
 }
 
+function hydrateCartControl(control: HTMLElement, qty: number) {
+  const addBtn = control.querySelector<HTMLButtonElement>('.cs-cart-control-add');
+  const qtyWrap = control.querySelector<HTMLElement>('.cs-cart-control-qty');
+  const qtyInput = control.querySelector<HTMLInputElement>('.cs-cart-control-input');
+
+  // Disabled (status/unavailable) controls only have the disabled add button.
+  if (addBtn?.disabled) return;
+  if (!qtyWrap || !qtyInput) return;
+
+  qtyInput.value = String(qty);
+  if (qty > 0) {
+    qtyWrap.hidden = false;
+    if (addBtn) addBtn.hidden = true;
+  } else {
+    qtyWrap.hidden = true;
+    if (addBtn) addBtn.hidden = false;
+  }
+}
+
 function syncToCart(sku: string, quantity: number) {
   if (!cartModule) return;
-  cartModule.setItem(sku, quantity, 'wholesale');
+  if (quantity === 0) {
+    cartModule.removeItem(sku, 'wholesale');
+  } else {
+    cartModule.setItem(sku, quantity, 'wholesale');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -118,10 +137,9 @@ function initToggle(root: HTMLElement) {
         b.setAttribute('aria-pressed', b.dataset.view === targetView ? 'true' : 'false');
       });
 
-      // Re-wire quantity controls on the newly active view
-      wireQuantityControls(root);
-
-      // Re-hydrate cart state on the newly active view
+      // Re-hydrate cart state on the newly active view. The unified cart-control
+      // wiring is attached once at root-level via delegation, so no re-wiring is
+      // needed across view swaps.
       hydrateFromCart(root);
 
       // Persist preference
@@ -152,9 +170,9 @@ function initToggle(root: HTMLElement) {
 // ---------------------------------------------------------------------------
 
 function updateTableRow(row: HTMLElement) {
-  const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-  const lineTotalEl = row.querySelector('.cs-line-total') as HTMLElement;
-  const removeBtn = row.querySelector('.cs-remove-btn') as HTMLButtonElement;
+  const input = row.querySelector('.cs-cart-control-input') as HTMLInputElement | null;
+  const lineTotalEl = row.querySelector('.cs-line-total') as HTMLElement | null;
+  const removeBtn = row.querySelector('.cs-remove-btn') as HTMLButtonElement | null;
   if (!input || !lineTotalEl || !removeBtn) return;
 
   const rawPrice = Number(row.dataset.rawPrice);
@@ -168,93 +186,84 @@ function updateTableRow(row: HTMLElement) {
 }
 
 // ---------------------------------------------------------------------------
-// Quantity controls wiring
+// Unified CartControl wiring via event delegation
 // ---------------------------------------------------------------------------
 
-function wireQuantityControls(root: HTMLElement) {
-  // Card view controls
-  root.querySelectorAll<HTMLElement>('.cs-listing').forEach((card) => {
-    if (card.dataset.wired) return; // prevent double-binding
-    card.dataset.wired = 'true';
+function wireCartControls(root: HTMLElement) {
+  if (root.dataset.wired === 'true') return;
+  root.dataset.wired = 'true';
 
-    const sku = card.dataset.sku ?? '';
-    const moq = card.dataset.moq ? Number(card.dataset.moq) : null;
-    const addBtn = card.querySelector('.cs-listing-add') as HTMLButtonElement;
-    const qtyInput = card.querySelector('.cs-listing-qty-input') as HTMLInputElement;
-    const downBtn = card.querySelector('.cs-listing-qty-down') as HTMLButtonElement;
-    const upBtn = card.querySelector('.cs-listing-qty-up') as HTMLButtonElement;
+  root.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
 
-    if (!addBtn || !qtyInput || !downBtn || !upBtn) return;
-    if (addBtn.disabled) return;
+    // Table-row remove button: set qty to 0.
+    const removeBtn = target.closest<HTMLElement>('.cs-remove-btn');
+    if (removeBtn) {
+      const row = removeBtn.closest<HTMLElement>('.cs-order-row');
+      if (row) {
+        const control = row.querySelector<HTMLElement>('.cs-cart-control');
+        if (control) {
+          handleAction(control, 'input', 0);
+          return;
+        }
+      }
+    }
 
-    addBtn.addEventListener('click', () => {
-      syncToCart(sku, moq ?? 1);
-    });
+    const actionEl = target.closest<HTMLElement>(
+      '.cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up',
+    );
+    if (!actionEl) return;
+    // Skip disabled controls (e.g. sold-out status buttons).
+    if (actionEl instanceof HTMLButtonElement && actionEl.disabled) return;
+    const control = actionEl.closest<HTMLElement>('.cs-cart-control');
+    if (!control) return;
+    const action = classifyCartControlTarget(Array.from(actionEl.classList));
+    if (!action || action === 'input') return;
 
-    downBtn.addEventListener('click', () => {
-      const current = parseInt(qtyInput.value) || 0;
-      syncToCart(sku, snapToMoq(current, moq, 'down'));
-    });
-
-    upBtn.addEventListener('click', () => {
-      const current = parseInt(qtyInput.value) || 0;
-      syncToCart(sku, snapToMoq(current, moq, 'up'));
-    });
-
-    qtyInput.addEventListener('change', () => {
-      const val = Math.max(0, parseInt(qtyInput.value) || 0);
-      syncToCart(sku, val);
-    });
+    handleAction(control, action);
   });
 
-  // Table view controls
-  root.querySelectorAll<HTMLElement>('.cs-order-row').forEach((row) => {
-    if (row.dataset.wired) return; // prevent double-binding
-    row.dataset.wired = 'true';
+  root.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (!target.classList.contains('cs-cart-control-input')) return;
+    const control = target.closest<HTMLElement>('.cs-cart-control');
+    if (!control) return;
 
-    const sku = row.dataset.sku ?? '';
-    const moq = row.dataset.moq ? Number(row.dataset.moq) : null;
-    const input = row.querySelector('.cs-qty-input') as HTMLInputElement;
-    const downBtn = row.querySelector('.cs-qty-down') as HTMLButtonElement;
-    const upBtn = row.querySelector('.cs-qty-up') as HTMLButtonElement;
-    const removeBtn = row.querySelector('.cs-remove-btn') as HTMLButtonElement;
-
-    if (!input || !downBtn || !upBtn || !removeBtn) return;
-
-    downBtn.addEventListener('click', () => {
-      const current = parseInt(input.value) || 0;
-      const next = snapToMoq(current, moq, 'down');
-      input.value = String(next);
-      updateTableRow(row);
-      syncToCart(sku, next);
-    });
-
-    upBtn.addEventListener('click', () => {
-      const current = parseInt(input.value) || 0;
-      const next = snapToMoq(current, moq, 'up');
-      input.value = String(next);
-      updateTableRow(row);
-      syncToCart(sku, next);
-    });
-
-    input.addEventListener('change', () => {
-      const val = Math.max(0, parseInt(input.value) || 0);
-      input.value = String(val);
-      updateTableRow(row);
-      syncToCart(sku, val);
-    });
-
-    removeBtn.addEventListener('click', () => {
-      input.value = '0';
-      updateTableRow(row);
-      syncToCart(sku, 0);
-    });
+    handleAction(control, 'input', target.valueAsNumber);
   });
+}
 
-  // Table lightbox
-  const lightbox = root.querySelector('.cs-lightbox') as HTMLElement;
-  const lightboxImg = root.querySelector('.cs-lightbox-img') as HTMLImageElement;
-  const lightboxBackdrop = root.querySelector('.cs-lightbox-backdrop') as HTMLElement;
+function handleAction(control: HTMLElement, action: CartControlAction, inputValue?: number) {
+  const sku = control.dataset.sku ?? '';
+  if (!sku) return;
+
+  const moq = control.dataset.moq ? Number(control.dataset.moq) : null;
+  const input = control.querySelector<HTMLInputElement>('.cs-cart-control-input');
+  const current = input ? parseInt(input.value) || 0 : 0;
+
+  const next = nextQuantity(action, current, moq, inputValue);
+
+  if (input) {
+    input.value = String(next);
+  }
+
+  // Table-specific row-level recomputation (line total, remove-btn visibility).
+  const row = control.closest<HTMLElement>('.cs-order-row');
+  if (row) updateTableRow(row);
+
+  syncToCart(sku, next);
+}
+
+// ---------------------------------------------------------------------------
+// Table lightbox + broken image fallback
+// ---------------------------------------------------------------------------
+
+function wireTableExtras(root: HTMLElement) {
+  const lightbox = root.querySelector('.cs-lightbox') as HTMLElement | null;
+  const lightboxImg = root.querySelector('.cs-lightbox-img') as HTMLImageElement | null;
+  const lightboxBackdrop = root.querySelector('.cs-lightbox-backdrop') as HTMLElement | null;
 
   if (lightbox && lightboxImg && lightboxBackdrop) {
     root.querySelectorAll<HTMLButtonElement>('.cs-thumb-btn').forEach((btn) => {
@@ -297,6 +306,7 @@ function wireQuantityControls(root: HTMLElement) {
 const root = document.querySelector<HTMLElement>('.cs-listings');
 if (root) {
   initToggle(root);
-  wireQuantityControls(root);
+  wireCartControls(root);
+  wireTableExtras(root);
   initCart(root);
 }

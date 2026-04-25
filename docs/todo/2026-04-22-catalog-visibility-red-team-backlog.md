@@ -50,7 +50,7 @@ Two independent implementations of the visibility predicate. If the rule evolves
 
 **Location:** `src/components/Cart/cart.ts:168-190` (`getVisibleItems`)
 
-`row.querySelector('strong')?.textContent` for name, `row.dataset.rawPrice` for price, `row.querySelector('.cs-qty-input').value` for qty. Any markup refactor to `Cart.astro` (wrapping name in a different tag, renaming a class) silently breaks subtotal and error messages. Implicit contract between HTML structure and TS logic.
+`row.querySelector('strong')?.textContent` for name, `row.dataset.rawPrice` for price, `row.querySelector('.cs-cart-control-input').value` for qty. Any markup refactor to `Cart.astro` (wrapping name in a different tag, renaming a class) silently breaks subtotal and error messages. Implicit contract between HTML structure and TS logic.
 
 **Fix (STATUS: resolved by H2 todo):** `docs/todo/cart-visibility-helper.md` already prescribes replacing DOM-derived cart math with structured inputs (server-rendered `priceMap` + `disabledSkus` on the root element, name from `dataset.name`). Land that and M3 closes. If for some reason H2 is descoped, add per-row `data-name`, `data-raw-price`, `data-moq` already exist — just switch `getVisibleItems` to read from them instead of selectors.
 

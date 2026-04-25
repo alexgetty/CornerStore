@@ -9,11 +9,15 @@ Open. Blocker for CI once `test:coverage` is enforced.
 Two major client-side modules ship with zero test coverage, in direct violation of the repo's strict TDD contract (`docs/tdd.md`: "No implementation code exists without a failing test that demanded it", 100% coverage threshold).
 
 Untested files:
-- `src/components/Cart/cart.ts` — 406 lines
-- `src/components/Listings/listings.ts` — 302 lines
-- `src/components/Cart/Cart.astro` — 173 lines (SSR markup that `cart.ts` assumes exists)
-- `src/components/Listings/ListingCards.astro` — 96 lines
-- `src/components/Listings/ListingTable.astro` — 130 lines
+- `src/components/Cart/cart.ts` — 569 lines
+- `src/components/Listings/listings.ts` — 312 lines
+- `src/components/Cart/Cart.astro` — 196 lines (SSR markup that `cart.ts` assumes exists)
+- `src/components/Listings/ListingCards.astro` — 83 lines
+- `src/components/Listings/ListingTable.astro` — 121 lines
+
+Pure-logic decision modules already extracted and at 100% coverage (do NOT cover here):
+- `src/components/CartControl/cart-control-actions.ts` (`classifyCartControlTarget`, `nextQuantity`)
+- `src/components/Cart/cart-row-actions.ts` (`resolveCartMutation`)
 
 `vitest.config.ts` has `thresholds: { lines: 100, branches: 100, ... }` and the `ci` script is `typecheck && test:coverage && build`. The `.ts` files are **not excluded** in the coverage config (the `.astro` files are implicitly excluded by the include glob `src/**/*.ts`). Running `npm run ci` today will fail at the coverage step.
 
@@ -63,6 +67,15 @@ For a belt-and-braces check that the fixture matches real output, add one low-le
 
 Target: 100% lines + branches. File reference: `src/components/Cart/cart.ts`.
 
+> **Note:** As of the CartControl unification (2026-04-24), cart rows mount the
+> same `<CartControl>` component as listings, with the unified classes
+> (`cs-cart-control`, `cs-cart-control-add/-up/-down/-input/-qty`). Cart-side
+> qty interactions go through one root-level event delegation listener (no
+> per-row binding). The pure cart-side decision "qty=0 → remove, qty>0 → set"
+> lives in `src/components/Cart/cart-row-actions.ts` (`resolveCartMutation`)
+> and is fully covered by `tests/unit/components/cart-row-actions.test.ts`.
+> Test entries below have been updated to reference the new selectors.
+
 ### Hydration — unavailable detection
 - [ ] Empty cart → banner hidden, `.cs-cart-empty` shown, submit disabled.
 - [ ] Cart with only available items → banner hidden, rows rendered, subtotal correct.
@@ -88,16 +101,18 @@ Target: 100% lines + branches. File reference: `src/components/Cart/cart.ts`.
 - [ ] Subtotal = Σ (qty × rawPrice) over visible rows only.
 - [ ] Subtotal formats correctly for USD and a second currency (pull from `pricing.ts`).
 
-### Qty controls — available rows
-- [ ] +/- buttons mutate localStorage AND update the displayed qty.
-- [ ] Remove button deletes from localStorage and removes the row.
-- [ ] Manual qty input snaps to MOQ on change.
-- [ ] Remove button hidden when qty = 0, shown when qty > 0.
+### Qty controls — available rows (delegated)
+- [ ] Fresh mount wires the root click + change delegation exactly once.
+- [ ] Clicking `.cs-cart-control-up` from MOQ goes to 2×MOQ; from 0 goes to MOQ; with no MOQ increments by 1.
+- [ ] Clicking `.cs-cart-control-down` decrements by MOQ (or 1); landing in (0, MOQ) snaps to 0 AND removes the item from the store (CART_EVENT re-runs hydrate, row hides).
+- [ ] `.cs-cart-control-add` is NOT visible for cart rows in steady state — qty>0 hydration toggles the stepper. (Defensive: programmatic click on the add button still routes through `nextQuantity('add', ...)` and sets the item to MOQ-or-1.)
+- [ ] `change` on `.cs-cart-control-input` uses the raw value (clamped >=0, floored to int), does NOT snap to MOQ; qty=0 input also removes from the store via the same code path.
+- [ ] Clicking the `.cs-remove-btn` on a cart row routes through `handleCartControlAction(control, 'input', 0)` → same `removeItem` call. Spy on `removeItem` to assert it fires once with mode `'wholesale'`.
 
-### Qty controls — unavailable rows (depends on H3, H9 resolutions)
-- [ ] Status rows do not attach qty handlers (per H9). Programmatic button click does NOT mutate localStorage.
-- [ ] Status rows' qty input is `disabled` and has `aria-disabled="true"` (per H3).
-- [ ] Keyboard Enter on a status-row + button does NOT mutate localStorage.
+### Qty controls — unavailable rows (status disabled add button)
+- [ ] Status rows render a disabled `.cs-cart-control-add` button (CartControl handles `status` prop). Programmatic click is filtered by the `actionEl.disabled` guard in delegation, so it does NOT mutate localStorage.
+- [ ] The `.cs-remove-btn` on status rows still fires removeItem (users can always clear unavailable lines).
+- [ ] Keyboard Enter on a disabled add button does NOT mutate localStorage (`actionEl.disabled` short-circuits delegation).
 
 ### Checkout flow (H5 resolved — inline "Remove unavailable items" button, no confirm)
 - [ ] Submit with only available items → calls `attemptCheckout` (when `checkoutEnabled`). Fetch body contains those items.
@@ -130,26 +145,34 @@ Target: 100% lines + branches. File reference: `src/components/Cart/cart.ts`.
 
 Target: 100% lines + branches. File reference: `src/components/Listings/listings.ts`.
 
+> **Note:** As of the CartControl unification (2026-04-24), both views mount the
+> same `<CartControl>` component with unified classes (`cs-cart-control`,
+> `cs-cart-control-add/-up/-down/-input`). The orchestrator uses root-level
+> event delegation (no per-row `dataset.wired`), so "re-binding" assertions
+> should target the root listener being attached once, not per-element flags.
+
 ### Hydration from cart
-- [ ] Card view — for each SKU in cart, the card's qty input reflects the quantity.
-- [ ] Card view — `removeBtn.hidden` correctly toggles based on qty.
+- [ ] Card view — for each SKU in cart, the card's `.cs-cart-control-input` reflects the quantity.
+- [ ] Card view — add/stepper visibility toggles via `hydrateCartControl` based on qty.
 - [ ] Table view — qty inputs reflect cart state.
-- [ ] Table view — rows with `data-status` (no qty input) exit hydration gracefully; existing cart qty for that SKU is preserved in localStorage (do NOT prune it) — surface whatever H6 decides for the UX side.
+- [ ] Table view — rows whose CartControl renders a disabled add button (status-disabled) exit hydration gracefully; existing cart qty for that SKU is preserved in localStorage (do NOT prune it) — surface whatever H6 decides for the UX side.
 
-### Qty control wiring — cards
-- [ ] Fresh mount wires `+`, `-`, remove, change handlers.
-- [ ] Clicking `+` snaps to MOQ on first click, increments by 1 afterward.
-- [ ] Clicking remove sets qty to 0 and calls `removeItem` on the store.
-- [ ] Handlers set `dataset.wired = 'true'`.
-- [ ] Re-running `hydrate` on an already-wired card does NOT rebind (no double-increment).
+### Qty control wiring — cards (delegated)
+- [ ] Fresh mount wires the root click + change delegation exactly once.
+- [ ] Clicking `.cs-cart-control-add` snaps to MOQ (or 1 if no MOQ).
+- [ ] Clicking `.cs-cart-control-up` from MOQ goes to 2×MOQ; from 0 goes to MOQ; with no MOQ increments by 1.
+- [ ] Clicking `.cs-cart-control-down` decrements by MOQ (or 1); landing in (0, MOQ) snaps to 0.
+- [ ] `change` on `.cs-cart-control-input` uses the raw value (clamped >=0, floored to int), does NOT snap to MOQ.
+- [ ] Clicking the table `.cs-remove-btn` sets qty to 0 and removes from store.
+- [ ] Re-running `hydrateFromCart` does NOT rebind delegation (no double-increment on a single click).
 
-### Qty control wiring — table
-- [ ] Same matrix as cards, adapted for table row structure.
+### Qty control wiring — table (delegated)
+- [ ] Same matrix as cards, adapted for table row structure (includes remove button).
 
-### Disabled button skip (per H9 in red-team review)
-- [ ] Cards with `addBtn.disabled === true` do NOT receive click handlers. Programmatic click does not mutate localStorage.
-- [ ] Table rows with `data-status` do NOT receive qty handlers.
-- [ ] Disabled-skip is idempotent across view toggles.
+### Disabled-control skip
+- [ ] Cards with a disabled `.cs-cart-control-add` button do NOT mutate localStorage on programmatic click.
+- [ ] Table rows whose CartControl is disabled do NOT mutate localStorage on programmatic click.
+- [ ] Disabled-skip holds across view toggles.
 
 ### View preference toggle
 - [ ] Toggling from card→table writes `cs-view-preference` to localStorage.

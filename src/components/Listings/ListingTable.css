@@ -112,58 +112,20 @@
     margin-top: 0.25rem;
   }
 
-  /* --- Quantity controls --- */
+  /* --- Quantity controls live in CartControl.css --- */
 
-  .cs-qty-control {
-    display: flex;
-    align-items: center;
-    gap: 0;
-  }
-
-  .cs-qty-btn {
+  /* Tighten the stepper inside a table cell so it fits the column width. */
+  .cs-order-row .cs-cart-control-down,
+  .cs-order-row .cs-cart-control-up {
     width: 2rem;
     height: 2rem;
-    border: 1px solid var(--cs-border-color);
-    background: var(--cs-surface-color, #fff);
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
-  .cs-qty-down { border-radius: 4px 0 0 4px; }
-  .cs-qty-up { border-radius: 0 4px 4px 0; }
-
-  .cs-qty-input {
-    width: 3.5rem;
+  .cs-order-row .cs-cart-control-input {
     height: 2rem;
-    text-align: center;
-    border: 1px solid var(--cs-border-color);
-    border-left: none;
-    border-right: none;
+    width: 3.5rem;
+    flex: 0 0 auto;
     font-size: var(--cs-font-size-small);
-    -moz-appearance: textfield;
-  }
-
-  .cs-qty-input::-webkit-inner-spin-button,
-  .cs-qty-input::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  .cs-qty-input.cs-invalid {
-    border-color: var(--cs-error-color, #c00);
-    background-color: var(--cs-error-bg, #fff0f0);
-  }
-
-  /* --- Order status (replaces qty controls for unavailable products) --- */
-
-  .cs-order-status {
-    font-size: var(--cs-font-size-small, 0.875rem);
-    color: var(--cs-muted-text-color);
-    font-style: italic;
   }
 
   /* --- MOQ column --- */
@@ -312,12 +274,13 @@
     .cs-col-image,
     .cs-col-remove,
     .cs-remove-btn,
-    .cs-qty-btn,
+    .cs-cart-control-down,
+    .cs-cart-control-up,
     .cs-lightbox {
       display: none !important;
     }
 
-    .cs-qty-input {
+    .cs-cart-control-input {
       border: none;
       background: none;
       text-align: right;

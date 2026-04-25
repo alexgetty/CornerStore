@@ -1,5 +1,6 @@
 ---
 import "./Cart.css";
+import CartControl from "../CartControl/CartControl.astro";
 import type { Listing } from "../../lib/storefront";
 import { formatPrice } from "../../lib/storefront";
 
@@ -119,22 +120,12 @@ for (const listing of listings) {
                 <td class="cs-col-price">{listing.price}</td>
               )}
               <td class="cs-col-qty">
-                {listing.status ? (
-                  <span class="cs-cart-status-label">{listing.status}</span>
-                ) : (
-                  <div class="cs-qty-control">
-                    <button type="button" class="cs-qty-btn cs-qty-down" aria-label="Decrease quantity">-</button>
-                    <input
-                      type="number"
-                      class="cs-qty-input"
-                      min="0"
-                      step={listing.moq ?? 1}
-                      value="0"
-                      aria-label={`Quantity for ${listing.name}`}
-                    />
-                    <button type="button" class="cs-qty-btn cs-qty-up" aria-label="Increase quantity">+</button>
-                  </div>
-                )}
+                <CartControl
+                  sku={listing.sku}
+                  name={listing.name}
+                  moq={listing.moq}
+                  status={listing.status}
+                />
               </td>
               <td class="cs-col-total">
                 {listing.status ? (
