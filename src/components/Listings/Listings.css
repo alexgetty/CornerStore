@@ -29,12 +29,12 @@
     height: 2.25rem;
     padding: 0;
     border: 1px solid var(--cs-border-color);
-    border-radius: var(--cs-button-border-radius, 4px);
-    background: var(--cs-surface-color, #fff);
+    border-radius: var(--cs-button-border-radius);
+    background: var(--cs-surface-color, transparent);
     cursor: pointer;
     color: var(--cs-body-text-color);
     opacity: 0.5;
-    transition: opacity var(--cs-transition-fast, 0.15s);
+    transition: opacity var(--cs-transition-fast);
   }
 
   .cs-view-toggle-btn:hover {

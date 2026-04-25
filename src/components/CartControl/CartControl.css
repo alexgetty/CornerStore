@@ -10,14 +10,14 @@
   .cs-cart-control-add {
     width: 100%;
     padding: 0.5rem;
-    font-size: var(--cs-font-size-small, 0.875rem);
+    font-size: var(--cs-font-size-small);
     font-weight: 600;
-    background: var(--cs-heading-text-color, #000);
-    color: var(--cs-listing-surface, #fff);
+    background: var(--cs-heading-text-color);
+    color: var(--cs-listing-surface);
     border: none;
-    border-radius: var(--cs-button-border-radius, 4px);
+    border-radius: var(--cs-button-border-radius);
     cursor: pointer;
-    transition: opacity var(--cs-transition-fast, 0.15s);
+    transition: opacity var(--cs-transition-fast);
   }
 
   .cs-cart-control-add:hover {
@@ -27,8 +27,8 @@
   .cs-cart-control-add:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    background: var(--cs-border-color, #ccc);
-    color: var(--cs-body-text-color, #333);
+    background: var(--cs-border-color);
+    color: var(--cs-body-text-color);
   }
 
   /* --- Stepper (qty controls) --- */
@@ -58,17 +58,17 @@
     border-width: 1px;
     border-style: solid;
     border-color: var(--cs-border-color);
-    background: var(--cs-listing-surface, #fff);
+    background: var(--cs-listing-surface, transparent);
   }
 
   .cs-cart-control-down {
-    border-top-left-radius: var(--cs-button-border-radius, 4px);
-    border-bottom-left-radius: var(--cs-button-border-radius, 4px);
+    border-top-left-radius: var(--cs-button-border-radius);
+    border-bottom-left-radius: var(--cs-button-border-radius);
   }
 
   .cs-cart-control-up {
-    border-top-right-radius: var(--cs-button-border-radius, 4px);
-    border-bottom-right-radius: var(--cs-button-border-radius, 4px);
+    border-top-right-radius: var(--cs-button-border-radius);
+    border-bottom-right-radius: var(--cs-button-border-radius);
   }
 
   .cs-cart-control-input {
@@ -76,7 +76,7 @@
     min-width: 0;
     height: 2.25rem;
     text-align: center;
-    font-size: var(--cs-font-size-small, 0.875rem);
+    font-size: var(--cs-font-size-small);
     font-weight: 600;
     border-top-width: 1px;
     border-bottom-width: 1px;
@@ -94,7 +94,7 @@
   }
 
   .cs-cart-control-input.cs-invalid {
-    border-color: var(--cs-error-color, #c00);
-    background-color: var(--cs-error-bg, #fff0f0);
+    border-color: var(--cs-error-color, currentColor);
+    background-color: var(--cs-error-bg, transparent);
   }
 }

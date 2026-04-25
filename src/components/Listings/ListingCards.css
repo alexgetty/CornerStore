@@ -30,16 +30,16 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    background-color: var(--cs-listing-surface, #fff);
+    background-color: var(--cs-listing-surface, transparent);
     border-width: 1px;
     border-style: solid;
     border-color: var(--cs-border-color);
-    border-radius: var(--cs-listing-border-radius, 8px);
-    transition: box-shadow var(--cs-transition-normal, 0.2s);
+    border-radius: var(--cs-listing-border-radius);
+    transition: box-shadow var(--cs-transition-normal);
   }
 
   .cs-listing:hover {
-    box-shadow: var(--cs-listing-shadow-hover, 0 2px 12px rgba(0, 0, 0, 0.08));
+    box-shadow: var(--cs-listing-shadow-hover);
   }
 
   /* --- Image --- */
@@ -51,15 +51,15 @@
 
   .cs-listing-image img {
     width: 100%;
-    aspect-ratio: var(--cs-image-aspect-ratio, 1);
+    aspect-ratio: var(--cs-image-aspect-ratio);
     object-fit: cover;
     display: block;
   }
 
   .cs-listing-placeholder {
     width: 100%;
-    aspect-ratio: var(--cs-image-aspect-ratio, 1);
-    background-color: var(--cs-image-background, #e0e0e0);
+    aspect-ratio: var(--cs-image-aspect-ratio);
+    background-color: var(--cs-image-background);
   }
 
   /* --- Badge --- */
@@ -78,8 +78,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--cs-heading-text-color, #000);
-    color: var(--cs-listing-surface, #fff);
+    background: var(--cs-heading-text-color);
+    color: var(--cs-listing-surface);
     font-size: 0.75rem;
     font-weight: 700;
     border-radius: 999px;
@@ -100,8 +100,8 @@
   }
 
   .cs-listing-category {
-    font-size: var(--cs-font-size-small, 0.875rem);
-    font-weight: var(--cs-emphasis-font-weight, 600);
+    font-size: var(--cs-font-size-small);
+    font-weight: var(--cs-emphasis-font-weight);
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--cs-muted-text-color);
@@ -109,22 +109,22 @@
   }
 
   .cs-listing-name {
-    font-size: var(--cs-font-size-base, 1rem);
-    font-weight: var(--cs-emphasis-font-weight, 600);
-    line-height: var(--cs-heading-line-height, 1.3);
+    font-size: var(--cs-font-size-base);
+    font-weight: var(--cs-emphasis-font-weight);
+    line-height: var(--cs-heading-line-height);
     margin: 0;
   }
 
   .cs-listing-description {
-    font-size: var(--cs-font-size-small, 0.875rem);
+    font-size: var(--cs-font-size-small);
     color: var(--cs-body-text-color);
-    line-height: var(--cs-body-line-height, 1.5);
+    line-height: var(--cs-body-line-height);
     margin: 0;
   }
 
   .cs-listing-price {
-    font-size: var(--cs-font-size-base, 1rem);
-    font-weight: var(--cs-emphasis-font-weight, 600);
+    font-size: var(--cs-font-size-base);
+    font-weight: var(--cs-emphasis-font-weight);
     color: var(--cs-heading-text-color);
     margin-top: 0.25rem;
     margin-bottom: 0;
@@ -133,7 +133,7 @@
   }
 
   .cs-listing-moq {
-    font-size: var(--cs-font-size-small, 0.875rem);
+    font-size: var(--cs-font-size-small);
     color: var(--cs-body-text-color);
     opacity: 0.6;
   }

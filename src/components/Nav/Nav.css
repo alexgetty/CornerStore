@@ -104,7 +104,7 @@
     border-width: 1px;
     border-style: solid;
     border-color: var(--cs-border-color);
-    border-radius: var(--cs-border-radius, 0.25rem);
+    border-radius: var(--cs-border-radius, 0);
     min-width: 10rem;
     z-index: 10;
   }
@@ -129,7 +129,7 @@
 
   .cs-nav-dropdown-menu a:hover {
     color: var(--cs-heading-text-color);
-    background-color: var(--cs-surface-hover, rgba(0, 0, 0, 0.04));
+    background-color: var(--cs-surface-hover, transparent);
   }
 
   .cs-nav-dropdown-menu a:focus-visible {

@@ -42,7 +42,7 @@
     width: 60px;
     height: 60px;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: var(--cs-thumb-border-radius, 0);
     flex-shrink: 0;
   }
 
@@ -51,7 +51,7 @@
     width: 60px;
     height: 60px;
     background: var(--cs-image-background);
-    border-radius: 4px;
+    border-radius: var(--cs-thumb-border-radius, 0);
     flex-shrink: 0;
   }
 
@@ -123,7 +123,7 @@
 
   .cs-remove-btn:hover {
     opacity: 1;
-    color: var(--cs-error-color, #c00);
+    color: var(--cs-error-color, currentColor);
   }
 
   .cs-subtotal-label {
@@ -150,7 +150,7 @@
   }
 
   .cs-order-errors {
-    color: var(--cs-error-color, #c00);
+    color: var(--cs-error-color, currentColor);
     margin-bottom: 1rem;
     font-size: var(--cs-font-size-small);
   }
@@ -202,9 +202,9 @@
 
   .cs-mailto-section {
     padding: 1.5rem;
-    background: var(--cs-surface-color, #f9f9f9);
+    background: var(--cs-surface-color, transparent);
     border: 1px solid var(--cs-border-color);
-    border-radius: 4px;
+    border-radius: var(--cs-button-border-radius);
     margin-bottom: 1.5rem;
   }
 
@@ -214,7 +214,7 @@
   }
 
   .cs-checkout-error {
-    color: var(--cs-error-color, #c00);
+    color: var(--cs-error-color, currentColor);
     margin-bottom: 1rem;
   }
 
@@ -231,7 +231,7 @@
     font-weight: var(--cs-emphasis-font-weight);
     border: 1px solid var(--cs-border-color);
     border-radius: var(--cs-button-border-radius);
-    background: var(--cs-surface-color, #fff);
+    background: var(--cs-surface-color, transparent);
     cursor: pointer;
     transition: background-color var(--cs-transition-fast);
   }
@@ -244,9 +244,9 @@
   .cs-cart-unavailable-banner {
     padding: 0.75rem 1rem;
     margin-bottom: 1.5rem;
-    background-color: var(--cs-warning-bg, #fff8e1);
-    border: 1px solid var(--cs-warning-border, #ffe082);
-    border-radius: 4px;
+    background-color: var(--cs-warning-bg, transparent);
+    border: 1px solid var(--cs-warning-border, currentColor);
+    border-radius: var(--cs-button-border-radius);
     font-size: var(--cs-font-size-small);
     color: var(--cs-body-text-color);
   }
@@ -266,9 +266,9 @@
     padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
     font-size: var(--cs-font-size-small);
     font-weight: var(--cs-emphasis-font-weight);
-    border: 1px solid var(--cs-warning-border, #ffe082);
+    border: 1px solid var(--cs-warning-border, currentColor);
     border-radius: var(--cs-button-border-radius);
-    background: var(--cs-surface-color, #fff);
+    background: var(--cs-surface-color, transparent);
     color: var(--cs-body-text-color);
     cursor: pointer;
     transition: background-color var(--cs-transition-fast);
@@ -279,7 +279,7 @@
   }
 
   .cs-unavailable-notice {
-    color: var(--cs-error-color, #c00);
+    color: var(--cs-error-color, currentColor);
     margin-bottom: 1rem;
     font-size: var(--cs-font-size-small);
   }
@@ -310,7 +310,7 @@
 
   .cs-clear-cart:hover,
   .cs-clear-cart:focus-visible {
-    color: var(--cs-error-color, #c00);
+    color: var(--cs-error-color, currentColor);
   }
 
   .cs-clear-cart-confirm {
@@ -336,7 +336,7 @@
     font-weight: var(--cs-emphasis-font-weight);
     border: 1px solid var(--cs-border-color);
     border-radius: var(--cs-button-border-radius);
-    background: var(--cs-surface-color, #fff);
+    background: var(--cs-surface-color, transparent);
     color: var(--cs-body-text-color);
     cursor: pointer;
     transition: background-color var(--cs-transition-fast);
@@ -344,45 +344,13 @@
 
   .cs-clear-cart-yes:hover,
   .cs-clear-cart-yes:focus-visible {
-    background-color: var(--cs-error-bg, #fff0f0);
-    border-color: var(--cs-error-color, #c00);
-    color: var(--cs-error-color, #c00);
+    background-color: var(--cs-error-bg, transparent);
+    border-color: var(--cs-error-color, currentColor);
+    color: var(--cs-error-color, currentColor);
   }
 
   .cs-clear-cart-cancel:hover,
   .cs-clear-cart-cancel:focus-visible {
     background-color: var(--cs-background);
-  }
-
-  @media print {
-    .cs-cart-unavailable-banner,
-    .cs-clear-unavailable,
-    .cs-unavailable-notice,
-    .cs-col-remove,
-    .cs-remove-btn,
-    .cs-cart-control-down,
-    .cs-cart-control-up,
-    .cs-cart-control-add,
-    .cs-order-actions,
-    .cs-clear-cart-row,
-    .cs-mailto-section,
-    .cs-order-errors,
-    .cs-min-cart-notice,
-    .cs-checkout-error,
-    .cs-checkout-fallback,
-    .cs-cart-summary {
-      display: none !important;
-    }
-
-    .cs-cart-control-input {
-      border: none;
-      background: none;
-      text-align: right;
-      width: auto;
-    }
-
-    .cs-cart-table {
-      font-size: 11pt;
-    }
   }
 }
