@@ -40,7 +40,11 @@ function init(root: HTMLElement) {
   const pdfBtn = root.querySelector('.cs-pdf-btn') as HTMLButtonElement;
   const cartSummary = root.querySelector('.cs-cart-summary') as HTMLElement;
   const shippingStatus = root.querySelector('.cs-shipping-status') as HTMLElement;
-  const minimumStatus = root.querySelector('.cs-minimum-status') as HTMLElement;
+  // Minimum-order status now lives in the consolidated totals block under the
+  // table, separate from cart-summary (which holds shipping). The container
+  // .cs-totals-minimum is hidden/shown; only the "remaining" amount is dynamic.
+  const minimumStatus = root.querySelector('.cs-totals-minimum') as HTMLElement | null;
+  const minimumRemaining = root.querySelector('.cs-totals-minimum-remaining') as HTMLElement | null;
   const banner = root.querySelector('.cs-cart-unavailable-banner') as HTMLElement;
   const clearUnavailableBtn = root.querySelector('.cs-clear-unavailable') as HTMLButtonElement | null;
   const unavailableNotice = root.querySelector('.cs-unavailable-notice') as HTMLElement | null;
@@ -347,9 +351,10 @@ function init(root: HTMLElement) {
   }
 
   function updateCartSummary(subtotal: number) {
-    if (!cartSummary) return;
-
-    let hasContent = false;
+    // Shipping status block (.cs-cart-summary) is independent of the minimum
+    // status, which lives in the totals block above. Each manages its own
+    // visibility.
+    let summaryHasContent = false;
 
     if (shippingFlatRaw != null && shippingStatus) {
       if (shippingFreeThresholdRaw != null && subtotal >= shippingFreeThresholdRaw) {
@@ -361,25 +366,26 @@ function init(root: HTMLElement) {
         shippingStatus.textContent = `${formatPrice(shippingFlatRaw, currency)} shipping`;
       }
       shippingStatus.hidden = false;
-      hasContent = true;
+      summaryHasContent = true;
     } else if (shippingStatus) {
       shippingStatus.hidden = true;
     }
 
-    if (minCartSizeRaw != null && minimumStatus) {
+    if (cartSummary) cartSummary.hidden = !summaryHasContent;
+
+    // Minimum status: only show when below the minimum. Static target ($Y) is
+    // already in the markup; we only swap the dynamic remaining amount.
+    if (minCartSizeRaw != null && minimumStatus && minimumRemaining) {
       const remaining = minCartSizeRaw - subtotal;
       if (remaining > 0) {
-        minimumStatus.textContent = `${formatPrice(remaining, currency)} away from minimum order`;
+        minimumRemaining.textContent = formatPrice(remaining, currency);
         minimumStatus.hidden = false;
-        hasContent = true;
       } else {
         minimumStatus.hidden = true;
       }
     } else if (minimumStatus) {
       minimumStatus.hidden = true;
     }
-
-    cartSummary.hidden = !hasContent;
   }
 
   // --- Clear unavailable items ---
@@ -513,8 +519,15 @@ function init(root: HTMLElement) {
 
       const pdfContent = contentEl.cloneNode(true) as HTMLElement;
 
+      // Strip interactive controls + dynamic status messaging from the
+      // printable order. .cs-order-actions removes both Clear all and
+      // Checkout/Submit (nested children). .cs-cart-summary drops the
+      // shipping-progress line. .cs-totals-minimum drops the "X of Y minimum"
+      // line because by the time the order is printed/emailed the gap is no
+      // longer relevant; the static subtotal stays via the .cs-cart-totals
+      // wrapper, which we keep.
       pdfContent.querySelectorAll(
-        '.cs-order-actions, .cs-clear-cart-row, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-min-cart-notice, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary, .cs-continue-shopping',
+        '.cs-order-actions, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-totals-minimum, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
       ).forEach((el) => el.remove());
 
       pdfContent.querySelectorAll('.cs-cart-row[hidden]').forEach((row) => row.remove());

@@ -14,7 +14,7 @@
   .cs-cart-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .cs-cart-table th,
@@ -126,27 +126,57 @@
     color: var(--cs-error-color, currentColor);
   }
 
-  .cs-subtotal-label {
-    text-align: right;
-    font-weight: 600;
+  /* Consolidated totals block (subtotal + minimum context). Sits flush under
+     the table so the user reads "what's in cart -> what it costs -> what's
+     missing" as one continuous block. The table's last-row bottom border
+     already supplies a visual separator, so no extra border-top here. */
+  .cs-cart-totals {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.75rem 0;
   }
 
-  .cs-subtotal-value {
-    text-align: right;
+  .cs-totals-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .cs-totals-label {
     font-weight: 600;
+    color: var(--cs-body-text-color);
+  }
+
+  .cs-totals-value {
+    font-weight: 600;
+    text-align: right;
+    min-width: 5rem;
+    color: var(--cs-body-text-color);
+  }
+
+  .cs-totals-minimum {
+    margin: 0;
+    font-size: var(--cs-font-size-small);
+    color: var(--cs-muted-text-color);
+  }
+
+  .cs-totals-minimum[hidden] {
+    display: none;
+  }
+
+  .cs-totals-minimum-remaining {
+    color: var(--cs-error-color, currentColor);
+    font-weight: var(--cs-emphasis-font-weight);
   }
 
   .cs-cart-summary {
     margin-bottom: 1rem;
     font-size: var(--cs-font-size-small);
     color: var(--cs-body-text-color);
-  }
-
-  .cs-min-cart-notice {
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
-    opacity: 0.7;
-    margin-bottom: 1rem;
+    text-align: right;
   }
 
   .cs-order-errors {
@@ -160,11 +190,21 @@
     padding-left: 1.25rem;
   }
 
+  /* Action row: Clear all (left) + Checkout (right). On narrow viewports the
+     row wraps so Checkout (the primary action) lands above Clear all. */
   .cs-order-actions {
     display: flex;
+    flex-wrap: wrap-reverse;
     align-items: center;
-    gap: 1.5rem;
+    justify-content: space-between;
+    gap: 0.75rem;
     margin-bottom: 1.5rem;
+  }
+
+  .cs-order-actions-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .cs-submit-btn {
@@ -188,16 +228,28 @@
     cursor: not-allowed;
   }
 
-  .cs-continue-shopping {
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    transition: color var(--cs-transition-fast);
-  }
+  /* Mobile: stack so Checkout (primary) sits on top thanks to wrap-reverse,
+     and stretch both buttons full-width for big tap targets. */
+  @media (max-width: 480px) {
+    .cs-order-actions {
+      flex-direction: row;
+    }
 
-  .cs-continue-shopping:hover {
-    color: var(--cs-heading-text-color);
+    .cs-order-actions-secondary,
+    .cs-order-actions > .cs-submit-btn {
+      flex: 1 1 100%;
+    }
+
+    .cs-order-actions-secondary {
+      justify-content: stretch;
+    }
+
+    .cs-order-actions-secondary .cs-clear-cart,
+    .cs-order-actions-secondary .cs-clear-cart-confirm {
+      flex: 1 1 auto;
+      width: 100%;
+      justify-content: center;
+    }
   }
 
   .cs-mailto-section {
@@ -288,29 +340,37 @@
     opacity: 0.4;
   }
 
-  .cs-clear-cart-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .cs-clear-cart {
-    background: none;
-    border: none;
-    padding: 0.25rem 0;
+  /* Clear all is now a peer of Checkout, so it gets button affordance instead
+     of the old quiet-link treatment. Outlined-button family matching the
+     Yes/Cancel confirm chips, with destructive hover hint. */
+  .cs-clear-cart,
+  .cs-clear-cart-yes,
+  .cs-clear-cart-cancel {
+    padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
     font-size: var(--cs-font-size-small);
-    color: var(--cs-muted-text-color);
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    font-weight: var(--cs-emphasis-font-weight);
+    border: 1px solid var(--cs-border-color);
+    border-radius: var(--cs-button-border-radius);
+    background: var(--cs-surface-color, transparent);
+    color: var(--cs-body-text-color);
     cursor: pointer;
-    transition: color var(--cs-transition-fast);
+    transition: background-color var(--cs-transition-fast),
+                border-color var(--cs-transition-fast),
+                color var(--cs-transition-fast);
   }
 
   .cs-clear-cart:hover,
-  .cs-clear-cart:focus-visible {
+  .cs-clear-cart:focus-visible,
+  .cs-clear-cart-yes:hover,
+  .cs-clear-cart-yes:focus-visible {
+    background-color: var(--cs-error-bg, transparent);
+    border-color: var(--cs-error-color, currentColor);
     color: var(--cs-error-color, currentColor);
+  }
+
+  .cs-clear-cart-cancel:hover,
+  .cs-clear-cart-cancel:focus-visible {
+    background-color: var(--cs-background);
   }
 
   .cs-clear-cart-confirm {
@@ -323,34 +383,5 @@
 
   .cs-clear-cart-confirm[hidden] {
     display: none;
-  }
-
-  .cs-clear-cart-prompt {
-    color: var(--cs-body-text-color);
-  }
-
-  .cs-clear-cart-yes,
-  .cs-clear-cart-cancel {
-    padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
-    font-size: var(--cs-font-size-small);
-    font-weight: var(--cs-emphasis-font-weight);
-    border: 1px solid var(--cs-border-color);
-    border-radius: var(--cs-button-border-radius);
-    background: var(--cs-surface-color, transparent);
-    color: var(--cs-body-text-color);
-    cursor: pointer;
-    transition: background-color var(--cs-transition-fast);
-  }
-
-  .cs-clear-cart-yes:hover,
-  .cs-clear-cart-yes:focus-visible {
-    background-color: var(--cs-error-bg, transparent);
-    border-color: var(--cs-error-color, currentColor);
-    color: var(--cs-error-color, currentColor);
-  }
-
-  .cs-clear-cart-cancel:hover,
-  .cs-clear-cart-cancel:focus-visible {
-    background-color: var(--cs-background);
   }
 }

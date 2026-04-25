@@ -141,41 +141,44 @@ for (const listing of listings) {
           );
         })}
       </tbody>
-      <tfoot>
-        <tr>
-          <td colspan={hasWholesale ? 4 : 3} class="cs-subtotal-label">Subtotal</td>
-          <td class="cs-subtotal-value">$0.00</td>
-          <td></td>
-        </tr>
-      </tfoot>
     </table>
+
+    <div class="cs-cart-totals">
+      <div class="cs-totals-row">
+        <span class="cs-totals-label">Subtotal</span>
+        <span class="cs-subtotal-value cs-totals-value">$0.00</span>
+      </div>
+      {minCartSize != null && (
+        <p class="cs-totals-minimum" hidden>
+          <span class="cs-totals-minimum-text">
+            <span class="cs-totals-minimum-remaining"></span>
+            <span class="cs-totals-minimum-of"> of </span>
+            <span class="cs-totals-minimum-target">{formatPrice(minCartSizeRaw!, currency)}</span>
+            <span class="cs-totals-minimum-suffix"> minimum order</span>
+          </span>
+        </p>
+      )}
+    </div>
 
     <div class="cs-cart-summary" hidden>
       <p class="cs-shipping-status"></p>
-      <p class="cs-minimum-status"></p>
     </div>
-
-    {minCartSize != null && (
-      <p class="cs-min-cart-notice">Minimum order: {formatPrice(minCartSizeRaw!, currency)}</p>
-    )}
 
     <div class="cs-order-errors" hidden></div>
     <div class="cs-unavailable-notice" hidden></div>
 
     <div class="cs-order-actions">
+      <div class="cs-order-actions-secondary">
+        <button type="button" class="cs-clear-cart">Clear all</button>
+        <span class="cs-clear-cart-confirm" hidden role="group" aria-label="Confirm clear cart">
+          <span class="cs-clear-cart-prompt">Clear entire cart?</span>
+          <button type="button" class="cs-clear-cart-yes">Yes, clear</button>
+          <button type="button" class="cs-clear-cart-cancel">Cancel</button>
+        </span>
+      </div>
       <button type="button" class="cs-submit-btn" disabled>
         {checkoutEnabled ? 'Checkout' : 'Submit Order'}
       </button>
-      <a href="/" class="cs-continue-shopping">Continue shopping</a>
-    </div>
-
-    <div class="cs-clear-cart-row">
-      <button type="button" class="cs-clear-cart">Clear cart</button>
-      <span class="cs-clear-cart-confirm" hidden role="group" aria-label="Confirm clear cart">
-        <span class="cs-clear-cart-prompt">Clear entire cart?</span>
-        <button type="button" class="cs-clear-cart-yes">Yes, clear</button>
-        <button type="button" class="cs-clear-cart-cancel">Cancel</button>
-      </span>
     </div>
 
     <div class="cs-checkout-error" hidden></div>
