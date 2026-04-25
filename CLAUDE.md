@@ -65,6 +65,14 @@ Note: `docs/SETUP.md` was deleted (the whole setup/onboarding doc needs a rewrit
 
 Stale docs are bugs.
 
+## Todos
+
+Active todos live in `docs/todo/`. Resolved todos live in `docs/todo/archive/`.
+
+When a todo is fully resolved, move it to `docs/todo/archive/` in the same commit that closes the work, and update any cross-references to the new path. A todo is fully resolved only when every item is shipped, dismissed, or explicitly deferred to another doc. Partial progress stays in `docs/todo/` with inline status updates. Don't archive partial work.
+
+Long-deferred items live in `docs/todo/archive/deferred/`. Move things there only if the work has been explicitly shelved, not just because progress has stalled.
+
 ## Green / Red Team
 
 Two adversarial modes for rigorous development.

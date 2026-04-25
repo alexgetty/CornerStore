@@ -10,9 +10,9 @@ Critical / High resolution summary (for cross-reference):
 - C3 — no cart/listings tests → `docs/todo/cart-listings-test-coverage.md`.
 - H1 — hidden-filter test gap → **fixed inline.**
 - H2 — widget/cart subtotal drift → `docs/todo/cart-visibility-helper.md`.
-- H3 + H9 — unavailable rows only visually disabled → `docs/todo/cart-unavailable-row-disabling.md`.
+- H3 + H9 — unavailable rows only visually disabled → **resolved, archived at `docs/todo/archive/cart-unavailable-row-disabling.md`.**
 - H4 — banner shows raw SKU → **fixed inline (with init parity fix).**
-- H5 — checkout confirm + server guard → **resolved, archived at `docs/archive/done/cart-checkout-unavailable-handling.md`.**
+- H5 — checkout confirm + server guard → **resolved, archived at `docs/todo/archive/cart-checkout-unavailable-handling.md`.**
 - H6 — listings hides cart qty on status items → `docs/todo/listings-unavailable-in-cart-indicator.md`.
 - H7 — stale SETUP.md → **deleted the file, cleaned up runtime refs. Docs rewrite deferred until product stabilizes.**
 - H8 — legacy CSV migration → dismissed. No users to migrate.
@@ -70,16 +70,16 @@ Two independent implementations of the visibility predicate. If the rule evolves
 
 ---
 
-### M5 — Stale order-sheet docs in `docs/todo/` and `docs/superpowers/plans/`
+### M5 — Stale order-sheet docs in `docs/superpowers/plans/`
 
-**Locations:**
-- `docs/todo/order-sheet-and-cart.md`
-- `docs/todo/order-sheet.md`
+**Status:** Partially resolved. The two `docs/todo/` order-sheet docs have been moved to `docs/todo/archive/` (`order-sheet.md`, `order-sheet-and-cart.md`). One stale plan remains.
+
+**Remaining location:**
 - `docs/superpowers/plans/2026-04-15-order-sheet.md`
 
-These describe the now-deleted Order Sheet page/component. Future contributors reading them get a stale mental model. Stale docs are bugs (CLAUDE.md).
+Describes the now-deleted Order Sheet page/component. Future contributors reading it get a stale mental model. Stale docs are bugs (CLAUDE.md).
 
-**Fix:** Move to `docs/archive/` (folder exists) with a one-line note about supersession, or delete. Either is fine — archive is lower cognitive load.
+**Fix:** Move to `docs/todo/archive/` with a one-line note about supersession, or delete. Either is fine; archive is lower cognitive load.
 
 **Dependency:** None.
 
@@ -129,9 +129,9 @@ Writes a view preference to `localStorage` with no disclosure. Probably acceptab
 
 Minor perf. `ListingTable.astro` conditionally renders qty control or status span. `Cart.astro` unconditionally renders qty control even for status rows.
 
-**Fix (STATUS: resolved by H3+H9 todo):** `docs/todo/cart-unavailable-row-disabling.md` already prescribes skipping qty control render server-side for status rows. Land that and D1 closes. Do NOT do separately.
+**Fix (STATUS: resolved by H3+H9):** Resolved upstream when H3+H9 shipped. Cart no longer renders dead qty controls on status rows. Archived at `docs/todo/archive/cart-unavailable-row-disabling.md`.
 
-**Dependency:** Closed by `cart-unavailable-row-disabling.md`.
+**Dependency:** Closed.
 
 ---
 
@@ -185,7 +185,7 @@ The H5 server guard rejects requests whose SKU is `hidden` or has a `status` set
 | M6 | Open | (this file) |
 | M7 | Open | (this file) |
 | M8 | Open; awaits docs rewrite | (this file) |
-| D1 | Resolved elsewhere | `cart-unavailable-row-disabling.md` |
+| D1 | Resolved | `docs/todo/archive/cart-unavailable-row-disabling.md` |
 | D2 | Open | (this file) |
 | D3 | Open | (this file) |
 | D4 | Open | (this file) |

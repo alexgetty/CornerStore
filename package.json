@@ -44,7 +44,8 @@
     "src/lib/",
     "src/components/",
     "src/layouts/",
-    "src/styles/"
+    "src/styles/",
+    "theme/"
   ],
   "scripts": {
     "dev": "astro dev",

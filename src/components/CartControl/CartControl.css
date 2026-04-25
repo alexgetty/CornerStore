@@ -9,26 +9,26 @@
 
   .cs-cart-control-add {
     width: 100%;
-    padding: 0.5rem;
-    font-size: var(--cs-font-size-small);
-    font-weight: 600;
-    background: var(--cs-heading-text-color);
-    color: var(--cs-listing-surface);
+    padding: var(--cs-cart-control-add-padding, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    background: var(--cs-heading-text-color, currentColor);
+    color: var(--cs-listing-surface, transparent);
     border: none;
-    border-radius: var(--cs-button-border-radius);
+    border-radius: var(--cs-button-border-radius, 0);
     cursor: pointer;
-    transition: opacity var(--cs-transition-fast);
+    transition: opacity var(--cs-transition-fast, 0s);
   }
 
   .cs-cart-control-add:hover {
-    opacity: 0.85;
+    opacity: var(--cs-button-hover-opacity, 1);
   }
 
   .cs-cart-control-add:disabled {
-    opacity: 0.4;
+    opacity: var(--cs-disabled-opacity, 1);
     cursor: not-allowed;
-    background: var(--cs-border-color);
-    color: var(--cs-body-text-color);
+    background: var(--cs-border-color, currentColor);
+    color: var(--cs-body-text-color, inherit);
   }
 
   /* --- Stepper (qty controls) --- */
@@ -47,43 +47,43 @@
 
   .cs-cart-control-down,
   .cs-cart-control-up {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: var(--cs-cart-control-stepper-size, auto);
+    height: var(--cs-cart-control-stepper-size, auto);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: var(--cs-cart-control-stepper-font-size, inherit);
     line-height: 1;
-    border-width: 1px;
+    border-width: var(--cs-border-width, 0);
     border-style: solid;
-    border-color: var(--cs-border-color);
+    border-color: var(--cs-border-color, currentColor);
     background: var(--cs-listing-surface, transparent);
   }
 
   .cs-cart-control-down {
-    border-top-left-radius: var(--cs-button-border-radius);
-    border-bottom-left-radius: var(--cs-button-border-radius);
+    border-top-left-radius: var(--cs-button-border-radius, 0);
+    border-bottom-left-radius: var(--cs-button-border-radius, 0);
   }
 
   .cs-cart-control-up {
-    border-top-right-radius: var(--cs-button-border-radius);
-    border-bottom-right-radius: var(--cs-button-border-radius);
+    border-top-right-radius: var(--cs-button-border-radius, 0);
+    border-bottom-right-radius: var(--cs-button-border-radius, 0);
   }
 
   .cs-cart-control-input {
     flex: 1;
     min-width: 0;
-    height: 2.25rem;
+    height: var(--cs-cart-control-stepper-size, auto);
     text-align: center;
-    font-size: var(--cs-font-size-small);
-    font-weight: 600;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    border-top-width: var(--cs-border-width, 0);
+    border-bottom-width: var(--cs-border-width, 0);
     border-left-width: 0;
     border-right-width: 0;
     border-style: solid;
-    border-color: var(--cs-border-color);
+    border-color: var(--cs-border-color, currentColor);
     -moz-appearance: textfield;
   }
 

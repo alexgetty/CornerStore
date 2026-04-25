@@ -2,7 +2,7 @@
 
 ## Archived — feature removed
 
-Commit `212c53a` removed the OrderSheet component (`src/components/OrderSheet` and `src/pages/order-sheet.astro` deleted). Multi-item purchasing is now handled by the Cart component with PDF or Stripe checkout modes (see `docs/archive/done/cart-system.md` and the `checkout: 'pdf' | 'stripe'` config shipped in commit `2b904b3`). Archived as obsolete.
+Commit `212c53a` removed the OrderSheet component (`src/components/OrderSheet` and `src/pages/order-sheet.astro` deleted). Multi-item purchasing is now handled by the Cart component with PDF or Stripe checkout modes (see `docs/todo/archive/cart-system.md` and the `checkout: 'pdf' | 'stripe'` config shipped in commit `2b904b3`). Archived as obsolete.
 
 ---
 

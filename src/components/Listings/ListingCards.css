@@ -4,22 +4,12 @@
 
   .cs-listing-cards ul {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--cs-listing-minimum-width), 1fr));
-    gap: var(--cs-listings-gap);
+    grid-template-columns: repeat(auto-fill, minmax(var(--cs-listing-minimum-width, 0), 1fr));
+    gap: var(--cs-listings-gap, 0);
   }
 
   .cs-listing-cards li {
     display: flex;
-  }
-
-  .cs-listings-empty {
-    text-align: center;
-    color: var(--cs-muted-text-color);
-    padding-top: 3rem;
-    padding-bottom: 3rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    font-size: var(--cs-font-size-large);
   }
 
   /* --- Card --- */
@@ -31,15 +21,15 @@
     flex-direction: column;
     width: 100%;
     background-color: var(--cs-listing-surface, transparent);
-    border-width: 1px;
+    border-width: var(--cs-border-width, 0);
     border-style: solid;
-    border-color: var(--cs-border-color);
-    border-radius: var(--cs-listing-border-radius);
-    transition: box-shadow var(--cs-transition-normal);
+    border-color: var(--cs-border-color, currentColor);
+    border-radius: var(--cs-listing-border-radius, 0);
+    transition: box-shadow var(--cs-transition-normal, 0s);
   }
 
   .cs-listing:hover {
-    box-shadow: var(--cs-listing-shadow-hover);
+    box-shadow: var(--cs-listing-shadow-hover, none);
   }
 
   /* --- Image --- */
@@ -51,15 +41,15 @@
 
   .cs-listing-image img {
     width: 100%;
-    aspect-ratio: var(--cs-image-aspect-ratio);
+    aspect-ratio: var(--cs-image-aspect-ratio, auto);
     object-fit: cover;
     display: block;
   }
 
   .cs-listing-placeholder {
     width: 100%;
-    aspect-ratio: var(--cs-image-aspect-ratio);
-    background-color: var(--cs-image-background);
+    aspect-ratio: var(--cs-image-aspect-ratio, auto);
+    background-color: var(--cs-image-background, transparent);
   }
 
   /* --- Badge --- */
@@ -69,20 +59,20 @@
     top: 0.5rem;
     right: 0.5rem;
     z-index: 1;
-    min-width: 1.5rem;
-    height: 1.5rem;
+    min-width: var(--cs-listing-badge-size, auto);
+    height: var(--cs-listing-badge-size, auto);
     padding-top: 0;
     padding-bottom: 0;
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
+    padding-left: var(--cs-listing-badge-padding-x, 0);
+    padding-right: var(--cs-listing-badge-padding-x, 0);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--cs-heading-text-color);
-    color: var(--cs-listing-surface);
-    font-size: 0.75rem;
-    font-weight: 700;
-    border-radius: 999px;
+    background: var(--cs-heading-text-color, currentColor);
+    color: var(--cs-listing-surface, transparent);
+    font-size: var(--cs-listing-badge-font-size, inherit);
+    font-weight: var(--cs-listing-badge-font-weight, inherit);
+    border-radius: var(--cs-radius-pill, 0);
     line-height: 1;
   }
 
@@ -91,59 +81,58 @@
   .cs-listing-details {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    gap: var(--cs-listing-inner-gap, 0);
+    padding-top: var(--cs-listing-padding, 0);
+    padding-bottom: var(--cs-listing-padding, 0);
+    padding-left: var(--cs-listing-padding, 0);
+    padding-right: var(--cs-listing-padding, 0);
     flex: 1;
   }
 
   .cs-listing-category {
-    font-size: var(--cs-font-size-small);
-    font-weight: var(--cs-emphasis-font-weight);
-    letter-spacing: 0.05em;
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    letter-spacing: var(--cs-letter-spacing-loose, normal);
     text-transform: uppercase;
-    color: var(--cs-muted-text-color);
+    color: var(--cs-muted-text-color, inherit);
     line-height: 1;
   }
 
   .cs-listing-name {
-    font-size: var(--cs-font-size-base);
-    font-weight: var(--cs-emphasis-font-weight);
-    line-height: var(--cs-heading-line-height);
+    font-size: var(--cs-font-size-base, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    line-height: var(--cs-heading-line-height, normal);
     margin: 0;
   }
 
   .cs-listing-description {
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
-    line-height: var(--cs-body-line-height);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-body-text-color, inherit);
+    line-height: var(--cs-body-line-height, normal);
     margin: 0;
   }
 
   .cs-listing-price {
-    font-size: var(--cs-font-size-base);
-    font-weight: var(--cs-emphasis-font-weight);
-    color: var(--cs-heading-text-color);
-    margin-top: 0.25rem;
+    font-size: var(--cs-font-size-base, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    color: var(--cs-heading-text-color, inherit);
+    margin-top: var(--cs-listing-price-margin-top, 0);
     margin-bottom: 0;
     margin-left: 0;
     margin-right: 0;
   }
 
   .cs-listing-moq {
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
-    opacity: 0.6;
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-muted-text-color, inherit);
   }
 
   /* --- Cart controls slot --- */
 
   .cs-listing-cart {
     padding-top: 0;
-    padding-bottom: 0.75rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-bottom: var(--cs-listing-padding, 0);
+    padding-left: var(--cs-listing-padding, 0);
+    padding-right: var(--cs-listing-padding, 0);
   }
 }

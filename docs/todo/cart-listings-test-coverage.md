@@ -27,12 +27,10 @@ The cart/listings code was shipped across commits 650d772 → edf3b1e without te
 
 ## Sequencing
 
-**Do this AFTER** the following findings have been resolved, so tests codify the fixed behavior:
-- **H3** — unavailable rows must set `aria-disabled` and disable qty inputs (not just `pointer-events: none`)
-- **H5** — RESOLVED (client layer): `confirm()` replaced by an inline "Remove unavailable items" button in the banner + dedicated `.cs-unavailable-notice`. Submit gated while `unavailableSkus.length > 0`. Test contract lives under "Checkout flow" below.
-- **H9** — skip attaching click handlers to status rows in cart
+**Prerequisites all resolved.** This work is unblocked.
 
-If those findings change before this work starts, update the test matrix below accordingly.
+- **H3 + H9** — RESOLVED. Unavailable rows set `aria-disabled`/disable qty inputs, and the cart skips click handlers on status rows. Archived at `docs/todo/archive/cart-unavailable-row-disabling.md`.
+- **H5** — RESOLVED (client layer): `confirm()` replaced by an inline "Remove unavailable items" button in the banner + dedicated `.cs-unavailable-notice`. Submit gated while `unavailableSkus.length > 0`. Test contract lives under "Checkout flow" below. Archived at `docs/todo/archive/cart-checkout-unavailable-handling.md`.
 
 ## Prerequisites
 

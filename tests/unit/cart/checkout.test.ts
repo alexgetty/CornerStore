@@ -318,8 +318,6 @@ describe('buildLineItems', () => {
 describe('createCheckoutHandler', () => {
   let mockCreate: ReturnType<typeof vi.fn>;
 
-  let mockList: ReturnType<typeof vi.fn>;
-
   let mockLoadCatalog: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -329,18 +327,8 @@ describe('createCheckoutHandler', () => {
     mockCreate = (Stripe.default as any).__mockCreate;
     mockCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session_abc' });
 
-    // Mock products.list to return an async iterable
-    mockList = vi.fn().mockReturnValue({
-      async *[Symbol.asyncIterator]() {
-        yield {
-          metadata: { sku: 'WIDGET-001' },
-          default_price: { id: 'price_123', unit_amount: 2000, currency: 'usd' },
-        };
-      },
-    });
     (Stripe.default as any).mockImplementation(() => ({
       checkout: { sessions: { create: mockCreate } },
-      products: { list: mockList },
     }));
 
     const catalogCsv = await import('../../../src/lib/catalog/csv.js');
@@ -457,11 +445,37 @@ describe('createCheckoutHandler', () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it('caches the catalog across requests (loadCatalog called once over two requests)', async () => {
+  it('reads the catalog from disk on every request (no caching)', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
     await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
 
-    expect(mockLoadCatalog).toHaveBeenCalledTimes(1);
+    expect(mockLoadCatalog).toHaveBeenCalledTimes(2);
+  });
+
+  it('reflects a catalog mutation between requests without restart', async () => {
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+
+    // First request: SKU is available, checkout succeeds.
+    const first = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+    expect(first.status).toBe(200);
+
+    // Operator hides the SKU on disk (simulated by changing the next loadCatalog return).
+    mockLoadCatalog.mockResolvedValueOnce([
+      makeProduct({ sku: 'WIDGET-001', name: 'Widget', price: 20.00, hidden: true }),
+    ]);
+
+    // Second request to the SAME handler instance must reflect the change.
+    const second = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+    expect(second.status).toBe(400);
+    const body = await second.json();
+    expect(body.error).toMatch(/Unavailable SKU/);
+    expect(body.error).toContain('WIDGET-001');
   });
 });

@@ -146,7 +146,7 @@ Depends on DOM test infrastructure (see `cart-listings-test-coverage.md`). Add t
 
 ## Related todos
 
-- **H5** — resolved, archived at `docs/archive/done/cart-checkout-unavailable-handling.md`. Cart page now handles unavailable items via banner + remove button + server guards.
+- **H5** — resolved, archived at `docs/todo/archive/cart-checkout-unavailable-handling.md`. Cart page now handles unavailable items via banner + remove button + server guards.
 - **C3** (`cart-listings-test-coverage.md`) — test infrastructure. H6 tests go in the listings.ts matrix already scoped in that todo.
 - **H3+H9** (`cart-unavailable-row-disabling.md`) — different module (cart, not listings). No overlap.
 

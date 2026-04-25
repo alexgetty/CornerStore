@@ -3,61 +3,61 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
-    padding-top: var(--cs-main-gap);
-    padding-bottom: var(--cs-main-gap);
-    border-bottom-width: 1px;
+    gap: var(--cs-nav-gap, 0);
+    padding-top: var(--cs-main-gap, 0);
+    padding-bottom: var(--cs-main-gap, 0);
+    border-bottom-width: var(--cs-border-width, 0);
     border-bottom-style: solid;
-    border-bottom-color: var(--cs-border-color);
-    background-color: var(--cs-header-surface);
+    border-bottom-color: var(--cs-border-color, currentColor);
+    background-color: var(--cs-header-surface, transparent);
   }
 
   .cs-store-name {
-    font-size: var(--cs-font-size-larger);
-    font-weight: var(--cs-heading-font-weight);
-    letter-spacing: var(--cs-heading-letter-spacing);
-    color: var(--cs-heading-text-color);
+    font-size: var(--cs-font-size-larger, inherit);
+    font-weight: var(--cs-heading-font-weight, inherit);
+    letter-spacing: var(--cs-heading-letter-spacing, normal);
+    color: var(--cs-heading-text-color, inherit);
     text-decoration: none;
   }
 
   .cs-store-name:hover {
-    color: var(--cs-highlight-text-color);
+    color: var(--cs-highlight-text-color, inherit);
   }
 
   .cs-logo {
-    height: 2rem;
+    height: var(--cs-logo-height, auto);
     width: auto;
     vertical-align: middle;
-    margin-right: 0.5rem;
+    margin-right: var(--cs-logo-margin-right, 0);
   }
 
   .cs-header-actions {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: var(--cs-nav-gap, 0);
   }
 
   .cs-nav-links {
     display: flex;
-    gap: 1.5rem;
+    gap: var(--cs-nav-gap, 0);
   }
 
   .cs-nav-links a {
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-body-text-color, inherit);
     text-decoration: none;
-    transition: color var(--cs-transition-fast);
+    transition: color var(--cs-transition-fast, 0s);
   }
 
   .cs-nav-links a:hover {
-    color: var(--cs-heading-text-color);
+    color: var(--cs-heading-text-color, inherit);
   }
 
   .cs-nav-links a:focus-visible {
-    outline-width: var(--cs-focus-width);
+    outline-width: var(--cs-focus-width, 2px);
     outline-style: solid;
-    outline-color: var(--cs-focus-color);
-    outline-offset: var(--cs-focus-offset);
+    outline-color: var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
   }
 
   .cs-nav-dropdown {
@@ -65,10 +65,10 @@
   }
 
   .cs-nav-dropdown-trigger {
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-body-text-color, inherit);
     text-decoration: none;
-    transition: color var(--cs-transition-fast);
+    transition: color var(--cs-transition-fast, 0s);
     background-color: transparent;
     border-width: 0;
     padding-top: 0;
@@ -80,14 +80,14 @@
   }
 
   .cs-nav-dropdown-trigger:hover {
-    color: var(--cs-heading-text-color);
+    color: var(--cs-heading-text-color, inherit);
   }
 
   .cs-nav-dropdown-trigger:focus-visible {
-    outline-width: var(--cs-focus-width);
+    outline-width: var(--cs-focus-width, 2px);
     outline-style: solid;
-    outline-color: var(--cs-focus-color);
-    outline-offset: var(--cs-focus-offset);
+    outline-color: var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
   }
 
   .cs-nav-dropdown-menu {
@@ -96,16 +96,16 @@
     top: 100%;
     right: 0;
     flex-direction: column;
-    padding-top: 0.25rem;
+    padding-top: var(--cs-nav-dropdown-menu-padding-y, 0);
     padding-right: 0;
-    padding-bottom: 0.25rem;
+    padding-bottom: var(--cs-nav-dropdown-menu-padding-y, 0);
     padding-left: 0;
-    background-color: var(--cs-header-surface, var(--cs-surface-color));
-    border-width: 1px;
+    background-color: var(--cs-header-surface, var(--cs-surface-color, transparent));
+    border-width: var(--cs-border-width, 0);
     border-style: solid;
-    border-color: var(--cs-border-color);
+    border-color: var(--cs-border-color, currentColor);
     border-radius: var(--cs-border-radius, 0);
-    min-width: 10rem;
+    min-width: var(--cs-nav-dropdown-menu-min-width, auto);
     z-index: 10;
   }
 
@@ -116,26 +116,26 @@
 
   .cs-nav-dropdown-menu a {
     display: block;
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-body-text-color, inherit);
     text-decoration: none;
     white-space: nowrap;
-    transition: color var(--cs-transition-fast);
-    padding-top: 0.375rem;
-    padding-right: 0.75rem;
-    padding-bottom: 0.375rem;
-    padding-left: 0.75rem;
+    transition: color var(--cs-transition-fast, 0s);
+    padding-top: var(--cs-nav-dropdown-link-padding-y, 0);
+    padding-right: var(--cs-nav-dropdown-link-padding-x, 0);
+    padding-bottom: var(--cs-nav-dropdown-link-padding-y, 0);
+    padding-left: var(--cs-nav-dropdown-link-padding-x, 0);
   }
 
   .cs-nav-dropdown-menu a:hover {
-    color: var(--cs-heading-text-color);
+    color: var(--cs-heading-text-color, inherit);
     background-color: var(--cs-surface-hover, transparent);
   }
 
   .cs-nav-dropdown-menu a:focus-visible {
-    outline-width: var(--cs-focus-width);
+    outline-width: var(--cs-focus-width, 2px);
     outline-style: solid;
-    outline-color: var(--cs-focus-color);
-    outline-offset: var(--cs-focus-offset);
+    outline-color: var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
   }
 }

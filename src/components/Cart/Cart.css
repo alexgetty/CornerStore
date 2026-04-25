@@ -1,56 +1,60 @@
 @layer package {
   .cs-cart-empty {
     text-align: center;
-    padding: 3rem 0;
-    color: var(--cs-body-text-color);
+    padding: var(--cs-cart-empty-padding, 0);
+    color: var(--cs-body-text-color, inherit);
   }
 
   .cs-cart-empty a {
-    color: var(--cs-highlight-text-color);
+    color: var(--cs-highlight-text-color, inherit);
     text-decoration: underline;
-    text-underline-offset: 2px;
+    text-underline-offset: var(--cs-text-underline-offset, auto);
   }
 
   .cs-cart-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 1rem;
+    margin-bottom: var(--cs-cart-block-margin, 0);
   }
 
   .cs-cart-table th,
   .cs-cart-table td {
-    padding: 0.75rem;
+    padding: var(--cs-cart-cell-padding, 0);
     text-align: left;
     vertical-align: middle;
-    border-bottom: 1px solid var(--cs-border-color);
+    border-bottom-width: var(--cs-border-width, 0);
+    border-bottom-style: solid;
+    border-bottom-color: var(--cs-border-color, currentColor);
   }
 
   .cs-cart-table thead th {
-    font-size: var(--cs-font-size-small);
-    font-weight: 600;
-    color: var(--cs-body-text-color);
-    border-bottom-width: 2px;
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    color: var(--cs-body-text-color, inherit);
+    border-bottom-width: var(--cs-border-width-emphasis, 0);
   }
 
   .cs-cart-product {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--cs-cart-product-gap, 0);
   }
 
   .cs-cart-thumb {
-    width: 60px;
-    height: 60px;
+    width: var(--cs-cart-thumb-size, auto);
+    height: var(--cs-cart-thumb-size, auto);
     object-fit: cover;
     border-radius: var(--cs-thumb-border-radius, 0);
     flex-shrink: 0;
   }
 
-  .cs-no-image {
+  /* Scoped to the cart product cell to avoid colliding with the order-table
+     placeholder, which uses the same class name. */
+  .cs-cart-product .cs-no-image {
     display: block;
-    width: 60px;
-    height: 60px;
-    background: var(--cs-image-background);
+    width: var(--cs-cart-thumb-size, auto);
+    height: var(--cs-cart-thumb-size, auto);
+    background: var(--cs-image-background, transparent);
     border-radius: var(--cs-thumb-border-radius, 0);
     flex-shrink: 0;
   }
@@ -61,14 +65,14 @@
 
   .cs-cart-sku {
     display: block;
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-muted-text-color);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-muted-text-color, inherit);
   }
 
   .cs-cart-moq {
     display: block;
-    font-size: var(--cs-font-size-smallest);
-    color: var(--cs-muted-text-color);
+    font-size: var(--cs-font-size-smallest, inherit);
+    color: var(--cs-muted-text-color, inherit);
   }
 
   .cs-col-price,
@@ -78,20 +82,20 @@
   }
 
   .cs-col-qty {
-    width: 160px;
+    width: var(--cs-cart-col-qty-width, auto);
   }
 
   .cs-col-total {
-    width: 100px;
+    width: var(--cs-cart-col-total-width, auto);
   }
 
   .cs-col-remove {
-    width: 40px;
+    width: var(--cs-cart-col-remove-width, auto);
   }
 
   .cs-msrp {
     text-decoration: line-through;
-    color: var(--cs-muted-text-color);
+    color: var(--cs-muted-text-color, inherit);
   }
 
   /* --- Quantity controls live in CartControl.css --- */
@@ -100,29 +104,28 @@
      row height (matches the ListingTable approach). */
   .cs-cart-row .cs-cart-control-down,
   .cs-cart-row .cs-cart-control-up {
-    width: 2rem;
-    height: 2rem;
+    width: var(--cs-cart-stepper-cell-size, auto);
+    height: var(--cs-cart-stepper-cell-size, auto);
   }
 
   .cs-cart-row .cs-cart-control-input {
-    height: 2rem;
-    width: 3.5rem;
+    height: var(--cs-cart-stepper-cell-size, auto);
+    width: var(--cs-cart-stepper-cell-input-width, auto);
     flex: 0 0 auto;
-    font-size: var(--cs-font-size-small);
+    font-size: var(--cs-font-size-small, inherit);
   }
 
   .cs-remove-btn {
     background: none;
     border: none;
-    font-size: 1.25rem;
+    font-size: var(--cs-remove-btn-font-size, inherit);
     cursor: pointer;
-    color: var(--cs-body-text-color);
-    opacity: 0.5;
-    padding: 0.25rem;
+    color: var(--cs-muted-text-color, inherit);
+    padding: var(--cs-remove-btn-padding, 0);
+    transition: color var(--cs-transition-fast, 0s);
   }
 
   .cs-remove-btn:hover {
-    opacity: 1;
     color: var(--cs-error-color, currentColor);
   }
 
@@ -134,33 +137,33 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem 0.75rem 0;
+    gap: var(--cs-cart-totals-gap, 0);
+    margin-bottom: var(--cs-cart-block-margin, 0);
+    padding: var(--cs-cart-totals-padding, 0);
   }
 
   .cs-totals-row {
     display: flex;
     align-items: baseline;
-    gap: 1rem;
+    gap: var(--cs-cart-totals-row-gap, 0);
   }
 
   .cs-totals-label {
-    font-weight: 600;
-    color: var(--cs-body-text-color);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    color: var(--cs-body-text-color, inherit);
   }
 
   .cs-totals-value {
-    font-weight: 600;
+    font-weight: var(--cs-emphasis-font-weight, inherit);
     text-align: right;
-    min-width: 5rem;
-    color: var(--cs-body-text-color);
+    min-width: var(--cs-cart-totals-value-min-width, auto);
+    color: var(--cs-body-text-color, inherit);
   }
 
   .cs-totals-minimum {
     margin: 0;
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-muted-text-color);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-muted-text-color, inherit);
   }
 
   .cs-totals-minimum[hidden] {
@@ -169,72 +172,71 @@
 
   .cs-totals-minimum-remaining {
     color: var(--cs-error-color, currentColor);
-    font-weight: var(--cs-emphasis-font-weight);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
   }
 
   .cs-cart-summary {
-    margin-bottom: 1rem;
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
+    margin-bottom: var(--cs-cart-block-margin, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-body-text-color, inherit);
     text-align: right;
   }
 
   .cs-order-errors {
     color: var(--cs-error-color, currentColor);
-    margin-bottom: 1rem;
-    font-size: var(--cs-font-size-small);
+    margin-bottom: var(--cs-cart-block-margin, 0);
+    font-size: var(--cs-font-size-small, inherit);
   }
 
   .cs-order-errors ul {
     margin: 0;
-    padding-left: 1.25rem;
+    padding-left: var(--cs-cart-list-padding-left, 0);
   }
 
   /* Action row: Clear all (left) + Checkout (right). On narrow viewports the
-     row wraps so Checkout (the primary action) lands above Clear all. */
+     row wraps so Checkout (the primary action) lands above Clear all.
+     Wrap-reverse + flex: 1 1 100% on each child does the actual stacking;
+     the media query below only stretches buttons to full-width tap targets. */
   .cs-order-actions {
     display: flex;
     flex-wrap: wrap-reverse;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    gap: var(--cs-cart-actions-gap, 0);
+    margin-bottom: var(--cs-cart-section-margin, 0);
   }
 
   .cs-order-actions-secondary {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--cs-cart-actions-secondary-gap, 0);
   }
 
   .cs-submit-btn {
-    padding: 0.75rem 2rem;
-    font-size: 1rem;
-    font-weight: 600;
-    background-color: var(--cs-button-background);
-    color: var(--cs-button-text-color);
+    padding: var(--cs-submit-btn-padding, 0);
+    font-size: var(--cs-submit-btn-font-size, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    background-color: var(--cs-button-background, transparent);
+    color: var(--cs-button-text-color, inherit);
     border: none;
-    border-radius: var(--cs-button-border-radius);
+    border-radius: var(--cs-button-border-radius, 0);
     cursor: pointer;
-    transition: background-color var(--cs-transition-fast);
+    transition: background-color var(--cs-transition-fast, 0s);
   }
 
   .cs-submit-btn:hover:not(:disabled) {
-    background-color: var(--cs-button-background-hover);
+    background-color: var(--cs-button-background-hover, transparent);
   }
 
   .cs-submit-btn:disabled {
-    opacity: 0.4;
+    opacity: var(--cs-disabled-opacity, 1);
     cursor: not-allowed;
   }
 
-  /* Mobile: stack so Checkout (primary) sits on top thanks to wrap-reverse,
-     and stretch both buttons full-width for big tap targets. */
+  /* Mobile: stretch both buttons to full-width tap targets. The actual
+     stacking comes from wrap-reverse + flex: 1 1 100% on each child, not
+     from flex-direction. */
   @media (max-width: 480px) {
-    .cs-order-actions {
-      flex-direction: row;
-    }
-
     .cs-order-actions-secondary,
     .cs-order-actions > .cs-submit-btn {
       flex: 1 1 100%;
@@ -253,91 +255,99 @@
   }
 
   .cs-mailto-section {
-    padding: 1.5rem;
+    padding: var(--cs-mailto-section-padding, 0);
     background: var(--cs-surface-color, transparent);
-    border: 1px solid var(--cs-border-color);
-    border-radius: var(--cs-button-border-radius);
-    margin-bottom: 1.5rem;
+    border-width: var(--cs-border-width, 0);
+    border-style: solid;
+    border-color: var(--cs-border-color, currentColor);
+    border-radius: var(--cs-button-border-radius, 0);
+    margin-bottom: var(--cs-cart-section-margin, 0);
   }
 
   .cs-mailto-link {
-    font-size: 1.125rem;
-    font-weight: 600;
+    font-size: var(--cs-mailto-link-font-size, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
   }
 
   .cs-checkout-error {
     color: var(--cs-error-color, currentColor);
-    margin-bottom: 1rem;
+    margin-bottom: var(--cs-cart-block-margin, 0);
   }
 
   .cs-checkout-fallback {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: var(--cs-checkout-fallback-gap, 0);
+    margin-bottom: var(--cs-cart-section-margin, 0);
   }
 
   .cs-retry-btn,
   .cs-pdf-btn {
-    padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
-    font-size: var(--cs-font-size-small);
-    font-weight: var(--cs-emphasis-font-weight);
-    border: 1px solid var(--cs-border-color);
-    border-radius: var(--cs-button-border-radius);
+    padding: var(--cs-button-padding-vertical, 0) var(--cs-button-padding-horizontal, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    border-width: var(--cs-border-width, 0);
+    border-style: solid;
+    border-color: var(--cs-border-color, currentColor);
+    border-radius: var(--cs-button-border-radius, 0);
     background: var(--cs-surface-color, transparent);
     cursor: pointer;
-    transition: background-color var(--cs-transition-fast);
+    transition: background-color var(--cs-transition-fast, 0s);
   }
 
   .cs-retry-btn:hover,
   .cs-pdf-btn:hover {
-    background-color: var(--cs-background);
+    background-color: var(--cs-background, transparent);
   }
 
   .cs-cart-unavailable-banner {
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.5rem;
+    padding: var(--cs-cart-banner-padding, 0);
+    margin-bottom: var(--cs-cart-section-margin, 0);
     background-color: var(--cs-warning-bg, transparent);
-    border: 1px solid var(--cs-warning-border, currentColor);
-    border-radius: var(--cs-button-border-radius);
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
+    border-width: var(--cs-border-width, 0);
+    border-style: solid;
+    border-color: var(--cs-warning-border, currentColor);
+    border-radius: var(--cs-button-border-radius, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-body-text-color, inherit);
   }
 
   .cs-cart-unavailable-banner p {
-    margin: 0 0 0.5rem;
-    font-weight: 600;
+    margin: 0 0 var(--cs-cart-banner-text-margin-bottom, 0);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
   }
 
   .cs-cart-unavailable-banner ul {
-    margin: 0 0 0.75rem;
-    padding-left: 1.25rem;
+    margin: 0 0 var(--cs-cart-banner-list-margin-bottom, 0);
+    padding-left: var(--cs-cart-list-padding-left, 0);
   }
 
   .cs-clear-unavailable {
     display: inline-block;
-    padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
-    font-size: var(--cs-font-size-small);
-    font-weight: var(--cs-emphasis-font-weight);
-    border: 1px solid var(--cs-warning-border, currentColor);
-    border-radius: var(--cs-button-border-radius);
+    padding: var(--cs-button-padding-vertical, 0) var(--cs-button-padding-horizontal, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    border-width: var(--cs-border-width, 0);
+    border-style: solid;
+    border-color: var(--cs-warning-border, currentColor);
+    border-radius: var(--cs-button-border-radius, 0);
     background: var(--cs-surface-color, transparent);
-    color: var(--cs-body-text-color);
+    color: var(--cs-body-text-color, inherit);
     cursor: pointer;
-    transition: background-color var(--cs-transition-fast);
+    transition: background-color var(--cs-transition-fast, 0s);
   }
 
   .cs-clear-unavailable:hover {
-    background-color: var(--cs-background);
+    background-color: var(--cs-background, transparent);
   }
 
   .cs-unavailable-notice {
     color: var(--cs-error-color, currentColor);
-    margin-bottom: 1rem;
-    font-size: var(--cs-font-size-small);
+    margin-bottom: var(--cs-cart-block-margin, 0);
+    font-size: var(--cs-font-size-small, inherit);
   }
 
   .cs-cart-row.cs-cart-unavailable {
-    opacity: 0.4;
+    opacity: var(--cs-disabled-opacity, 1);
   }
 
   /* Clear all is now a peer of Checkout, so it gets button affordance instead
@@ -346,17 +356,19 @@
   .cs-clear-cart,
   .cs-clear-cart-yes,
   .cs-clear-cart-cancel {
-    padding: var(--cs-button-padding-vertical) var(--cs-button-padding-horizontal);
-    font-size: var(--cs-font-size-small);
-    font-weight: var(--cs-emphasis-font-weight);
-    border: 1px solid var(--cs-border-color);
-    border-radius: var(--cs-button-border-radius);
+    padding: var(--cs-button-padding-vertical, 0) var(--cs-button-padding-horizontal, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    border-width: var(--cs-border-width, 0);
+    border-style: solid;
+    border-color: var(--cs-border-color, currentColor);
+    border-radius: var(--cs-button-border-radius, 0);
     background: var(--cs-surface-color, transparent);
-    color: var(--cs-body-text-color);
+    color: var(--cs-body-text-color, inherit);
     cursor: pointer;
-    transition: background-color var(--cs-transition-fast),
-                border-color var(--cs-transition-fast),
-                color var(--cs-transition-fast);
+    transition: background-color var(--cs-transition-fast, 0s),
+                border-color var(--cs-transition-fast, 0s),
+                color var(--cs-transition-fast, 0s);
   }
 
   .cs-clear-cart:hover,
@@ -370,15 +382,15 @@
 
   .cs-clear-cart-cancel:hover,
   .cs-clear-cart-cancel:focus-visible {
-    background-color: var(--cs-background);
+    background-color: var(--cs-background, transparent);
   }
 
   .cs-clear-cart-confirm {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
+    gap: var(--cs-cart-actions-secondary-gap, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-body-text-color, inherit);
   }
 
   .cs-clear-cart-confirm[hidden] {

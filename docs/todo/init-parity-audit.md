@@ -60,7 +60,7 @@ The scaffolded config now includes a commented example of the `dropdown: 'catego
 - Extracted the scaffold templates into builder functions in `bin/scaffold.mjs` (`buildIndexPage`, `buildSlugPage`, `buildCategorySlugPage`, updated `buildCartPage`), advancing the scaffold-emission-strategy follow-up.
 - `npm run typecheck` clean in repo; fresh `cornerstore init` scaffold passes `astro check` with 0 errors.
 
-Archived original investigation doc: `docs/archive/done/astro-check-page-errors.md`.
+Archived original investigation doc: `docs/todo/archive/astro-check-page-errors.md`.
 
 ## Verified 2026-04-24
 
@@ -118,4 +118,4 @@ Gaps A above is the last item blocking this.
 ## Related todos (do NOT merge into this audit)
 
 - `cart-listings-test-coverage.md` (C3) — test infrastructure. Separate from init.
-- `docs/archive/done/cart-checkout-unavailable-handling.md` (H5) — resolved; referenced for history only.
+- `docs/todo/archive/cart-checkout-unavailable-handling.md` (H5) — resolved; referenced for history only.

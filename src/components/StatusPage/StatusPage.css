@@ -9,48 +9,48 @@
   }
 
   .cs-status h1 {
-    font-size: var(--cs-font-size-larger);
-    font-weight: var(--cs-heading-font-weight);
-    margin-bottom: 0.75rem;
+    font-size: var(--cs-font-size-larger, inherit);
+    font-weight: var(--cs-heading-font-weight, inherit);
+    margin-bottom: var(--cs-status-heading-margin-bottom, 0);
   }
 
   .cs-status p {
-    color: var(--cs-body-text-color);
-    margin-bottom: 1.5rem;
-    line-height: var(--cs-body-line-height);
+    color: var(--cs-body-text-color, inherit);
+    margin-bottom: var(--cs-status-text-margin-bottom, 0);
+    line-height: var(--cs-body-line-height, normal);
   }
 
   .cs-status a {
     display: inline-block;
-    padding-top: var(--cs-button-padding-vertical);
-    padding-bottom: var(--cs-button-padding-vertical);
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-    background-color: var(--cs-button-background);
-    color: var(--cs-button-text-color);
+    padding-top: var(--cs-button-padding-vertical, 0);
+    padding-bottom: var(--cs-button-padding-vertical, 0);
+    padding-left: var(--cs-status-button-padding-x, 0);
+    padding-right: var(--cs-status-button-padding-x, 0);
+    background-color: var(--cs-button-background, transparent);
+    color: var(--cs-button-text-color, inherit);
     text-decoration: none;
-    border-radius: var(--cs-button-border-radius);
-    font-size: var(--cs-font-size-small);
-    font-weight: 500;
-    transition: background-color var(--cs-transition-fast);
+    border-radius: var(--cs-button-border-radius, 0);
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-status-button-font-weight, normal);
+    transition: background-color var(--cs-transition-fast, 0s);
   }
 
   .cs-status a:hover {
-    background-color: var(--cs-button-background-hover);
+    background-color: var(--cs-button-background-hover, transparent);
   }
 
   .cs-status .cs-status-secondary {
-    color: var(--cs-muted-text-color);
-    font-size: var(--cs-font-size-small);
-    margin-bottom: 0.5rem;
-    line-height: var(--cs-body-line-height);
+    color: var(--cs-muted-text-color, inherit);
+    font-size: var(--cs-font-size-small, inherit);
+    margin-bottom: var(--cs-status-secondary-margin-bottom, 0);
+    line-height: var(--cs-body-line-height, normal);
   }
 
   .cs-status .cs-status-contact {
-    color: var(--cs-muted-text-color);
-    font-size: var(--cs-font-size-small);
-    margin-bottom: 1.5rem;
-    line-height: var(--cs-body-line-height);
+    color: var(--cs-muted-text-color, inherit);
+    font-size: var(--cs-font-size-small, inherit);
+    margin-bottom: var(--cs-status-text-margin-bottom, 0);
+    line-height: var(--cs-body-line-height, normal);
   }
 
   .cs-status .cs-status-contact a {
@@ -60,7 +60,7 @@
     padding-left: 0;
     padding-right: 0;
     background-color: transparent;
-    color: var(--cs-muted-text-color);
+    color: var(--cs-muted-text-color, inherit);
     text-decoration: underline;
     border-radius: 0;
     font-size: inherit;
@@ -68,14 +68,14 @@
   }
 
   .cs-status .cs-status-contact a:hover {
-    color: var(--cs-heading-text-color);
+    color: var(--cs-heading-text-color, inherit);
     background-color: transparent;
   }
 
   .cs-status a:focus-visible {
-    outline-width: var(--cs-focus-width);
+    outline-width: var(--cs-focus-width, 2px);
     outline-style: solid;
-    outline-color: var(--cs-focus-color);
-    outline-offset: var(--cs-focus-offset);
+    outline-color: var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
   }
 }

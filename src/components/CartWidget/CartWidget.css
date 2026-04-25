@@ -2,21 +2,21 @@
   .cs-cart-widget {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--cs-cart-widget-gap, 0);
     text-decoration: none;
-    color: var(--cs-body-text-color);
-    transition: color var(--cs-transition-fast);
+    color: var(--cs-body-text-color, inherit);
+    transition: color var(--cs-transition-fast, 0s);
   }
 
   .cs-cart-widget:hover {
-    color: var(--cs-heading-text-color);
+    color: var(--cs-heading-text-color, inherit);
   }
 
   .cs-cart-widget:focus-visible {
-    outline-width: var(--cs-focus-width);
+    outline-width: var(--cs-focus-width, 2px);
     outline-style: solid;
-    outline-color: var(--cs-focus-color);
-    outline-offset: var(--cs-focus-offset);
+    outline-color: var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
   }
 
   .cs-cart-icon {
@@ -25,25 +25,25 @@
   }
 
   .cs-cart-count {
-    background-color: var(--cs-highlight-text-color);
+    background-color: var(--cs-highlight-text-color, transparent);
     color: var(--cs-cart-count-text-color, currentColor);
-    font-size: 0.6875rem;
-    font-weight: var(--cs-emphasis-font-weight);
-    min-width: 1.125rem;
-    height: 1.125rem;
-    line-height: 1.125rem;
+    font-size: var(--cs-cart-count-font-size, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    min-width: var(--cs-cart-count-min-size, auto);
+    height: var(--cs-cart-count-min-size, auto);
+    line-height: var(--cs-cart-count-min-size, normal);
     text-align: center;
-    border-radius: 999px;
+    border-radius: var(--cs-radius-pill, 0);
     padding-top: 0;
     padding-bottom: 0;
-    padding-left: 0.375rem;
-    padding-right: 0.375rem;
+    padding-left: var(--cs-cart-count-padding-x, 0);
+    padding-right: var(--cs-cart-count-padding-x, 0);
   }
 
   .cs-cart-subtotal {
-    font-size: var(--cs-font-size-small);
-    font-weight: var(--cs-emphasis-font-weight);
-    color: var(--cs-heading-text-color);
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    color: var(--cs-heading-text-color, inherit);
     white-space: nowrap;
   }
 }

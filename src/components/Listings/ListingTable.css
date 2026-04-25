@@ -5,28 +5,30 @@
   .cs-order-sheet-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--cs-order-table-margin, 0);
   }
 
   .cs-order-sheet-table th,
   .cs-order-sheet-table td {
-    padding: 0.5rem 0.75rem;
+    padding: var(--cs-order-cell-padding, 0);
     text-align: left;
     vertical-align: middle;
-    border-bottom: 1px solid var(--cs-border-color);
+    border-bottom-width: var(--cs-border-width, 0);
+    border-bottom-style: solid;
+    border-bottom-color: var(--cs-border-color, currentColor);
   }
 
   .cs-order-sheet-table thead th {
-    font-size: var(--cs-font-size-small);
-    font-weight: 600;
-    color: var(--cs-body-text-color);
-    border-bottom-width: 2px;
+    font-size: var(--cs-font-size-small, inherit);
+    font-weight: var(--cs-emphasis-font-weight, inherit);
+    color: var(--cs-body-text-color, inherit);
+    border-bottom-width: var(--cs-border-width-emphasis, 0);
   }
 
   /* --- Table spacing --- */
 
   .cs-order-sheet-table + .cs-order-sheet-table {
-    margin-top: 1.5rem;
+    margin-top: var(--cs-order-table-margin, 0);
   }
 
   /* --- Column sizing --- */
@@ -39,14 +41,14 @@
   }
 
   .cs-msrp {
-    opacity: 0.5;
+    color: var(--cs-muted-text-color, inherit);
     text-decoration: line-through;
   }
 
-  .cs-col-image { width: 60px; }
-  .cs-col-qty { width: 140px; }
-  .cs-col-total { width: 100px; }
-  .cs-col-remove { width: 40px; }
+  .cs-col-image { width: var(--cs-order-col-image-width, auto); }
+  .cs-col-qty { width: var(--cs-order-col-qty-width, auto); }
+  .cs-col-total { width: var(--cs-order-col-total-width, auto); }
+  .cs-col-remove { width: var(--cs-order-col-remove-width, auto); }
 
   /* --- Image thumbnail & placeholder --- */
 
@@ -58,18 +60,20 @@
   }
 
   .cs-thumb {
-    width: 48px;
-    height: 48px;
+    width: var(--cs-order-thumb-size, auto);
+    height: var(--cs-order-thumb-size, auto);
     object-fit: cover;
     border-radius: var(--cs-thumb-border-radius, 0);
   }
 
-  .cs-no-image {
+  /* Scoped to the table column to avoid colliding with the cart's larger
+     placeholder, which uses the same class name. */
+  .cs-col-image .cs-no-image {
     display: block;
-    width: 48px;
-    height: 48px;
+    width: var(--cs-order-thumb-size, auto);
+    height: var(--cs-order-thumb-size, auto);
     border-radius: var(--cs-thumb-border-radius, 0);
-    background: var(--cs-border-color);
+    background: var(--cs-border-color, currentColor);
   }
 
   /* --- Product info --- */
@@ -80,18 +84,16 @@
 
   .cs-order-sku {
     display: block;
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
-    opacity: 0.5;
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-muted-text-color, inherit);
     font-family: monospace;
   }
 
   .cs-order-desc {
     display: block;
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
-    opacity: 0.7;
-    margin-top: 0.25rem;
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-muted-text-color, inherit);
+    margin-top: var(--cs-order-desc-margin-top, 0);
   }
 
   /* --- Quantity controls live in CartControl.css --- */
@@ -99,23 +101,22 @@
   /* Tighten the stepper inside a table cell so it fits the column width. */
   .cs-order-row .cs-cart-control-down,
   .cs-order-row .cs-cart-control-up {
-    width: 2rem;
-    height: 2rem;
+    width: var(--cs-cart-stepper-cell-size, auto);
+    height: var(--cs-cart-stepper-cell-size, auto);
   }
 
   .cs-order-row .cs-cart-control-input {
-    height: 2rem;
-    width: 3.5rem;
+    height: var(--cs-cart-stepper-cell-size, auto);
+    width: var(--cs-cart-stepper-cell-input-width, auto);
     flex: 0 0 auto;
-    font-size: var(--cs-font-size-small);
+    font-size: var(--cs-font-size-small, inherit);
   }
 
   /* --- MOQ column --- */
 
   .cs-col-moq {
-    font-size: var(--cs-font-size-small);
-    color: var(--cs-body-text-color);
-    opacity: 0.7;
+    font-size: var(--cs-font-size-small, inherit);
+    color: var(--cs-muted-text-color, inherit);
   }
 
   /* --- Remove button --- */
@@ -123,15 +124,14 @@
   .cs-remove-btn {
     background: none;
     border: none;
-    font-size: 1.25rem;
+    font-size: var(--cs-remove-btn-font-size, inherit);
     cursor: pointer;
-    color: var(--cs-body-text-color);
-    opacity: 0.5;
-    padding: 0.25rem;
+    color: var(--cs-muted-text-color, inherit);
+    padding: var(--cs-remove-btn-padding, 0);
+    transition: color var(--cs-transition-fast, 0s);
   }
 
   .cs-remove-btn:hover {
-    opacity: 1;
     color: var(--cs-error-color, currentColor);
   }
 
@@ -149,13 +149,13 @@
   .cs-lightbox-backdrop {
     position: absolute;
     inset: 0;
-    background: var(--cs-lightbox-backdrop, rgba(0, 0, 0, 0.7));
+    background: var(--cs-lightbox-backdrop, transparent);
   }
 
   .cs-lightbox-img {
     position: relative;
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: var(--cs-lightbox-max-width, 100%);
+    max-height: var(--cs-lightbox-max-height, 100%);
     object-fit: contain;
     border-radius: var(--cs-thumb-border-radius, 0);
   }

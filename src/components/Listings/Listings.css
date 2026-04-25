@@ -7,9 +7,12 @@
 
   .cs-listings-empty {
     text-align: center;
-    color: var(--cs-body-text-color);
-    opacity: 0.6;
-    padding: 2rem 0;
+    color: var(--cs-muted-text-color, inherit);
+    font-size: var(--cs-font-size-large, inherit);
+    padding-top: var(--cs-listings-empty-padding-y, 0);
+    padding-bottom: var(--cs-listings-empty-padding-y, 0);
+    padding-left: var(--cs-listings-empty-padding-x, 0);
+    padding-right: var(--cs-listings-empty-padding-x, 0);
   }
 
   /* --- View toggle --- */
@@ -17,34 +20,35 @@
   .cs-view-toggle {
     display: flex;
     justify-content: flex-end;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
+    gap: var(--cs-view-toggle-gap, 0);
+    margin-bottom: var(--cs-view-toggle-margin-bottom, 0);
   }
 
   .cs-view-toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: var(--cs-view-toggle-btn-size, auto);
+    height: var(--cs-view-toggle-btn-size, auto);
     padding: 0;
-    border: 1px solid var(--cs-border-color);
-    border-radius: var(--cs-button-border-radius);
+    border-width: var(--cs-border-width, 0);
+    border-style: solid;
+    border-color: var(--cs-border-color, currentColor);
+    border-radius: var(--cs-button-border-radius, 0);
     background: var(--cs-surface-color, transparent);
     cursor: pointer;
-    color: var(--cs-body-text-color);
-    opacity: 0.5;
-    transition: opacity var(--cs-transition-fast);
+    color: var(--cs-muted-text-color, inherit);
+    transition: color var(--cs-transition-fast, 0s),
+                border-color var(--cs-transition-fast, 0s);
   }
 
   .cs-view-toggle-btn:hover {
-    opacity: 0.8;
+    color: var(--cs-heading-text-color, inherit);
   }
 
   .cs-view-toggle-btn[aria-pressed="true"] {
-    opacity: 1;
-    border-color: var(--cs-heading-text-color);
-    color: var(--cs-heading-text-color);
+    border-color: var(--cs-heading-text-color, currentColor);
+    color: var(--cs-heading-text-color, inherit);
   }
 
   /* --- Card icon (2x2 grid) --- */
@@ -53,29 +57,29 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
-    gap: 2px;
-    width: 14px;
-    height: 14px;
+    gap: var(--cs-view-icon-card-gap, 0);
+    width: var(--cs-view-icon-size, auto);
+    height: var(--cs-view-icon-size, auto);
   }
 
   .cs-icon-card::before,
   .cs-icon-card::after {
     content: '';
     background: currentColor;
-    border-radius: 1px;
+    border-radius: var(--cs-radius-tiny, 0);
   }
 
   /* Need 4 squares but only have 2 pseudo-elements, so use box-shadow trick */
   .cs-icon-card::before {
     grid-column: 1;
     grid-row: 1;
-    box-shadow: 8px 0 0 0 currentColor;
+    box-shadow: var(--cs-view-icon-shadow-offset, 0) 0 0 0 currentColor;
   }
 
   .cs-icon-card::after {
     grid-column: 1;
     grid-row: 2;
-    box-shadow: 8px 0 0 0 currentColor;
+    box-shadow: var(--cs-view-icon-shadow-offset, 0) 0 0 0 currentColor;
   }
 
   /* --- Table icon (3 horizontal lines) --- */
@@ -84,21 +88,22 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 3px;
-    width: 14px;
-    height: 14px;
+    gap: var(--cs-view-icon-table-gap, 0);
+    width: var(--cs-view-icon-size, auto);
+    height: var(--cs-view-icon-size, auto);
   }
 
   .cs-icon-table::before,
   .cs-icon-table::after {
     content: '';
-    height: 2px;
+    height: var(--cs-view-icon-line-thickness, auto);
     background: currentColor;
-    border-radius: 1px;
+    border-radius: var(--cs-radius-tiny, 0);
   }
 
-  /* Third line via box-shadow on the after pseudo */
+  /* Third line via box-shadow on the after pseudo. The offset is negated
+     here to push the shadow line up; the token holds the positive offset. */
   .cs-icon-table::after {
-    box-shadow: 0 -8px 0 0 currentColor;
+    box-shadow: 0 calc(-1 * var(--cs-view-icon-shadow-offset, 0)) 0 0 currentColor;
   }
 }

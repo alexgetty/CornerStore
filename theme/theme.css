@@ -1,14 +1,28 @@
 /* Corner Store Theme
  *
- * Every --cs-* token your storefront reads, with its default value.
- * Change any value below to customize your store's appearance.
+ * This is the starter theme that ships with `cornerstore init`. It owns
+ * every visual decision your storefront makes: colors, typography, layout
+ * gaps, the look of headings and prose. The `corner-store` package itself
+ * ships only structural CSS; this file (or whatever you replace it with)
+ * supplies the look.
  *
- * Palette variables (--cs-black, --cs-ochre, etc.) come from the package
- * and are available for use here. You can also use hex values, rgb(), or
- * define your own variables — whatever you prefer.
+ * How it works
+ * ------------
+ * - Every --cs-* token your storefront reads has a default value declared
+ *   below. Change any value to customize your store.
+ * - Tokens you don't change keep their defaults. You can safely delete any
+ *   line you haven't modified — the package falls back to safe neutrals.
+ * - Palette helpers (--cs-black, --cs-ochre, etc.) are declared by the
+ *   package and may be referenced here. You can also use hex values, rgb(),
+ *   or define your own variables — whatever you prefer.
+ * - The bottom of this file styles the page-level semantic zones and the
+ *   typographic content of MDX/Markdown pages (`main h1`, `main p`, etc.).
+ *   Those rules also live here, in the theme, because they describe how
+ *   YOUR content looks. Edit freely.
  *
- * Tokens you don't change keep their defaults. You can safely delete
- * any line you haven't modified.
+ * To switch to a completely custom theme, replace this file's contents.
+ * The package will continue to render structurally; the visual layer is
+ * entirely yours.
  */
 
 :root {
@@ -58,9 +72,11 @@
    * Buttons
    * ------------------------------------------------------- */
   --cs-button-background-hover: var(--cs-gray-700);
+  --cs-button-hover-opacity: 0.85;
   --cs-button-padding-horizontal: 1.25rem;
   --cs-button-padding-vertical: 0.625rem;
   --cs-button-text-color: #fff;
+  --cs-disabled-opacity: 0.4;
 
   /* -------------------------------------------------------
    * Focus
@@ -73,17 +89,22 @@
    * Borders
    * ------------------------------------------------------- */
   --cs-border-color: var(--cs-gray-200);
+  --cs-border-width: 1px;
+  --cs-border-width-emphasis: 2px;
 
   /* -------------------------------------------------------
-   * Shadows
+   * Shadows & overlays
    * ------------------------------------------------------- */
   --cs-listing-shadow-hover: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --cs-lightbox-backdrop: rgba(0, 0, 0, 0.7);
 
   /* -------------------------------------------------------
    * Border Radius
    * ------------------------------------------------------- */
   --cs-listing-border-radius: 8px;
   --cs-button-border-radius: 6px;
+  --cs-radius-pill: 999px;
+  --cs-radius-tiny: 1px;
 
   /* -------------------------------------------------------
    * Transitions
@@ -95,11 +116,241 @@
    * Layout
    * ------------------------------------------------------- */
   --cs-image-aspect-ratio: 4 / 3;
-  --cs-listing-inner-gap: 0.5rem;
+  --cs-listing-inner-gap: 0.25rem;
   --cs-listing-minimum-width: 280px;
-  --cs-listing-padding: 1.25rem;
+  --cs-listing-padding: 0.75rem;
   --cs-listings-gap: 1.5rem;
   --cs-main-gap: 2rem;
   --cs-main-padding: 1.5rem;
+  --cs-main-padding-top: 2.5rem;
+  --cs-main-padding-bottom: 4rem;
   --cs-main-width: 1080px;
+  --cs-main-listings-margin: 2rem;
+  --cs-prose-width: 42rem;
+
+  /* -------------------------------------------------------
+   * Typography extras
+   * ------------------------------------------------------- */
+  --cs-text-underline-offset: 2px;
+  --cs-letter-spacing-loose: 0.05em;
+
+  /* -------------------------------------------------------
+   * Cart — table, totals, actions, banners
+   * ------------------------------------------------------- */
+  --cs-cart-empty-padding: 3rem 0;
+  --cs-cart-table-margin-bottom: 1rem;
+  --cs-cart-cell-padding: 0.75rem;
+  --cs-cart-product-gap: 0.75rem;
+  --cs-cart-thumb-size: 60px;
+  --cs-cart-col-qty-width: 160px;
+  --cs-cart-col-total-width: 100px;
+  --cs-cart-col-remove-width: 40px;
+  --cs-cart-stepper-cell-size: 2rem;
+  --cs-cart-stepper-cell-input-width: 3.5rem;
+  --cs-cart-totals-gap: 0.25rem;
+  --cs-cart-totals-padding: 0.5rem 0.75rem 0;
+  --cs-cart-totals-row-gap: 1rem;
+  --cs-cart-totals-value-min-width: 5rem;
+  --cs-cart-block-margin: 1rem;
+  --cs-cart-section-margin: 1.5rem;
+  --cs-cart-list-padding-left: 1.25rem;
+  --cs-cart-actions-gap: 0.75rem;
+  --cs-cart-actions-secondary-gap: 0.5rem;
+  --cs-cart-banner-padding: 0.75rem 1rem;
+  --cs-cart-banner-text-margin-bottom: 0.5rem;
+  --cs-cart-banner-list-margin-bottom: 0.75rem;
+  --cs-mailto-section-padding: 1.5rem;
+  --cs-mailto-link-font-size: 1.125rem;
+  --cs-checkout-fallback-gap: 1rem;
+  --cs-submit-btn-padding: 0.75rem 2rem;
+  --cs-submit-btn-font-size: 1rem;
+  --cs-remove-btn-font-size: 1.25rem;
+  --cs-remove-btn-padding: 0.25rem;
+
+  /* -------------------------------------------------------
+   * Cart Control — Add to Cart + qty stepper
+   * ------------------------------------------------------- */
+  --cs-cart-control-add-padding: 0.5rem;
+  --cs-cart-control-stepper-font-size: 1rem;
+  --cs-cart-control-stepper-size: 2.25rem;
+
+  /* -------------------------------------------------------
+   * Cart Widget — count badge + subtotal
+   * ------------------------------------------------------- */
+  --cs-cart-widget-gap: 0.5rem;
+  --cs-cart-count-font-size: 0.6875rem;
+  --cs-cart-count-min-size: 1.125rem;
+  --cs-cart-count-padding-x: 0.375rem;
+
+  /* -------------------------------------------------------
+   * Listing Cards — badge + category label + price
+   * ------------------------------------------------------- */
+  --cs-listing-badge-size: 1.5rem;
+  --cs-listing-badge-padding-x: 0.4rem;
+  --cs-listing-badge-font-size: 0.75rem;
+  --cs-listing-badge-font-weight: 700;
+  --cs-listing-price-margin-top: 0.25rem;
+
+  /* -------------------------------------------------------
+   * Listing Table — order sheet rows + lightbox
+   * ------------------------------------------------------- */
+  --cs-order-table-margin: 1.5rem;
+  --cs-order-cell-padding: 0.5rem 0.75rem;
+  --cs-order-desc-margin-top: 0.25rem;
+  --cs-order-thumb-size: 48px;
+  --cs-order-col-image-width: 60px;
+  --cs-order-col-qty-width: 140px;
+  --cs-order-col-total-width: 100px;
+  --cs-order-col-remove-width: 40px;
+  --cs-lightbox-max-width: 90vw;
+  --cs-lightbox-max-height: 90vh;
+
+  /* -------------------------------------------------------
+   * Listings — empty state + view toggle + view icons
+   * ------------------------------------------------------- */
+  --cs-listings-empty-padding-y: 3rem;
+  --cs-listings-empty-padding-x: 1rem;
+  --cs-view-toggle-gap: 0.25rem;
+  --cs-view-toggle-margin-bottom: 1rem;
+  --cs-view-toggle-btn-size: 2.25rem;
+  --cs-view-icon-size: 14px;
+  --cs-view-icon-card-gap: 2px;
+  --cs-view-icon-table-gap: 3px;
+  --cs-view-icon-line-thickness: 2px;
+  --cs-view-icon-shadow-offset: 8px;
+
+  /* -------------------------------------------------------
+   * Nav — header chrome + dropdown menu
+   * ------------------------------------------------------- */
+  --cs-nav-gap: 1.5rem;
+  --cs-logo-height: 2rem;
+  --cs-logo-margin-right: 0.5rem;
+  --cs-nav-dropdown-menu-padding-y: 0.25rem;
+  --cs-nav-dropdown-menu-min-width: 10rem;
+  --cs-nav-dropdown-link-padding-y: 0.375rem;
+  --cs-nav-dropdown-link-padding-x: 0.75rem;
+
+  /* -------------------------------------------------------
+   * Status pages — 404, sold-out, store-closed
+   * ------------------------------------------------------- */
+  --cs-status-heading-margin-bottom: 0.75rem;
+  --cs-status-text-margin-bottom: 1.5rem;
+  --cs-status-button-padding-x: 1.5rem;
+  --cs-status-button-font-weight: 500;
+  --cs-status-secondary-margin-bottom: 0.5rem;
+
+  /* -------------------------------------------------------
+   * Footer
+   * ------------------------------------------------------- */
+  --cs-footer-padding-y: 2rem;
+  --cs-footer-links-gap: 1.5rem;
+  --cs-footer-contact-margin-top: 1rem;
+}
+
+/* -------------------------------------------------------
+ * Page-level typography
+ * The package selects body/header/main/footer for structural rules
+ * (layout flex, padding math). Visual treatment lives here.
+ * ------------------------------------------------------- */
+body {
+  font-family: var(--cs-font-family);
+  line-height: var(--cs-body-line-height);
+  color: var(--cs-heading-text-color);
+  background-color: var(--cs-background);
+}
+
+/* -------------------------------------------------------
+ * Prose typography
+ * Styles the headings, paragraphs, lists, and links inside <main>
+ * for MDX/Markdown content pages. Bare-element selectors live here
+ * (in the theme), not in the package, so they apply only to themed
+ * sites and are easy to override or remove.
+ * ------------------------------------------------------- */
+main > h1,
+main > h2,
+main > h3,
+main > p,
+main > ul,
+main > ol,
+main > hr,
+main > article > h1,
+main > article > h2,
+main > article > h3,
+main > article > p,
+main > article > ul,
+main > article > ol,
+main > article > hr {
+  max-width: var(--cs-prose-width);
+}
+
+main h1 {
+  font-size: var(--cs-font-size-largest);
+  font-weight: var(--cs-heading-font-weight);
+  letter-spacing: var(--cs-heading-letter-spacing);
+  line-height: var(--cs-heading-line-height);
+  margin-bottom: 2rem;
+}
+
+main h2 {
+  font-size: var(--cs-font-size-larger);
+  font-weight: var(--cs-heading-font-weight);
+  letter-spacing: var(--cs-heading-letter-spacing);
+  line-height: var(--cs-heading-line-height);
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+main h3 {
+  font-size: var(--cs-font-size-large);
+  font-weight: var(--cs-emphasis-font-weight);
+  line-height: var(--cs-heading-line-height);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+main p {
+  color: var(--cs-body-text-color);
+  line-height: var(--cs-body-line-height);
+  margin-bottom: 1.25rem;
+}
+
+main a:not(.cs-store-name) {
+  color: var(--cs-highlight-text-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--cs-transition-fast);
+}
+
+main a:not(.cs-store-name):hover {
+  color: var(--cs-heading-text-color);
+}
+
+main > ul,
+main > ol,
+main > article > ul,
+main > article > ol {
+  color: var(--cs-body-text-color);
+  line-height: var(--cs-body-line-height);
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+main > ul li + li,
+main > ol li + li,
+main > article > ul li + li,
+main > article > ol li + li {
+  margin-top: 0.5rem;
+}
+
+main strong {
+  font-weight: var(--cs-emphasis-font-weight);
+  color: var(--cs-heading-text-color);
+}
+
+main hr {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: var(--cs-border-color);
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
 }
