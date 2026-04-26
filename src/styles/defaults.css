@@ -74,7 +74,7 @@
     white-space: normal;
     background-color: var(--cs-button-background, currentColor);
     color: var(--cs-button-text-color, inherit);
-    font-size: var(--cs-font-size-small, 0.875rem);
+    font-size: var(--cs-text-3, 0.875rem);
     font-weight: var(--cs-emphasis-font-weight, 600);
     text-decoration: none;
     z-index: 9999;
