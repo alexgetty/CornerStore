@@ -36,7 +36,8 @@
     "./layouts/ContentPage": "./src/layouts/ContentPage.astro",
     "./styles/reset.css": "./src/styles/reset.css",
     "./styles/palette.css": "./src/styles/palette.css",
-    "./styles/defaults.css": "./src/styles/defaults.css"
+    "./styles/defaults.css": "./src/styles/defaults.css",
+    "./styles/scales/*.css": "./src/styles/scales/*.css"
   },
   "files": [
     "bin/",
