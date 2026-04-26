@@ -41,7 +41,7 @@
   }
 
   .cs-cart-subtotal {
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     color: var(--cs-heading-text-color, inherit);
     white-space: nowrap;
