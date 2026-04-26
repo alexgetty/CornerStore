@@ -10,7 +10,7 @@
   .cs-cart-control-add {
     width: 100%;
     padding: var(--cs-cart-control-add-padding, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     background: var(--cs-heading-text-color, currentColor);
     color: var(--cs-listing-surface, transparent);
@@ -76,7 +76,7 @@
     min-width: 0;
     height: var(--cs-cart-control-stepper-size, auto);
     text-align: center;
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     border-top-width: var(--cs-border-width, 0);
     border-bottom-width: var(--cs-border-width, 0);
