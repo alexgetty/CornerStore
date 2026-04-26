@@ -8,7 +8,7 @@
   .cs-listings-empty {
     text-align: center;
     color: var(--cs-muted-text-color, inherit);
-    font-size: var(--cs-font-size-large, inherit);
+    font-size: var(--cs-text-5, inherit);
     padding-top: var(--cs-listings-empty-padding-y, 0);
     padding-bottom: var(--cs-listings-empty-padding-y, 0);
     padding-left: var(--cs-listings-empty-padding-x, 0);

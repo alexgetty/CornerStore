@@ -90,7 +90,7 @@
   }
 
   .cs-listing-category {
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     letter-spacing: var(--cs-letter-spacing-loose, normal);
     text-transform: uppercase;
@@ -99,21 +99,21 @@
   }
 
   .cs-listing-name {
-    font-size: var(--cs-font-size-base, inherit);
+    font-size: var(--cs-text-4, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     line-height: var(--cs-heading-line-height, normal);
     margin: 0;
   }
 
   .cs-listing-description {
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-body-text-color, inherit);
     line-height: var(--cs-body-line-height, normal);
     margin: 0;
   }
 
   .cs-listing-price {
-    font-size: var(--cs-font-size-base, inherit);
+    font-size: var(--cs-text-4, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     color: var(--cs-heading-text-color, inherit);
     margin-top: var(--cs-listing-price-margin-top, 0);
@@ -123,7 +123,7 @@
   }
 
   .cs-listing-moq {
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
   }
 

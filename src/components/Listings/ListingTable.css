@@ -19,7 +19,7 @@
   }
 
   .cs-order-sheet-table thead th {
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     color: var(--cs-body-text-color, inherit);
     border-bottom-width: var(--cs-border-width-emphasis, 0);
@@ -84,14 +84,14 @@
 
   .cs-order-sku {
     display: block;
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
     font-family: monospace;
   }
 
   .cs-order-desc {
     display: block;
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
     margin-top: var(--cs-order-desc-margin-top, 0);
   }
@@ -109,13 +109,13 @@
     height: var(--cs-cart-stepper-cell-size, auto);
     width: var(--cs-cart-stepper-cell-input-width, auto);
     flex: 0 0 auto;
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
   }
 
   /* --- MOQ column --- */
 
   .cs-col-moq {
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
   }
 
