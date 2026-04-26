@@ -1,0 +1,25 @@
+/* Modular type scale — major third (ratio 1.25)
+ *
+ * Eight rungs derived from a 1.25 ratio, with body at --cs-text-4 (1rem).
+ * Layout: 3 rungs below base, base, 4 rungs above base.
+ *
+ * Multipliers are ratio raised to each rung's offset, computed at
+ * authoring time and rounded to 3 decimal places.
+ *
+ * To rescale the entire system, override --cs-text-base after importing:
+ *   :root { --cs-text-base: 1.125rem; }
+ *
+ * To override any individual rung, redeclare it:
+ *   :root { --cs-text-3: 0.875rem; }
+ */
+:root {
+  --cs-text-base: 1rem;
+  --cs-text-1: calc(var(--cs-text-base) * 0.512);
+  --cs-text-2: calc(var(--cs-text-base) * 0.64);
+  --cs-text-3: calc(var(--cs-text-base) * 0.8);
+  --cs-text-4: var(--cs-text-base);
+  --cs-text-5: calc(var(--cs-text-base) * 1.25);
+  --cs-text-6: calc(var(--cs-text-base) * 1.563);
+  --cs-text-7: calc(var(--cs-text-base) * 1.953);
+  --cs-text-8: calc(var(--cs-text-base) * 2.441);
+}
