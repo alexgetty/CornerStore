@@ -1,0 +1,18 @@
+/* Modular type scale — perfect fourth (ratio 1.333)
+ *
+ * Eight rungs derived from a 1.333 ratio, with body at --cs-text-4 (1rem).
+ * Layout: 3 rungs below base, base, 4 rungs above base.
+ *
+ * Override --cs-text-base after importing to rescale the whole system.
+ */
+:root {
+  --cs-text-base: 1rem;
+  --cs-text-1: calc(var(--cs-text-base) * 0.422);
+  --cs-text-2: calc(var(--cs-text-base) * 0.563);
+  --cs-text-3: calc(var(--cs-text-base) * 0.75);
+  --cs-text-4: var(--cs-text-base);
+  --cs-text-5: calc(var(--cs-text-base) * 1.333);
+  --cs-text-6: calc(var(--cs-text-base) * 1.777);
+  --cs-text-7: calc(var(--cs-text-base) * 2.369);
+  --cs-text-8: calc(var(--cs-text-base) * 3.157);
+}

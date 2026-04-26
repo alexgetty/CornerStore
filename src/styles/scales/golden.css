@@ -1,0 +1,18 @@
+/* Modular type scale — golden (ratio 1.618, φ)
+ *
+ * Eight rungs derived from a golden ratio, with body at --cs-text-4 (1rem).
+ * Layout: 3 rungs below base, base, 4 rungs above base.
+ *
+ * Override --cs-text-base after importing to rescale the whole system.
+ */
+:root {
+  --cs-text-base: 1rem;
+  --cs-text-1: calc(var(--cs-text-base) * 0.236);
+  --cs-text-2: calc(var(--cs-text-base) * 0.382);
+  --cs-text-3: calc(var(--cs-text-base) * 0.618);
+  --cs-text-4: var(--cs-text-base);
+  --cs-text-5: calc(var(--cs-text-base) * 1.618);
+  --cs-text-6: calc(var(--cs-text-base) * 2.618);
+  --cs-text-7: calc(var(--cs-text-base) * 4.236);
+  --cs-text-8: calc(var(--cs-text-base) * 6.854);
+}

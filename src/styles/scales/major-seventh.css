@@ -1,0 +1,18 @@
+/* Modular type scale — major seventh (ratio 1.875)
+ *
+ * Eight rungs derived from a 1.875 ratio, with body at --cs-text-4 (1rem).
+ * Layout: 3 rungs below base, base, 4 rungs above base.
+ *
+ * Override --cs-text-base after importing to rescale the whole system.
+ */
+:root {
+  --cs-text-base: 1rem;
+  --cs-text-1: calc(var(--cs-text-base) * 0.152);
+  --cs-text-2: calc(var(--cs-text-base) * 0.284);
+  --cs-text-3: calc(var(--cs-text-base) * 0.533);
+  --cs-text-4: var(--cs-text-base);
+  --cs-text-5: calc(var(--cs-text-base) * 1.875);
+  --cs-text-6: calc(var(--cs-text-base) * 3.516);
+  --cs-text-7: calc(var(--cs-text-base) * 6.592);
+  --cs-text-8: calc(var(--cs-text-base) * 12.36);
+}
