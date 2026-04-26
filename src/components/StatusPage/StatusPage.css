@@ -9,7 +9,7 @@
   }
 
   .cs-status h1 {
-    font-size: var(--cs-font-size-larger, inherit);
+    font-size: var(--cs-text-6, inherit);
     font-weight: var(--cs-heading-font-weight, inherit);
     margin-bottom: var(--cs-status-heading-margin-bottom, 0);
   }
@@ -30,7 +30,7 @@
     color: var(--cs-button-text-color, inherit);
     text-decoration: none;
     border-radius: var(--cs-button-border-radius, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-status-button-font-weight, normal);
     transition: background-color var(--cs-transition-fast, 0s);
   }
@@ -41,14 +41,14 @@
 
   .cs-status .cs-status-secondary {
     color: var(--cs-muted-text-color, inherit);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     margin-bottom: var(--cs-status-secondary-margin-bottom, 0);
     line-height: var(--cs-body-line-height, normal);
   }
 
   .cs-status .cs-status-contact {
     color: var(--cs-muted-text-color, inherit);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     margin-bottom: var(--cs-status-text-margin-bottom, 0);
     line-height: var(--cs-body-line-height, normal);
   }
