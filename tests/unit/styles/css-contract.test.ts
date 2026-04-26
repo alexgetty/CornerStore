@@ -36,6 +36,13 @@ const PACKAGE_CSS_DIRS = [
 const RESET_FILE = join(REPO_ROOT, 'src', 'styles', 'reset.css');
 const PALETTE_FILE = join(REPO_ROOT, 'src', 'styles', 'palette.css');
 const DEFAULTS_FILE = join(REPO_ROOT, 'src', 'styles', 'defaults.css');
+// Scale presets define typography tokens via internal --cs-text-base
+// indirection so consumers can rescale the system with a single override.
+// Their bare var(--cs-text-base) references are an authoring-time
+// relationship, not a consumer-facing contract that needs a fallback —
+// peer to palette.css, which is exempted from the color-literal contract
+// because color literals are ITS data.
+const SCALES_DIR = join(REPO_ROOT, 'src', 'styles', 'scales');
 
 // Page-level semantic zones are stable contracts per docs/principles.md and
 // MAY be selected directly in package CSS for structural rules (layout
@@ -72,6 +79,7 @@ describe('CSS contract: var(--cs-*) fallbacks', () => {
   const BARE_VAR_RE = /var\(\s*--cs-[a-z0-9-]+\s*\)/g;
 
   for (const file of allPackageCssFiles()) {
+    if (file.startsWith(SCALES_DIR)) continue;
     const rel = relative(REPO_ROOT, file);
     it(`${rel} has no bare var(--cs-*) references`, () => {
       const css = stripComments(readFileSync(file, 'utf8'));
