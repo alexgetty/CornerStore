@@ -28,7 +28,7 @@
   }
 
   .cs-cart-table thead th {
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     color: var(--cs-body-text-color, inherit);
     border-bottom-width: var(--cs-border-width-emphasis, 0);
@@ -65,13 +65,13 @@
 
   .cs-cart-sku {
     display: block;
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
   }
 
   .cs-cart-moq {
     display: block;
-    font-size: var(--cs-font-size-smallest, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
   }
 
@@ -112,7 +112,7 @@
     height: var(--cs-cart-stepper-cell-size, auto);
     width: var(--cs-cart-stepper-cell-input-width, auto);
     flex: 0 0 auto;
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
   }
 
   .cs-remove-btn {
@@ -162,7 +162,7 @@
 
   .cs-totals-minimum {
     margin: 0;
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
   }
 
@@ -177,7 +177,7 @@
 
   .cs-cart-summary {
     margin-bottom: var(--cs-cart-block-margin, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-body-text-color, inherit);
     text-align: right;
   }
@@ -185,7 +185,7 @@
   .cs-order-errors {
     color: var(--cs-error-color, currentColor);
     margin-bottom: var(--cs-cart-block-margin, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
   }
 
   .cs-order-errors ul {
@@ -283,7 +283,7 @@
   .cs-retry-btn,
   .cs-pdf-btn {
     padding: var(--cs-button-padding-vertical, 0) var(--cs-button-padding-horizontal, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     border-width: var(--cs-border-width, 0);
     border-style: solid;
@@ -307,7 +307,7 @@
     border-style: solid;
     border-color: var(--cs-warning-border, currentColor);
     border-radius: var(--cs-button-border-radius, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-body-text-color, inherit);
   }
 
@@ -324,7 +324,7 @@
   .cs-clear-unavailable {
     display: inline-block;
     padding: var(--cs-button-padding-vertical, 0) var(--cs-button-padding-horizontal, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     border-width: var(--cs-border-width, 0);
     border-style: solid;
@@ -343,7 +343,7 @@
   .cs-unavailable-notice {
     color: var(--cs-error-color, currentColor);
     margin-bottom: var(--cs-cart-block-margin, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
   }
 
   .cs-cart-row.cs-cart-unavailable {
@@ -357,7 +357,7 @@
   .cs-clear-cart-yes,
   .cs-clear-cart-cancel {
     padding: var(--cs-button-padding-vertical, 0) var(--cs-button-padding-horizontal, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     border-width: var(--cs-border-width, 0);
     border-style: solid;
@@ -389,7 +389,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--cs-cart-actions-secondary-gap, 0);
-    font-size: var(--cs-font-size-small, inherit);
+    font-size: var(--cs-text-3, inherit);
     color: var(--cs-body-text-color, inherit);
   }
 
