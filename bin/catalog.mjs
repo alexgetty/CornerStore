@@ -90,7 +90,7 @@ function validateRows(records) {
   }
   return { products, errors: allErrors };
 }
-async function loadCatalog(path) {
+async function loadCatalog(path, options) {
   const csvPath = path ?? CATALOG_PATH;
   const content = await readFile(csvPath, "utf-8");
   const records = parse(content, {
@@ -99,16 +99,34 @@ async function loadCatalog(path) {
     bom: true
   });
   const { products, errors } = validateRows(records);
-  for (const e of errors) {
-    console.log(`[Catalog] Warning: Row ${e.row}, ${e.field}: ${e.message} \u2014 skipped`);
+  const lenient = options?.lenient === true || process.env.CORNER_STORE_CATALOG_LENIENT === "1";
+  if (errors.length > 0) {
+    if (lenient) {
+      for (const e of errors) {
+        console.log(`[Catalog] Warning: Row ${e.row}, ${e.field}: ${e.message} \u2014 skipped`);
+      }
+    } else {
+      throw new CatalogError(errors);
+    }
   }
   return products;
 }
-var CATALOG_PATH, SKU_PATTERN, PRICE_PATTERN, MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_PRICE, MIN_PRICE;
+var CATALOG_PATH, CatalogError, SKU_PATTERN, PRICE_PATTERN, MAX_NAME_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_PRICE, MIN_PRICE;
 var init_csv = __esm({
   "src/lib/catalog/csv.ts"() {
     "use strict";
     CATALOG_PATH = join(process.cwd(), "products", "catalog.csv");
+    CatalogError = class extends Error {
+      constructor(issues) {
+        const summary = issues.map((e) => `Row ${e.row}, ${e.field}: ${e.message}`).join("; ");
+        super(
+          `Catalog validation failed (${issues.length} issue${issues.length === 1 ? "" : "s"}): ${summary}`
+        );
+        this.issues = issues;
+        this.name = "CatalogError";
+      }
+      issues;
+    };
     SKU_PATTERN = /^[a-zA-Z0-9_-]+$/;
     PRICE_PATTERN = /^\d+(\.\d+)?$/;
     MAX_NAME_LENGTH = 250;

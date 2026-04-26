@@ -2,6 +2,7 @@ import { parseCheckoutRequest, buildLineItems } from './checkout.js';
 import { decimalToRawPrice, DEFAULT_CURRENCY } from '../storefront/pricing.js';
 import { loadCatalog } from '../catalog/csv.js';
 import Stripe from 'stripe';
+import { createHash } from 'node:crypto';
 
 export interface CheckoutHandlerConfig {
   stripeKey: string;
@@ -28,7 +29,13 @@ export function createCheckoutHandler(options: CheckoutHandlerConfig) {
     // Read the catalog fresh on every request. The CSV is the source of truth at checkout time;
     // a hidden SKU, price change, or new product takes effect on the next request with no
     // process restart, no cache flush, no IPC handshake with the sync CLI.
-    const catalog = await loadCatalog();
+    let catalog;
+    try {
+      catalog = await loadCatalog();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Catalog unavailable';
+      return new Response(JSON.stringify({ error: message }), { status: 500 });
+    }
 
     const minCartSizeRaw = options.minCartSize != null
       ? decimalToRawPrice(options.minCartSize, DEFAULT_CURRENCY)
@@ -69,14 +76,25 @@ export function createCheckoutHandler(options: CheckoutHandlerConfig) {
     }
 
     try {
-      const session = await getStripe().checkout.sessions.create({
-        mode: 'payment',
-        line_items: built.lineItems as Stripe.Checkout.SessionCreateParams.LineItem[],
-        shipping_options: shippingOptions.length > 0 ? shippingOptions : undefined,
-        shipping_address_collection: { allowed_countries: ['US'] },
-        success_url: `${origin}/success`,
-        cancel_url: `${origin}/cancel`,
-      });
+      const idempotencyKey = createHash('sha256')
+        .update(JSON.stringify({
+          items: parsed.items.slice().sort((a, b) => a.sku.localeCompare(b.sku)),
+          origin,
+          bucket: Math.floor(Date.now() / 60_000),
+        }))
+        .digest('hex');
+
+      const session = await getStripe().checkout.sessions.create(
+        {
+          mode: 'payment',
+          line_items: built.lineItems as Stripe.Checkout.SessionCreateParams.LineItem[],
+          shipping_options: shippingOptions.length > 0 ? shippingOptions : undefined,
+          shipping_address_collection: { allowed_countries: ['US'] },
+          success_url: `${origin}/success`,
+          cancel_url: `${origin}/cancel`,
+        },
+        { idempotencyKey },
+      );
 
       return new Response(JSON.stringify({ url: session.url }), { status: 200 });
     } catch (err) {

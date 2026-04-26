@@ -129,6 +129,27 @@ describe('parseCheckoutRequest', () => {
       error: 'Each item must have a positive integer quantity',
     });
   });
+
+  it('accepts quantity equal to MAX_QUANTITY', () => {
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 10_000 }] });
+    expect(result).toEqual({
+      ok: true,
+      items: [{ sku: 'A', quantity: 10_000 }],
+    });
+  });
+
+  it('rejects quantity above MAX_QUANTITY', () => {
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 10_001 }] });
+    expect(result).toEqual({
+      ok: false,
+      error: 'Quantity 10001 exceeds maximum of 10000',
+    });
+  });
+
+  it('rejects extreme quantity values (Number.MAX_SAFE_INTEGER)', () => {
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: Number.MAX_SAFE_INTEGER }] });
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe('buildLineItems', () => {
@@ -445,6 +466,45 @@ describe('createCheckoutHandler', () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
+  it('passes a stable idempotency key to Stripe within the same time bucket', async () => {
+    const fixedNow = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+    try {
+      const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+      await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
+      await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
+
+      expect(mockCreate).toHaveBeenCalledTimes(2);
+      const firstOpts = mockCreate.mock.calls[0][1];
+      const secondOpts = mockCreate.mock.calls[1][1];
+      expect(firstOpts).toBeDefined();
+      expect(firstOpts.idempotencyKey).toBeTruthy();
+      expect(secondOpts.idempotencyKey).toBe(firstOpts.idempotencyKey);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('changes idempotency key when items change', async () => {
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 2 }] }, 'https://mystore.com');
+
+    const firstKey = mockCreate.mock.calls[0][1].idempotencyKey;
+    const secondKey = mockCreate.mock.calls[1][1].idempotencyKey;
+    expect(secondKey).not.toBe(firstKey);
+  });
+
+  it('changes idempotency key when origin changes', async () => {
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://store-a.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://store-b.com');
+
+    const firstKey = mockCreate.mock.calls[0][1].idempotencyKey;
+    const secondKey = mockCreate.mock.calls[1][1].idempotencyKey;
+    expect(secondKey).not.toBe(firstKey);
+  });
+
   it('reads the catalog from disk on every request (no caching)', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
@@ -477,5 +537,20 @@ describe('createCheckoutHandler', () => {
     const body = await second.json();
     expect(body.error).toMatch(/Unavailable SKU/);
     expect(body.error).toContain('WIDGET-001');
+  });
+
+  it('returns 500 when loadCatalog throws (catalog validation failure)', async () => {
+    mockLoadCatalog.mockRejectedValue(new Error('Catalog validation failed (1 issue): Row 2, SKU: required'));
+
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    const response = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.error).toContain('Catalog validation failed');
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 });

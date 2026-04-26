@@ -1,6 +1,6 @@
 import type { CatalogProduct } from '../catalog/types.js';
 import { decimalToRawPrice, DEFAULT_CURRENCY } from '../storefront/pricing.js';
-import { validateQuantity } from '../validation/quantity.js';
+import { validateQuantity, MAX_QUANTITY } from '../validation/quantity.js';
 
 export interface CheckoutItem {
   sku: string;
@@ -32,6 +32,9 @@ export function parseCheckoutRequest(body: unknown): ParseResult {
     }
     if (typeof rec.quantity !== 'number' || rec.quantity <= 0 || !Number.isInteger(rec.quantity)) {
       return { ok: false, error: 'Each item must have a positive integer quantity' };
+    }
+    if (rec.quantity > MAX_QUANTITY) {
+      return { ok: false, error: `Quantity ${rec.quantity} exceeds maximum of ${MAX_QUANTITY}` };
     }
     items.push({ sku: rec.sku, quantity: rec.quantity });
   }

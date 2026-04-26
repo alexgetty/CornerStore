@@ -5,6 +5,18 @@ import type { CatalogProduct, CatalogValidationError } from './types.js';
 
 export const CATALOG_PATH = join(process.cwd(), 'products', 'catalog.csv');
 
+export class CatalogError extends Error {
+  constructor(public readonly issues: CatalogValidationError[]) {
+    const summary = issues
+      .map((e) => `Row ${e.row}, ${e.field}: ${e.message}`)
+      .join('; ');
+    super(
+      `Catalog validation failed (${issues.length} issue${issues.length === 1 ? '' : 's'}): ${summary}`,
+    );
+    this.name = 'CatalogError';
+  }
+}
+
 const SKU_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const PRICE_PATTERN = /^\d+(\.\d+)?$/;
 const MAX_NAME_LENGTH = 250;
@@ -109,7 +121,10 @@ export function validateRows(
   return { products, errors: allErrors };
 }
 
-export async function loadCatalog(path?: string): Promise<CatalogProduct[]> {
+export async function loadCatalog(
+  path?: string,
+  options?: { lenient?: boolean },
+): Promise<CatalogProduct[]> {
   const csvPath = path ?? CATALOG_PATH;
   const content = await readFile(csvPath, 'utf-8');
   const records = parse(content, {
@@ -120,8 +135,18 @@ export async function loadCatalog(path?: string): Promise<CatalogProduct[]> {
 
   const { products, errors } = validateRows(records);
 
-  for (const e of errors) {
-    console.log(`[Catalog] Warning: Row ${e.row}, ${e.field}: ${e.message} — skipped`);
+  const lenient =
+    options?.lenient === true ||
+    process.env.CORNER_STORE_CATALOG_LENIENT === '1';
+
+  if (errors.length > 0) {
+    if (lenient) {
+      for (const e of errors) {
+        console.log(`[Catalog] Warning: Row ${e.row}, ${e.field}: ${e.message} — skipped`);
+      }
+    } else {
+      throw new CatalogError(errors);
+    }
   }
 
   return products;

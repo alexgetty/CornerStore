@@ -413,7 +413,7 @@ describe('loadCatalog', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const csv = makeCSV([makeCSVRow({ SKU: '' })]);
     readFileMock.mockResolvedValue(csv);
-    const products = await loadCatalog('/fake/catalog.csv');
+    const products = await loadCatalog('/fake/catalog.csv', { lenient: true });
     expect(products).toEqual([]);
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('Row 2, SKU: required'),
@@ -425,7 +425,7 @@ describe('loadCatalog', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const csv = makeCSV([makeCSVRow({ SKU: '' }), makeCSVRow({ SKU: 'GOOD-001' })]);
     readFileMock.mockResolvedValue(csv);
-    const products = await loadCatalog('/fake/catalog.csv');
+    const products = await loadCatalog('/fake/catalog.csv', { lenient: true });
     expect(products).toHaveLength(1);
     expect(products[0]!.sku).toBe('GOOD-001');
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -463,5 +463,85 @@ describe('loadCatalog', () => {
       expect.stringContaining('products/catalog.csv'),
       'utf-8'
     );
+  });
+});
+
+describe('loadCatalog strict mode (default)', () => {
+  let loadCatalog: typeof import('../../../src/lib/catalog/csv.js').loadCatalog;
+  let CatalogError: typeof import('../../../src/lib/catalog/csv.js').CatalogError;
+  let readFileMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    delete process.env.CORNER_STORE_CATALOG_LENIENT;
+    readFileMock = await getReadFileMock();
+    ({ loadCatalog, CatalogError } = await import('../../../src/lib/catalog/csv.js'));
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('throws CatalogError when any row is invalid', async () => {
+    const csv = makeCSV([makeCSVRow({ SKU: '' }), makeCSVRow({ SKU: 'GOOD-001' })]);
+    readFileMock.mockResolvedValue(csv);
+
+    await expect(loadCatalog('/fake/catalog.csv')).rejects.toThrow(CatalogError);
+  });
+
+  it('CatalogError exposes the underlying issues', async () => {
+    const csv = makeCSV([makeCSVRow({ SKU: '' }), makeCSVRow({ SKU: 'BAD!', Name: '' })]);
+    readFileMock.mockResolvedValue(csv);
+
+    try {
+      await loadCatalog('/fake/catalog.csv');
+      throw new Error('expected loadCatalog to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(CatalogError);
+      const catErr = err as InstanceType<typeof CatalogError>;
+      expect(catErr.issues.length).toBeGreaterThanOrEqual(2);
+      expect(catErr.message).toContain('Row 2');
+      expect(catErr.message).toContain('Row 3');
+    }
+  });
+
+  it('does not throw when all rows are valid', async () => {
+    const csv = makeCSV([makeCSVRow({ SKU: 'GOOD-001' })]);
+    readFileMock.mockResolvedValue(csv);
+
+    const products = await loadCatalog('/fake/catalog.csv');
+    expect(products).toHaveLength(1);
+  });
+
+  it('lenient mode via CORNER_STORE_CATALOG_LENIENT=1 env var skips errors and returns valid rows', async () => {
+    process.env.CORNER_STORE_CATALOG_LENIENT = '1';
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const csv = makeCSV([makeCSVRow({ SKU: '' }), makeCSVRow({ SKU: 'GOOD-001' })]);
+    readFileMock.mockResolvedValue(csv);
+
+    const products = await loadCatalog('/fake/catalog.csv');
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('GOOD-001');
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('lenient mode via options.lenient skips errors and returns valid rows', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const csv = makeCSV([makeCSVRow({ SKU: '' }), makeCSVRow({ SKU: 'GOOD-001' })]);
+    readFileMock.mockResolvedValue(csv);
+
+    const products = await loadCatalog('/fake/catalog.csv', { lenient: true });
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('GOOD-001');
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('options.lenient overrides absence of env var (explicit beats default)', async () => {
+    delete process.env.CORNER_STORE_CATALOG_LENIENT;
+    const csv = makeCSV([makeCSVRow({ SKU: '' })]);
+    readFileMock.mockResolvedValue(csv);
+
+    // strict default would throw; options.lenient: true should not throw
+    await expect(loadCatalog('/fake/catalog.csv', { lenient: true })).resolves.toEqual([]);
   });
 });

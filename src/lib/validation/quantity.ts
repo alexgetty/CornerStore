@@ -1,3 +1,6 @@
+/** Maximum quantity allowed per line item. Sized for real wholesale orders; rejects abuse. */
+export const MAX_QUANTITY = 10_000;
+
 export function validateQuantity(quantity: number, moq: number | null): boolean {
   if (quantity === 0) return true;
   if (moq !== null && quantity < moq) return false;

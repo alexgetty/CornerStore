@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateQuantity, snapToMoq } from '../../../src/lib/validation/quantity.js';
+import { validateQuantity, snapToMoq, MAX_QUANTITY } from '../../../src/lib/validation/quantity.js';
 
 describe('validateQuantity', () => {
   it('returns true for zero quantity regardless of MOQ', () => {
@@ -61,5 +61,11 @@ describe('snapToMoq', () => {
 
   it('does not go below zero', () => {
     expect(snapToMoq(0, null, 'down')).toBe(0);
+  });
+});
+
+describe('MAX_QUANTITY', () => {
+  it('is exported as 10_000', () => {
+    expect(MAX_QUANTITY).toBe(10_000);
   });
 });
