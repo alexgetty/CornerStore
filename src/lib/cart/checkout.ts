@@ -1,5 +1,5 @@
 import type { CatalogProduct } from '../catalog/types.js';
-import { decimalToRawPrice, DEFAULT_CURRENCY } from '../storefront/pricing.js';
+import { decimalToRawPrice, DEFAULT_CURRENCY, formatPrice } from '../storefront/pricing.js';
 import { validateQuantity, MAX_QUANTITY } from '../validation/quantity.js';
 
 export interface CheckoutItem {
@@ -99,7 +99,10 @@ export function buildLineItems(
   }
 
   if (minCartSizeRaw != null && subtotal < minCartSizeRaw) {
-    return { ok: false, error: 'Minimum order total not met' };
+    return {
+      ok: false,
+      error: `${formatPrice(minCartSizeRaw, DEFAULT_CURRENCY)} minimum, ${formatPrice(minCartSizeRaw - subtotal, DEFAULT_CURRENCY)} to go`,
+    };
   }
 
   return { ok: true, lineItems, subtotal };

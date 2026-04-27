@@ -96,7 +96,6 @@ const checkoutEnabled = config.checkout === 'stripe' && !!config.checkoutUrl;
     contact={config.contact ?? ''}
     listings={listings}
     currency={DEFAULT_CURRENCY}
-    minCartSize={config.minCartSize}
     minCartSizeRaw={minCartSizeRaw}
     wholesaleMargin={config.wholesaleMargin}
     checkoutEnabled={checkoutEnabled}

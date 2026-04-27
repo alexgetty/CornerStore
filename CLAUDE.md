@@ -10,6 +10,20 @@ Part of the Little BigSmall product family.
 
 Makers deserve cheap infrastructure to power their value-add businesses. Every dollar saved on platform fees is a dollar that stays with the person who made the thing.
 
+## Infrastructure, Not Middleman — MANDATORY
+
+**Corner Store is the technical infrastructure layer. We never facilitate the sale itself.** Sellers own the cart, the checkout, the order, the receipt, and the buyer relationship. We provide the software (and route payments via Stripe Connect when platform fees apply) but the sale completes on the seller's domain.
+
+Hard architectural lines we will not cross:
+
+- **No cross-seller cart.** A buyer cannot purchase from multiple sellers in a single checkout. Each store has its own cart and checkout.
+- **No hosted checkout.** Checkout always completes on the seller's domain. Corner Store domains never host the cart, the checkout form, or the order confirmation.
+- **No order-of-record.** The seller is the merchant of record. We do not store orders, generate receipts, or own the post-purchase relationship.
+- **No aggregated buyer accounts.** No Corner Store account that spans seller stores. Buyer accounts (if any) live with each seller.
+- **No catalog facilitation.** We do not list products on behalf of sellers, set prices, or handle fulfillment. An aggregated marketing/discovery surface is acceptable only if it links out to the seller's storefront for purchase.
+
+This is both a values statement (the product exists to keep sellers and buyers directly connected, with Corner Store as infrastructure) and a structural one (it keeps Corner Store outside marketplace facilitator regulations and their tax/compliance overhead). When evaluating any feature, check it against this list. If it would blur or cross the line, it does not ship.
+
 ## Distribution
 
 **Primary:** NPM package with a CLI init command (`cornerstore init`) that scaffolds the user's project — bundle directory, theme template, config. This is the documented, supported path. All guides, onboarding, and educational resources target this model.
@@ -30,18 +44,12 @@ The repo itself is the library. Consumers do not inherit `src/pages/`, they get 
 2. **New key in `StoreConfig`?** → the scaffolded `cornerstore.config.js` must offer it, or the feature must document the default. Either prompt for it at init time or include it in the scaffold with a comment.
 3. **New component consumers instantiate?** → `bin/init.mjs` must wire it into the scaffolded page that uses it.
 4. **New CSV column, env var, or runtime requirement?** → `bin/init.mjs` must produce a valid example (correct column count in sample rows, placeholder env var with instructions, etc.).
-5. **Feature requires a server runtime (API route, SSR, adapter)?** → `bin/init.mjs` must configure `output: 'server'` or `'hybrid'` and install + configure the Astro adapter. Static-mode scaffolds **cannot host server endpoints.**
-6. **Library factory that consumers mount (like `createCheckoutHandler`)?** → `bin/init.mjs` must scaffold the thin route file that imports and mounts it.
+5. **Library factory that consumers mount on their own server (like `createCheckoutHandler`)?** → Corner Store storefronts are static (`output: 'static'`). Server-side factories run on the consumer's separate server under the BYO-server model. The scaffold's job is to wire the storefront to that server: configure the relevant `cornerstore.config.js` keys (e.g. `checkoutUrl`) so the cart can POST to it. Document the server-side mounting in the factory's own README or JSDoc, not in `bin/init.mjs`.
+6. **Feature genuinely requires the storefront itself to be SSR?** → That is an architectural change, not an init-parity update. Stop and discuss before proceeding; don't unilaterally flip the scaffold to `output: 'server'`.
 
 ### Definition of done test
 
 After your changes, run `cornerstore init` into a fresh empty directory. Install deps. Run the build. Exercise the feature end-to-end in the scaffolded project. If you can't, init is out of sync and the feature is not done.
-
-### Violation history (active gaps tracked in `docs/todo/init-parity-audit.md`)
-
-- Cart + checkout exported `createCheckoutHandler` but never scaffolded `src/pages/api/checkout.ts`. Scaffold is also stuck on `output: 'static'` which can't run the route. Every consumer project has a broken checkout button.
-- `/product-names.json` endpoint for H4 was added to this repo's `src/pages/` without updating init. Consumers don't get it.
-- `wholesaleMargin`, `shippingFlat`, `shippingFreeThreshold`, `checkoutUrl` config keys exist in types, work in the library, never surface in init.
 
 **If you notice you are about to add a feature without updating init, STOP and write the init change first.**
 

@@ -6,6 +6,7 @@ import type {
 } from '../validation/types.js';
 import { validateQuantity } from '../validation/quantity.js';
 import { calculateLineTotal } from '../validation/totals.js';
+import { formatPrice, DEFAULT_CURRENCY } from '../storefront/pricing.js';
 
 function resolveItem(
   cartItem: CartItem,
@@ -49,7 +50,12 @@ function validateMinCart(
   }, 0);
 
   if (subtotal < minCartSizeRaw) {
-    return [{ type: 'min-cart', message: 'Minimum order total not met' }];
+    return [
+      {
+        type: 'min-cart',
+        message: `${formatPrice(minCartSizeRaw, DEFAULT_CURRENCY)} minimum, ${formatPrice(minCartSizeRaw - subtotal, DEFAULT_CURRENCY)} to go`,
+      },
+    ];
   }
   return [];
 }

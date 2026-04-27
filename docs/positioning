@@ -1,0 +1,277 @@
+# Corner Store — Pricing & Positioning Strategy
+
+**Last updated:** April 27, 2026
+
+---
+
+## 1. Mission & Strategic Identity
+
+Strengthen small businesses to make their communities more resilient. Small businesses are the economic backbone of small communities — when they suffer, communities suffer. Corner Store exists to keep more money with small makers and small retailers, and to give them tools and discovery without extracting from the relationships they build.
+
+This is the constraint that drives every product, pricing, and architectural decision.
+
+### What Corner Store is
+
+A sustainable, indie, open-source platform built for slow, durable, community-driven growth. The goal is to reach a small, mission-aligned audience that produces enough revenue to keep the platform running indefinitely.
+
+### What Corner Store is not
+
+- Not venture-scale. Will not raise venture capital.
+- Not optimizing for ARPU, CAC payback, or growth metrics. Optimizing for sustainability, mission alignment, and community quality.
+- Not built for an exit. Built to run indefinitely as an indie operation.
+
+### Why the venture-scale path is rejected
+
+Venture capital requires growth and ROI on a timeline that conflicts with mission alignment. The pattern is consistent across two-sided marketplaces: VC funding leads to growth pressure, which leads to extractive monetization, which leads to enshittification. Corner Store opts out by structurally refusing the inputs that drive the cycle. This positioning is loud and explicit — part of the public identity, not an apology.
+
+---
+
+## 2. The Open-Source Foundation
+
+Corner Store's first version is an open-source, self-hosted storefront generator (Astro-based, distributed as an NPM package). At any point, a maker can take their existing Corner Store storefront, point it at their own server endpoint, and continue running the same store independently of the platform.
+
+### Why this matters
+
+This is the architectural commitment that makes every other commitment credible. Makers don't have to trust Corner Store not to extract — they can read the code, fork it, and self-host. The platform's only path to retaining users is continuing to add value beyond what they could get self-hosting.
+
+### What this enables
+
+- **Verifiable credibility.** "We won't extract" is enforceable, not promised. The architecture makes extraction impossible without users immediately leaving.
+- **Zero-cost exit.** No lock-in. Makers and retailers participate because the platform adds value, not because they're trapped.
+- **Survivability beyond the founder.** If the platform fails, the code persists. Users don't lose their stores.
+- **Contribution path for the community.** Technically inclined makers can contribute features, fix bugs, run their own variants.
+
+### Licensing
+
+AGPL or equivalent. Forces forks and hosted variants to remain open. Prevents extraction-based forks from competing using Corner Store's own code. The values constraint travels with the code.
+
+---
+
+## 3. Market
+
+### Primary market
+
+Wholesale: small makers selling to small independent retail shops. B2B-first, with DTC functionality also available at marketplace launch. Some makers will offer both; some will choose wholesale-only. Both are supported.
+
+### Why wholesale-first
+
+- Wholesale produces more revenue per hour of effort than DTC for indie makers.
+- Wholesale buyers are deliberate. Click-through-to-maker-storefront fits B2B buying behavior.
+- The DTC space is dominated by Shopify and Etsy. Wholesale has only one dominant player (Faire), widely disliked.
+
+### No category beachhead
+
+Corner Store does not specialize in a single product category. The differentiator is values and community focus, not vertical expertise. Makers across categories self-select onto the platform based on mission alignment.
+
+### Primary competitor
+
+Faire. Pricing, positioning, and competitive comparisons are anchored against Faire because that's the relevant alternative for wholesale makers and retailers.
+
+---
+
+## 4. Pricing Model
+
+**3% commission on revenue above $1,000/month per seller. No commission below $1,000. No monthly fee. No tiers. No add-ons.**
+
+### How the model works
+
+- Sellers under $1,000/month pay nothing. New makers and hobbyists can launch a store, list products, and use the platform for free until they're earning real money.
+- 3% is dramatically below Faire's 15-25%. A maker doing $5,000/month pays Corner Store $120; on Faire they'd pay $750-$1,250.
+- No tier upgrades, feature gates, or upsell pressure.
+
+### Hobbyist makers are welcome
+
+Many sellers will never cross $1,000/month. They're hobbyists, side-project makers, or testing the wholesale waters. They cost the platform near-zero to host (static sites, single Stripe endpoint), they make the marketplace feel populated and alive, and they're aligned with the mission. Their presence is a feature.
+
+### What's not in the pricing
+
+- No setup fees, listing fees, or monthly minimums.
+- No payment processing markup. Stripe charges sellers directly.
+- No charge for marketplace listing.
+
+The feature set is intentionally minimal. Pricing reflects access to the platform, not feature parity with Shopify or Faire.
+
+---
+
+## 5. Positioning
+
+### Against Faire
+
+Direct, factual, comparative. Faire is named. Their commission rates are stated. Their ToS provisions on off-platform contact are cited. The model is characterized as exploitative or extractive. This is normal competitive practice and protected commercial speech.
+
+Core comparative claims:
+
+- Faire charges 15-25% commission. Corner Store charges 3%, only on revenue above $1,000/month.
+- Faire prohibits makers from contacting their own retailers off-platform. Corner Store explicitly supports the maker-retailer direct relationship.
+- Faire owns the buyer relationship. Corner Store positions makers as merchant of record; the relationship belongs to them.
+- Faire takes 15% commission on retailer reorders in perpetuity. Corner Store doesn't.
+
+Lines not crossed:
+
+- No false factual claims.
+- No directing makers to bring Faire-sourced retailers to Corner Store. Inducement of ToS breach is a separate tort from criticism. Makers' individual decisions about who to invite are theirs.
+
+### Against Shopify
+
+Shopify is a different category — DTC infrastructure, not wholesale. Comparison only matters for sellers evaluating both for DTC use cases. Corner Store is intentionally simpler, less feature-rich, and cheaper for sellers under ~$2,300/month GMV. Above that, Shopify Basic is cheaper in absolute terms. Sellers who need advanced features, multi-channel sync, or sophisticated app ecosystems should use Shopify.
+
+### To makers
+
+The wedge: free until $1,000/month. The pitch lands hardest with new makers entering wholesale who haven't signed Faire's ToS.
+
+Distribution:
+
+- Founder's existing network (artist and maker friends as the first cohort).
+- Maker community organizations (Renegade Craft, Indie Folk Network, American Made Show, regional collectives).
+- Trade shows (NY NOW, NSS, MarketTime, regional gift shows).
+- Indie business press and podcasts.
+- Maker education content (line sheet templates, retailer outreach guides, wholesale pricing calculators).
+
+### To retailers
+
+The pitch: when you source through extractive marketplaces, 15-25% of what you pay never reaches the maker. On Corner Store, your dollar goes to the maker. The relationship is yours to build.
+
+Honest about limitations:
+
+- No net 60. Retailers pay upfront. Means buying more deliberately — fewer makers, deeper relationships, more confident orders. Works best for retailers with strong cash positions.
+- Smaller catalog at launch. Discovery is curated, not comprehensive.
+
+What Corner Store offers that Faire doesn't:
+
+- Direct relationships with makers (contact, custom orders, off-platform continuity).
+- Lower prices on equivalent products (because makers aren't paying 15-25% commission).
+- Values alignment with the small-shop ethos.
+- Local and regional sourcing emphasis.
+
+---
+
+## 6. Product Differentiators
+
+Two product features go beyond "we're not Faire" framings and create genuine advantages Faire structurally cannot match.
+
+### 6.1 Regionality
+
+Faire is a national catalog. It does not meaningfully help a Vermont shop discover Vermont makers. Corner Store is built around geographic and regional discovery from day one.
+
+- "Makers within X miles of you" as a primary discovery mechanism for retailers.
+- Regional collections and curation.
+- Hand-delivery and local-pickup workflows for makers and retailers within driving distance.
+- Buyer-facing "makers near me" surfaces for consumer DTC discovery.
+
+Faire cannot replicate this without rebuilding their core experience. National-catalog logic is incompatible with regional-first surfacing. This creates a discovery experience that differentiates beyond price and values.
+
+### 6.2 Cross-linking makers and retailers
+
+The marketplace is bidirectional. Makers list their work; retailers list their shops. The two sides are interlinked at the discovery layer:
+
+- Browsing a maker shows the retailers (within range, or anywhere) that carry them.
+- Browsing a retailer shows the Corner Store makers they buy from.
+- Buyers discover makers, then find local shops carrying them. Or discover shops they like, then find more makers those shops work with.
+
+Most marketplaces don't surface relationships outside the platform because that competes with their own transaction volume. Corner Store can build this because the relationships are the point. The result is a self-reinforcing discovery graph: makers bring retailers, retailers bring buyers, buyers discover more makers.
+
+This also makes Corner Store the consumer-facing front door to local indie commerce, not just a wholesale platform.
+
+---
+
+## 7. Curation as Product
+
+Marketplace listing is application-only. Self-hosted storefronts on Corner Store software are open to anyone, but inclusion in the aggregated marketplace requires review and approval.
+
+### Curation criteria
+
+- High-quality handmade or hand-designed work, personally created by the maker.
+- No AI-generated artwork.
+- No drop-ship operations or resold goods.
+
+### Why curation matters
+
+- Signal-to-noise is the product. Buyers and retailers can trust that everything in the marketplace is legitimate indie work.
+- Faire cannot replicate this without alienating their existing seller base.
+- The application process is a relationship-building mechanism. Hand-reviewing makers means knowing them, their work, and their story.
+- It's a draw for both sides: makers don't want to compete with AI and drop-ship; buyers don't want to filter through it.
+
+---
+
+## 8. Net Terms
+
+### What net terms does
+
+Net terms doesn't transfer inventory risk — the retailer still owes the money whether the inventory sells or not. It provides working capital efficiency. A retailer with $20K cash can carry ~$60K inventory under net 60 because three "tranches" of orders are floating at any time. This lets retailers stock more SKUs and take more chances on new makers.
+
+### Current state
+
+Corner Store does not offer net terms. Net terms requires either platform-level credit underwriting (a $50M+ fintech operation) or a credit facility partnership. Neither is available to a bootstrapped indie operation.
+
+### How retailers buy without net terms
+
+Without net terms, retailers concentrate orders on proven makers, place smaller initial orders, and discover new makers more slowly. This is consistent with the "deeper relationships, fewer makers" positioning. Established makers with strong product-market fit do well; new makers face slower retailer acquisition than on Faire.
+
+### Roadmap
+
+Third-party B2B BNPL providers (Resolve, Slope, Balance, Apruve, Kanmon) underwrite retailer credit, pay makers upfront, and collect from retailers over net 30/60/90. They will be integrated as an optional payment method without taking credit risk directly. Requires transaction volume before providers will partner.
+
+---
+
+## 9. Growth Strategy
+
+### Grassroots mechanism
+
+Corner Store does not acquire users through paid channels. The platform's identity makes paid acquisition contradictory. Growth happens through the same kind of relationships the platform exists to enable.
+
+1. Founder's own network seeds the first cohort. Artist and maker friends. Pre-aligned, forgiving, invested.
+2. Each maker recruits. Onboarding actively encourages makers to invite their existing retailer relationships and other makers they know.
+3. Each retailer recruits. Same pattern. A retailer who joins is encouraged to invite makers and shops they know.
+4. Cross-linking creates discovery. Makers and retailers find each other through the platform's bidirectional discovery surfaces.
+5. Press and community organizations amplify. Indie business press, maker communities, regional shows.
+
+### Pace
+
+Slow growth is expected and acceptable. The platform's infrastructure costs are near-zero (static sites, Stripe endpoints), so it can run indefinitely with a small user base. The success metric is sustainability, not growth rate.
+
+---
+
+## 10. Founder Sustainability
+
+The dominant failure mode for indie platforms is founder burnout, not competitive failure. Mitigations baked into the strategy:
+
+- **Founder runs their own shop on the platform.** Despair Factory is the first use case. Continuing to run that shop keeps the founder personally invested in the platform's quality. Every product decision is filtered through "would this make my own shop better or worse."
+- **Friends as the first cohort.** Pre-aligned, forgiving, invested in the founder personally. They keep the platform accountable to the mission.
+- **Open source as a participation surface.** Technically inclined makers can contribute features and fixes. Marketing and operations volunteers self-select from the user base.
+- **Static-site architecture means low maintenance burden.** The platform can run for months without active development.
+- **No VC pressure means no obligation to scale faster than is healthy.** The pace is the founder's to set.
+- **Plan to bring in collaborators when revenue supports it.** People who join are motivated by the mission, which selects for durable contributors.
+
+---
+
+## 11. Public Commitments
+
+The values are part of the product. Commitments are public, binding, and visible.
+
+### Charter
+
+- Corner Store will not raise venture capital.
+- Corner Store will not sell to a larger company without giving makers and retailers advance notice and the ability to migrate off-platform.
+- Corner Store will not introduce ads.
+- Corner Store will not introduce extraction-based features (per-feature paywalls, mandatory upgrades, transaction fee increases that target existing relationships).
+- Corner Store's code remains open source under AGPL or equivalent.
+- If Corner Store ever fails or is wound down, the code and documentation remain available.
+
+These commitments are stronger than marketing because the open-source foundation makes them verifiable. Breaking any of them means makers leave en masse, taking their stores with them, with zero switching cost. The architecture enforces what the charter promises.
+
+### Visibility
+
+The charter lives somewhere prominent on the public site. Marketing materials reference it. Updates to the charter happen only with public announcement and explanation.
+
+---
+
+## 12. Open Questions
+
+- Wholesale-specific feature roadmap (MOQs, pricing tiers, line sheets, retailer applications, reorder workflows).
+- Specific regional discovery UX patterns (radius search, regional collections, local-pickup workflows).
+- BNPL partnership timeline.
+- When and how to bring in collaborators.
+- Specific charter document language and where it lives publicly.
+- Long-term legal entity structure (LLC initially; consider public benefit corp or steward-ownership structure as the platform matures).
+
+For marketplace facilitator legal strategy, see `corner-store-legal-strategy.md`.

@@ -216,6 +216,23 @@ describe('bin/scaffold.mjs', () => {
     });
   });
 
+  describe('buildCartPage — minCartSize prop removal', () => {
+    // The component-level `minCartSize` prop is dead. The minimum-cart-total
+    // validation now reads its threshold from StoreConfig inside the
+    // validation modules. The scaffolded cart page must not pass the prop.
+    it('does not pass minCartSize as a prop to <CartPage>', () => {
+      const out = buildCartPage();
+      expect(out).not.toMatch(/minCartSize=\{/);
+    });
+
+    it('still passes minCartSizeRaw to <CartPage>', () => {
+      // The raw-cents value is still surfaced to the client via data-* attribute,
+      // so it is still derived from config and passed in.
+      const out = buildCartPage();
+      expect(out).toMatch(/minCartSizeRaw=\{minCartSizeRaw\}/);
+    });
+  });
+
   describe('buildIndexPage — astro check safety', () => {
     it('is exported', () => {
       expect(typeof buildIndexPage).toBe('function');

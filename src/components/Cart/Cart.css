@@ -160,21 +160,6 @@
     color: var(--cs-body-text-color, inherit);
   }
 
-  .cs-totals-minimum {
-    margin: 0;
-    font-size: var(--cs-text-3, inherit);
-    color: var(--cs-muted-text-color, inherit);
-  }
-
-  .cs-totals-minimum[hidden] {
-    display: none;
-  }
-
-  .cs-totals-minimum-remaining {
-    color: var(--cs-error-color, currentColor);
-    font-weight: var(--cs-emphasis-font-weight, inherit);
-  }
-
   .cs-cart-summary {
     margin-bottom: var(--cs-cart-block-margin, 0);
     font-size: var(--cs-text-3, inherit);

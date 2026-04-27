@@ -225,7 +225,7 @@ describe('buildLineItems', () => {
 
     expect(result).toEqual({
       ok: false,
-      error: 'Minimum order total not met',
+      error: '$50.00 minimum, $40.00 to go',
     });
   });
 

@@ -21,6 +21,7 @@ These are non-negotiable. They don't change with scope, timeline, or priorities.
 - **Commission-based, not subscription.** Paid features are priced as incremental commission percentages, not flat monthly fees. Cost scales with revenue. Feels fair at every scale.
 - **Open source is distribution, not charity.** Every self-hosted storefront is a billboard and proof of concept. The code being open is the growth strategy.
 - **Compete on experience, not lock-in.** If someone forks the code and serves makers well, that's a win.
+- **Infrastructure, not middleman.** Corner Store provides the technical layer for sellers to run their own stores. We never own the sale itself: no cross-seller carts, no hosted checkout, no order-of-record, no aggregated buyer relationship. Each seller owns their cart, their checkout, their receipt, and their customer relationship. This keeps the seller-buyer connection direct and keeps Corner Store outside marketplace facilitator regulations. The values case and the financial case point the same way.
 
 ### Product Tiers
 

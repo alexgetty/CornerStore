@@ -116,7 +116,7 @@ describe('wholesaleRules', () => {
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual({
         type: 'min-cart',
-        message: 'Minimum order total not met',
+        message: '$50.00 minimum, $30.00 to go',
       });
     });
 

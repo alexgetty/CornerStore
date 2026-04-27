@@ -1,6 +1,7 @@
 import type { ValidationItem, ValidationError, ValidationResult } from './types.js';
 import { validateQuantity } from './quantity.js';
 import { calculateSubtotal } from './totals.js';
+import { formatPrice, DEFAULT_CURRENCY } from '../storefront/pricing.js';
 
 export function validateOrder(
   items: ValidationItem[],
@@ -28,7 +29,10 @@ export function validateOrder(
   if (hasItems && minCartSizeRaw !== null) {
     const subtotal = calculateSubtotal(items);
     if (subtotal < minCartSizeRaw) {
-      errors.push({ type: 'min-cart', message: 'Minimum order total not met' });
+      errors.push({
+        type: 'min-cart',
+        message: `${formatPrice(minCartSizeRaw, DEFAULT_CURRENCY)} minimum, ${formatPrice(minCartSizeRaw - subtotal, DEFAULT_CURRENCY)} to go`,
+      });
     }
   }
 

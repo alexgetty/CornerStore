@@ -9,7 +9,6 @@ interface Props {
   contact: string;
   listings: Listing[];
   currency: string;
-  minCartSize?: number;
   minCartSizeRaw: number | null;
   wholesaleMargin?: number;
   checkoutEnabled: boolean;
@@ -23,7 +22,6 @@ const {
   contact,
   listings,
   currency,
-  minCartSize,
   minCartSizeRaw,
   wholesaleMargin,
   checkoutEnabled,
@@ -148,16 +146,6 @@ for (const listing of listings) {
         <span class="cs-totals-label">Subtotal</span>
         <span class="cs-subtotal-value cs-totals-value">$0.00</span>
       </div>
-      {minCartSize != null && (
-        <p class="cs-totals-minimum" hidden>
-          <span class="cs-totals-minimum-text">
-            <span class="cs-totals-minimum-remaining"></span>
-            <span class="cs-totals-minimum-of"> of </span>
-            <span class="cs-totals-minimum-target">{formatPrice(minCartSizeRaw!, currency)}</span>
-            <span class="cs-totals-minimum-suffix"> minimum order</span>
-          </span>
-        </p>
-      )}
     </div>
 
     <div class="cs-cart-summary" hidden>
