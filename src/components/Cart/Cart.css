@@ -129,25 +129,13 @@
     color: var(--cs-error-color, currentColor);
   }
 
-  /* Consolidated totals block (subtotal + minimum context). Sits flush under
-     the table so the user reads "what's in cart -> what it costs -> what's
-     missing" as one continuous block. The table's last-row bottom border
-     already supplies a visual separator, so no extra border-top here. */
-  .cs-cart-totals {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: var(--cs-cart-totals-gap, 0);
-    margin-bottom: var(--cs-cart-block-margin, 0);
-    padding: var(--cs-cart-totals-padding, 0);
-  }
-
-  .cs-totals-row {
-    display: flex;
-    align-items: baseline;
-    gap: var(--cs-cart-totals-row-gap, 0);
-  }
-
+  /* Subtotal lives in the table's <tfoot>. The label cell is a
+     <th scope="row"> so screen readers announce "Subtotal" as the row header
+     for the value, and table-navigation mode treats the row as the table's
+     summary instead of unrelated trailing content. The value cell shares
+     .cs-col-total with the per-row line totals above so it lands in the same
+     column visually. No flex wrapper, no min-width hack — table layout owns
+     the alignment now. */
   .cs-totals-label {
     font-weight: var(--cs-emphasis-font-weight, inherit);
     color: var(--cs-body-text-color, inherit);
@@ -155,8 +143,6 @@
 
   .cs-totals-value {
     font-weight: var(--cs-emphasis-font-weight, inherit);
-    text-align: right;
-    min-width: var(--cs-cart-totals-value-min-width, auto);
     color: var(--cs-body-text-color, inherit);
   }
 
@@ -380,5 +366,149 @@
 
   .cs-clear-cart-confirm[hidden] {
     display: none;
+  }
+
+  /* ------------------------------------------------------------------
+   * Mobile collapse: cart table -> stacked labeled cards.
+   *
+   * Why 40rem (640px): five columns at desktop sizes (Product cell with
+   * 60px thumb, Price, Qty stepper at 160px, Total, Remove) need ~600px
+   * of horizontal space before the stepper starts crowding the price /
+   * total numbers and the product name truncates uselessly. 40rem is the
+   * width below which the table model stops carrying its weight.
+   *
+   * The breakpoint is hardcoded here because CSS @media queries cannot
+   * reference custom properties cross-browser (the env() / spec proposal
+   * isn't shipped). The token --cs-cart-mobile-* family in theme.css
+   * configures the LOOK of the stack; the trigger width itself is a
+   * structural decision pinned by tests/unit/components/cart-mobile-stack.test.ts.
+   *
+   * Pattern: display-block stack with data-label pseudo-elements.
+   * - thead disappears (column headers no longer relevant once each cell
+   *   is labeled inline).
+   * - tr becomes a card; td becomes a labeled flex row inside it.
+   * - data-label="Price" on the cell -> ::before renders "Price:".
+   * - tfoot subtotal row collapses the same way and reads as the summary.
+   * - Stepper buttons + qty input + remove button hit WCAG 2.5.5 (44px).
+   * ------------------------------------------------------------------ */
+  @media (max-width: 40rem) {
+    .cs-cart-table thead {
+      display: none;
+    }
+
+    .cs-cart-table tr {
+      display: block;
+      margin-bottom: var(--cs-cart-mobile-card-margin, 0);
+      padding: var(--cs-cart-mobile-row-padding, 0);
+      border-bottom-width: var(--cs-border-width, 0);
+      border-bottom-style: solid;
+      border-bottom-color: var(--cs-border-color, currentColor);
+    }
+
+    /* Each cell becomes a labeled flex row. The label sits left, the
+       value sits right - matching a typical receipt / line-item layout. */
+    .cs-cart-table tbody td,
+    .cs-cart-table tfoot td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--cs-cart-mobile-row-gap, 0);
+      width: 100%;
+      padding: var(--cs-cart-mobile-row-gap, 0) 0;
+      text-align: right;
+      border-bottom-width: 0;
+      white-space: normal;
+    }
+
+    /* The visible column label, injected from data-label="...". This is
+       the mobile-only labeling contract. */
+    .cs-cart-table tbody td[data-label]::before,
+    .cs-cart-table tfoot td[data-label]::before {
+      content: attr(data-label) ":";
+      font-weight: var(--cs-emphasis-font-weight, inherit);
+      color: var(--cs-body-text-color, inherit);
+      flex: 0 0 auto;
+    }
+
+    /* Product cell is the row's headline. Stays full-width without a
+       label and lets the existing flex layout (thumb + name) own it. */
+    .cs-cart-table tbody td.cs-col-product {
+      justify-content: flex-start;
+      text-align: left;
+      padding-top: 0;
+    }
+
+    /* Qty cell hosts the CartControl stepper. The cart-control element
+       defaults to width:100% which lets it shrink to fit alongside the
+       data-label inside the flex row. The two stepper buttons stay at
+       the touch-target size; the input flex:1's into the remaining
+       horizontal space. */
+    .cs-cart-table tbody td.cs-col-qty .cs-cart-control {
+      flex: 0 1 auto;
+    }
+
+    /* Remove button gets its own line at the bottom of the card so the
+       large tap target doesn't compete with price/qty for horizontal
+       space. Right-align so it lands under the prices. */
+    .cs-cart-table tbody td.cs-col-remove {
+      justify-content: flex-end;
+      padding-bottom: 0;
+    }
+
+    /* Stepper buttons + input grow to the WCAG touch target. Desktop
+       sizes (--cs-cart-stepper-cell-size, 2rem) stay untouched outside
+       this media query. */
+    .cs-cart-row .cs-cart-control-down,
+    .cs-cart-row .cs-cart-control-up {
+      width: var(--cs-cart-touch-target, 44px);
+      height: var(--cs-cart-touch-target, 44px);
+    }
+
+    .cs-cart-row .cs-cart-control-input {
+      height: var(--cs-cart-touch-target, 44px);
+    }
+
+    /* Remove button: ensure tap target. The desktop visual stays
+       (background:none, font-size from token) - we just enforce a floor
+       on the hit area. */
+    .cs-remove-btn {
+      min-width: var(--cs-cart-touch-target, 44px);
+      min-height: var(--cs-cart-touch-target, 44px);
+    }
+
+    /* tfoot subtotal row participates in the stack. The trailing remove
+       cell exists only for desktop column alignment - hide it here. The
+       label cell is a <th scope="row"> that becomes the row's heading,
+       laid out as a flex row alongside the value cell so the subtotal
+       reads as "Subtotal       $30.00" on one line. */
+    .cs-cart-table tfoot tr.cs-totals-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--cs-cart-mobile-row-gap, 0);
+    }
+
+    .cs-cart-table tfoot .cs-col-remove {
+      display: none;
+    }
+
+    .cs-cart-table tfoot th.cs-totals-label {
+      flex: 0 0 auto;
+      text-align: left;
+      padding: var(--cs-cart-mobile-row-gap, 0) 0;
+    }
+
+    .cs-cart-table tfoot td.cs-col-total {
+      justify-content: flex-end;
+    }
+
+    /* Reset the desktop column-width tokens inside the stack - they have
+       no meaning when each cell is full-width. */
+    .cs-cart-table .cs-col-qty,
+    .cs-cart-table .cs-col-total,
+    .cs-cart-table .cs-col-remove,
+    .cs-cart-table .cs-col-price {
+      width: auto;
+    }
   }
 }

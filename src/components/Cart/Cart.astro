@@ -111,13 +111,13 @@ for (const listing of listings) {
               </td>
               {hasWholesale ? (
                 <>
-                  <td class="cs-col-price cs-msrp">{listing.price}</td>
-                  <td class="cs-col-price">{formatPrice(effectiveRaw, currency)}</td>
+                  <td class="cs-col-price cs-msrp" data-label="MSRP">{listing.price}</td>
+                  <td class="cs-col-price" data-label="Wholesale">{formatPrice(effectiveRaw, currency)}</td>
                 </>
               ) : (
-                <td class="cs-col-price">{listing.price}</td>
+                <td class="cs-col-price" data-label="Price">{listing.price}</td>
               )}
-              <td class="cs-col-qty">
+              <td class="cs-col-qty" data-label="Qty">
                 <CartControl
                   sku={listing.sku}
                   name={listing.name}
@@ -125,7 +125,7 @@ for (const listing of listings) {
                   status={listing.status}
                 />
               </td>
-              <td class="cs-col-total">
+              <td class="cs-col-total" data-label="Total">
                 {listing.status ? (
                   <span class="cs-line-total">&mdash;</span>
                 ) : (
@@ -139,14 +139,16 @@ for (const listing of listings) {
           );
         })}
       </tbody>
+      <tfoot>
+        <tr class="cs-totals-row">
+          <th colspan={hasWholesale ? 4 : 3} scope="row" class="cs-totals-label">Subtotal</th>
+          <td class="cs-col-total">
+            <span class="cs-subtotal-value cs-totals-value">$0.00</span>
+          </td>
+          <td class="cs-col-remove"></td>
+        </tr>
+      </tfoot>
     </table>
-
-    <div class="cs-cart-totals">
-      <div class="cs-totals-row">
-        <span class="cs-totals-label">Subtotal</span>
-        <span class="cs-subtotal-value cs-totals-value">$0.00</span>
-      </div>
-    </div>
 
     <div class="cs-cart-summary" hidden>
       <p class="cs-shipping-status"></p>

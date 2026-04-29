@@ -508,7 +508,8 @@ function init(root: HTMLElement) {
       // shipping-progress line. .cs-order-errors drops the "$Y minimum,
       // $X to go" line (and any MOQ errors) because by the time the order
       // is printed/emailed the gap is no longer relevant; the static
-      // subtotal stays via the .cs-cart-totals wrapper, which we keep.
+      // subtotal stays via the table's <tfoot> (which is not in the strip
+      // list, so it survives unchanged).
       pdfContent.querySelectorAll(
         '.cs-order-actions, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
       ).forEach((el) => el.remove());
