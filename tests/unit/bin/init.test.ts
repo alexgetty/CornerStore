@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCheckoutStyle, buildConfigFile, buildCartPage, buildEnvFile, deriveAnswersFromExistingConfig, buildIndexPage, buildSlugPage, buildCategorySlugPage } from '../../../bin/scaffold.mjs';
+import { parseCheckoutStyle, buildConfigFile, buildCartPage, buildEnvFile, deriveAnswersFromExistingConfig, buildIndexPage, buildSlugPage, buildCategorySlugPage, buildPackageJson, buildStatusPage } from '../../../bin/scaffold.mjs';
 
 describe('bin/scaffold.mjs', () => {
   describe('parseCheckoutStyle', () => {
@@ -316,6 +316,119 @@ describe('bin/scaffold.mjs', () => {
       // Since the scaffolded file historically imported it only for the unused local,
       // dropping the import is the right call.
       expect(out).not.toMatch(/\bloadConfig\b/);
+    });
+  });
+
+  describe('buildPackageJson', () => {
+    it('emits a package.json string with the supplied slug as name', () => {
+      const out = buildPackageJson('test-store');
+      const parsed = JSON.parse(out);
+      expect(parsed.name).toBe('test-store');
+    });
+
+    it('declares type: "module"', () => {
+      const parsed = JSON.parse(buildPackageJson('any-slug'));
+      expect(parsed.type).toBe('module');
+    });
+
+    it('includes a typecheck script set to "astro check"', () => {
+      const parsed = JSON.parse(buildPackageJson('any-slug'));
+      expect(parsed.scripts.typecheck).toBe('astro check');
+    });
+
+    it('includes the standard astro lifecycle scripts', () => {
+      const parsed = JSON.parse(buildPackageJson('any-slug'));
+      expect(parsed.scripts.dev).toBe('astro dev');
+      expect(parsed.scripts.build).toBe('astro build');
+      expect(parsed.scripts.preview).toBe('astro preview');
+    });
+
+    it('includes the corner-store catalog scripts', () => {
+      const parsed = JSON.parse(buildPackageJson('any-slug'));
+      expect(parsed.scripts['catalog:diff']).toBe('corner-store-catalog diff');
+      expect(parsed.scripts['catalog:add']).toBe('corner-store-catalog add');
+      expect(parsed.scripts['catalog:update']).toBe('corner-store-catalog update');
+      expect(parsed.scripts['catalog:sync']).toBe('corner-store-catalog sync');
+    });
+
+    it('declares astro, @astrojs/mdx, and corner-store as dependencies', () => {
+      const parsed = JSON.parse(buildPackageJson('any-slug'));
+      expect(parsed.dependencies['astro']).toBe('^5');
+      expect(parsed.dependencies['@astrojs/mdx']).toBe('^4');
+      expect(parsed.dependencies['corner-store']).toBe('^0.1.0');
+    });
+
+    it('does NOT declare @astrojs/check or typescript in devDependencies (astro auto-installs on first run)', () => {
+      const parsed = JSON.parse(buildPackageJson('any-slug'));
+      const dev = parsed.devDependencies ?? {};
+      expect(dev['@astrojs/check']).toBeUndefined();
+      expect(dev['typescript']).toBeUndefined();
+    });
+
+    it('terminates with a trailing newline', () => {
+      const out = buildPackageJson('any-slug');
+      expect(out.endsWith('\n')).toBe(true);
+    });
+  });
+
+  describe('buildStatusPage', () => {
+    it('throws on unknown kind', () => {
+      // @ts-expect-error — invalid kind, exercising the runtime guard
+      expect(() => buildStatusPage('teapot', 'Test Store')).toThrow();
+    });
+
+    it('emits the 404 page byte-identically to the historical inline template', () => {
+      const expected = `---
+import { StatusPage } from 'corner-store/components';
+---
+
+<StatusPage
+  title="Page Not Found - Test Store"
+  heading="Page not found."
+  message="The page you're looking for doesn't exist or has been moved."
+  linkText="Back to store"
+  linkHref="/"
+/>
+`;
+      expect(buildStatusPage('404', 'Test Store')).toBe(expected);
+    });
+
+    it('emits the success page byte-identically to the historical inline template', () => {
+      const expected = `---
+import { StatusPage } from 'corner-store/components';
+---
+
+<StatusPage
+  title="Order Confirmed - Test Store"
+  heading="Thank you for your purchase!"
+  message="Your order has been confirmed. You will receive a receipt from Stripe shortly."
+  linkText="Back to store"
+  linkHref="/"
+/>
+`;
+      expect(buildStatusPage('success', 'Test Store')).toBe(expected);
+    });
+
+    it('emits the cancel page byte-identically to the historical inline template', () => {
+      const expected = `---
+import { StatusPage } from 'corner-store/components';
+---
+
+<StatusPage
+  title="Checkout Cancelled - Test Store"
+  heading="Your checkout was cancelled."
+  message="No charge has been made. You can return to the store whenever you are ready."
+  linkText="Back to store"
+  linkHref="/"
+/>
+`;
+      expect(buildStatusPage('cancel', 'Test Store')).toBe(expected);
+    });
+
+    it('interpolates store name into the title for each kind', () => {
+      expect(buildStatusPage('404', 'Acme Co.')).toContain('title="Page Not Found - Acme Co."');
+      expect(buildStatusPage('success', 'Acme Co.')).toContain('title="Order Confirmed - Acme Co."');
+      expect(buildStatusPage('cancel', 'Acme Co.')).toContain('title="Checkout Cancelled - Acme Co."');
     });
   });
 

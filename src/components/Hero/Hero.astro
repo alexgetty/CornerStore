@@ -1,0 +1,17 @@
+---
+import "./Hero.css";
+
+interface Props {
+  image: string;
+  imageAlt?: string;
+}
+
+const { image, imageAlt = "" } = Astro.props;
+---
+
+<section class="cs-hero">
+  <img class="cs-hero-image" src={image} alt={imageAlt} loading="eager" fetchpriority="high" />
+  <div class="cs-hero-content">
+    <slot />
+  </div>
+</section>

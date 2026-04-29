@@ -15,6 +15,8 @@ import {
   buildIndexPage,
   buildSlugPage,
   buildCategorySlugPage,
+  buildPackageJson,
+  buildStatusPage,
 } from './scaffold.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -149,24 +151,7 @@ Markdown here overrides the CSV description on your storefront, while the CSV de
 `);
 
 // package.json
-await safeWrite(join(dir, 'package.json'), JSON.stringify({
-  name: slug,
-  type: 'module',
-  scripts: {
-    dev: 'astro dev',
-    build: 'astro build',
-    preview: 'astro preview',
-    'catalog:diff': 'corner-store-catalog diff',
-    'catalog:add': 'corner-store-catalog add',
-    'catalog:update': 'corner-store-catalog update',
-    'catalog:sync': 'corner-store-catalog sync',
-  },
-  dependencies: {
-    '@astrojs/mdx': '^4',
-    'astro': '^5',
-    'corner-store': '^0.1.0',
-  },
-}, null, 2) + '\n');
+await safeWrite(join(dir, 'package.json'), buildPackageJson(slug));
 
 // astro.config.mjs
 await safeWrite(join(dir, 'astro.config.mjs'), `import { defineConfig } from 'astro/config';
@@ -273,49 +258,16 @@ await safeWrite(join(dir, 'src', 'pages', '[slug].astro'), buildSlugPage());
 await safeWrite(join(dir, 'src', 'pages', 'category', '[slug].astro'), buildCategorySlugPage());
 
 // src/pages/404.astro
-await safeWrite(join(dir, 'src', 'pages', '404.astro'), `---
-import { StatusPage } from 'corner-store/components';
----
-
-<StatusPage
-  title="Page Not Found - ${storeName}"
-  heading="Page not found."
-  message="The page you're looking for doesn't exist or has been moved."
-  linkText="Back to store"
-  linkHref="/"
-/>
-`);
+await safeWrite(join(dir, 'src', 'pages', '404.astro'), buildStatusPage('404', storeName));
 
 // src/pages/cart.astro
 await safeWrite(join(dir, 'src', 'pages', 'cart.astro'), buildCartPage());
 
 // src/pages/success.astro
-await safeWrite(join(dir, 'src', 'pages', 'success.astro'), `---
-import { StatusPage } from 'corner-store/components';
----
-
-<StatusPage
-  title="Order Confirmed - ${storeName}"
-  heading="Thank you for your purchase!"
-  message="Your order has been confirmed. You will receive a receipt from Stripe shortly."
-  linkText="Back to store"
-  linkHref="/"
-/>
-`);
+await safeWrite(join(dir, 'src', 'pages', 'success.astro'), buildStatusPage('success', storeName));
 
 // src/pages/cancel.astro
-await safeWrite(join(dir, 'src', 'pages', 'cancel.astro'), `---
-import { StatusPage } from 'corner-store/components';
----
-
-<StatusPage
-  title="Checkout Cancelled - ${storeName}"
-  heading="Your checkout was cancelled."
-  message="No charge has been made. You can return to the store whenever you are ready."
-  linkText="Back to store"
-  linkHref="/"
-/>
-`);
+await safeWrite(join(dir, 'src', 'pages', 'cancel.astro'), buildStatusPage('cancel', storeName));
 
 // src/pages/product-names.json.ts — SKU -> name map used by the cart to label unavailable items
 await safeWrite(join(dir, 'src', 'pages', 'product-names.json.ts'), `import type { APIRoute } from 'astro';
@@ -324,7 +276,14 @@ import { getProductNamesResponse } from 'corner-store/catalog';
 export const GET: APIRoute = () => getProductNamesResponse();
 `);
 
-// Link corner-store first (before npm install), so npm doesn't try to fetch it from the registry
+// Link corner-store first (before npm install), so npm doesn't try to fetch it from the registry.
+//
+// Note for library devs: `npm link corner-store` is sufficient for `astro check`
+// and `astro dev` against in-progress library changes, but NOT for `astro build`.
+// Astro's vite plugin can't match compile-phase and load-phase keys for symlinked
+// client-script Astro modules (e.g. Cart.astro), and the build fails with a
+// "no cached compile metadata found" error. To verify the full downstream build
+// pipeline, use `npm pack` + `file:./corner-store-*.tgz` instead of npm link.
 console.log('  Installing dependencies...\n');
 try {
   execFileSync('npm', ['link', 'corner-store'], { cwd: dir, stdio: 'pipe' });

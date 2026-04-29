@@ -94,7 +94,8 @@
     display: none;
     position: absolute;
     top: 100%;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     flex-direction: column;
     padding-top: var(--cs-nav-dropdown-menu-padding-y, 0);
     padding-right: 0;

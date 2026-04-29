@@ -57,7 +57,7 @@ The scaffolded config now includes a commented example of the `dropdown: 'catego
 - Added `if (loader)` guards before invoking dynamic MDX loaders. Closed a latent runtime hazard, not just a TS error.
 - Resolved the `Cart` filename-collision in scaffolded `cart.astro` by aliasing the import: `import { Cart as CartPage }`. Library's own `src/pages/cart.astro` aligned with the same pattern in commit `2bea35e`.
 - Unified the `getStaticPaths` prop shape in `category/[slug].astro` so TypeScript can narrow inside the JSX branch.
-- Extracted the scaffold templates into builder functions in `bin/scaffold.mjs` (`buildIndexPage`, `buildSlugPage`, `buildCategorySlugPage`, updated `buildCartPage`), advancing the scaffold-emission-strategy follow-up.
+- Extracted the scaffold templates into builder functions in `bin/scaffold.mjs` (`buildIndexPage`, `buildSlugPage`, `buildCategorySlugPage`, updated `buildCartPage`), advancing the scaffold-emission-strategy follow-up (since closed; see `docs/todo/archive/scaffold-emission-strategy.md`).
 - `npm run typecheck` clean in repo; fresh `cornerstore init` scaffold passes `astro check` with 0 errors.
 
 Archived original investigation doc: `docs/todo/archive/astro-check-page-errors.md`.
@@ -72,10 +72,10 @@ Automated DoD steps 1–5 all pass for all three init modes (pdf, stripe+URL, st
 - `npx astro check` — 0 errors / 0 warnings / 0 hints across all three modes.
 - `npx astro build` — 11 pages built, clean.
 
-Two non-blocking findings surfaced during verification, tracked separately:
+Two non-blocking findings surfaced during verification, both since resolved:
 
-- `docs/todo/scaffold-astro-check-deps.md` — scaffold doesn't ship `@astrojs/check` + `typescript`, so `npx astro check` prompts for install on first run.
-- `docs/todo/scaffold-npm-link-build.md` — `astro build` in a scaffolded project fails when `corner-store` is installed via `npm link` (symlink). Real consumers installing via tarball / registry are unaffected. Dev-workflow issue only.
+- `docs/todo/archive/scaffold-astro-check-deps.md` — closed 2026-04-29. Scaffolded `package.json` now ships a `typecheck: 'astro check'` script; Astro auto-installs `@astrojs/check` + `typescript` on first run, so consumers who never typecheck don't pay the install cost.
+- `docs/todo/archive/scaffold-npm-link-build.md` — closed 2026-04-29. `bin/init.mjs` now carries an explanatory comment on the npm-link block. `npm link` is fine for `astro check` and `astro dev` against in-progress library changes; for full downstream-build verification, use `npm pack` + `file:./corner-store-*.tgz`. Dev-workflow issue only; real consumers are unaffected.
 
 ## Still open
 
@@ -90,12 +90,12 @@ Not yet verified (require browser interaction):
 
 **Explicit deferral:** Alex is the only user of this package and will write documentation before making it public. Not an active item while the package is pre-public. Re-open when the package is about to be distributed externally.
 
-## Maintenance follow-ups (non-blocking)
+## Maintenance follow-ups (resolved)
 
-Tracked in dedicated todo files:
+Both follow-up todos closed on 2026-04-29:
 
-- `docs/todo/scaffold-maintenance.md` — small cleanups (quoting style, duplicated defaults, brittle test assertions, dead vars, validation asymmetry).
-- `docs/todo/scaffold-emission-strategy.md` — pick a single convention for how scaffolded files are emitted (inline strings vs. builder functions vs. static stubs).
+- `docs/todo/archive/scaffold-maintenance.md` — reviewed and declined as won't-do. Remaining items were either low-value, hypothetical, intentional design, or already shipped. See header note in the archived file.
+- `docs/todo/archive/scaffold-emission-strategy.md` — closed by migrating the three inline status-page templates (`404.astro`, `success.astro`, `cancel.astro`) into `bin/scaffold.mjs:buildStatusPage(kind, storeName)`. All four non-trivial scaffolded Astro pages now flow through `scaffold.mjs`. The proposed CLAUDE.md rule was declined; the pattern self-enforces now that four sibling builders exist.
 
 ## Preventing recurrence
 

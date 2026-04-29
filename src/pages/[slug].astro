@@ -1,6 +1,6 @@
 ---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { Listings, Listing } from 'corner-store/components';
+import { Hero, Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
 
 export async function getStaticPaths() {
@@ -29,7 +29,7 @@ if (loader) {
 
 <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
   {Content ? (
-    <Content components={{ Listings, Listing }} />
+    <Content components={{ Hero, Listings, Listing }} />
   ) : (
     <p>Create <code>pages/{page.slug}.mdx</code> to fill in this page.</p>
   )}

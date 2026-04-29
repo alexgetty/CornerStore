@@ -110,7 +110,7 @@ const checkoutEnabled = config.checkout === 'stripe' && !!config.checkoutUrl;
 export function buildIndexPage() {
   return `---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { Listings, Listing } from 'corner-store/components';
+import { Hero, Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
 
 const config = await loadConfig();
@@ -129,7 +129,7 @@ if (homeModule) {
 
 {Content ? (
   <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
-    <Content components={{ Listings, Listing }} />
+    <Content components={{ Hero, Listings, Listing }} />
   </ContentPage>
 ) : (
   <ContentPage title={config.name}>
@@ -142,7 +142,7 @@ if (homeModule) {
 export function buildSlugPage() {
   return `---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { Listings, Listing } from 'corner-store/components';
+import { Hero, Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
 
 export async function getStaticPaths() {
@@ -171,7 +171,7 @@ if (loader) {
 
 <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
   {Content ? (
-    <Content components={{ Listings, Listing }} />
+    <Content components={{ Hero, Listings, Listing }} />
   ) : (
     <p>Create <code>pages/{page.slug}.mdx</code> to fill in this page.</p>
   )}
@@ -241,5 +241,67 @@ export function buildEnvFile() {
   return `# No secrets needed here. Corner Store's checkout runs on your own server,
 # which imports createCheckoutHandler from 'corner-store/checkout'.
 # Configure the URL via cornerstore.config.js (checkoutUrl).
+`;
+}
+
+export function buildPackageJson(slug) {
+  // @astrojs/check and typescript are intentionally omitted from devDependencies.
+  // Astro auto-installs them on first `astro check` invocation, so consumers who
+  // never typecheck don't pay the install cost.
+  return JSON.stringify({
+    name: slug,
+    type: 'module',
+    scripts: {
+      dev: 'astro dev',
+      build: 'astro build',
+      preview: 'astro preview',
+      typecheck: 'astro check',
+      'catalog:diff': 'corner-store-catalog diff',
+      'catalog:add': 'corner-store-catalog add',
+      'catalog:update': 'corner-store-catalog update',
+      'catalog:sync': 'corner-store-catalog sync',
+    },
+    dependencies: {
+      '@astrojs/mdx': '^4',
+      'astro': '^5',
+      'corner-store': '^0.1.0',
+    },
+  }, null, 2) + '\n';
+}
+
+const STATUS_PAGE_COPY = {
+  '404': {
+    title: 'Page Not Found',
+    heading: 'Page not found.',
+    message: "The page you're looking for doesn't exist or has been moved.",
+  },
+  success: {
+    title: 'Order Confirmed',
+    heading: 'Thank you for your purchase!',
+    message: 'Your order has been confirmed. You will receive a receipt from Stripe shortly.',
+  },
+  cancel: {
+    title: 'Checkout Cancelled',
+    heading: 'Your checkout was cancelled.',
+    message: 'No charge has been made. You can return to the store whenever you are ready.',
+  },
+};
+
+export function buildStatusPage(kind, storeName) {
+  const copy = STATUS_PAGE_COPY[kind];
+  if (!copy) {
+    throw new Error(`buildStatusPage: unknown kind ${JSON.stringify(kind)}. Expected '404', 'success', or 'cancel'.`);
+  }
+  return `---
+import { StatusPage } from 'corner-store/components';
+---
+
+<StatusPage
+  title="${copy.title} - ${storeName}"
+  heading="${copy.heading}"
+  message="${copy.message}"
+  linkText="Back to store"
+  linkHref="/"
+/>
 `;
 }

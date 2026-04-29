@@ -1,5 +1,15 @@
 # Scaffold Maintenance — Small Cleanups
 
+## Closed 2026-04-29 — won't do
+
+Reviewed on 2026-04-29; remaining items declined.
+
+- Item 1 (quoting style drift in `buildConfigFile`): low value, legible at current size, no live consumer pain. Revisit if a new key actually tips it.
+- Item 2 (duplicated `'pdf'` default): hypothetical brittleness. Three call sites, all in one repo, all caught immediately by tests if they drift.
+- Item 3 (brittle error-message substring assertions): the tests pass and document intended messages. Refactoring to typed errors is its own design change, not maintenance.
+- Item 4 (dead variable in `bin/init.mjs`): already shipped (`84a392e`).
+- Item 5 (validation asymmetry in `parseConfig`): the asymmetry is intentional and documented inline at `src/lib/storefront/config.ts:14`. Not a defect.
+
 ## Status
 
 Open. Non-blocking. Surfaced by Task 1 / Task 2 code reviews for the `checkout` mode config work (commits `2b904b3` through `9b6f330`).

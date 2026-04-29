@@ -1,6 +1,6 @@
 ---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { Listings, Listing } from 'corner-store/components';
+import { Hero, Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
 
 const config = await loadConfig();
@@ -19,7 +19,7 @@ if (homeModule) {
 
 {Content ? (
   <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
-    <Content components={{ Listings, Listing }} />
+    <Content components={{ Hero, Listings, Listing }} />
   </ContentPage>
 ) : (
   <ContentPage title={config.name}>
