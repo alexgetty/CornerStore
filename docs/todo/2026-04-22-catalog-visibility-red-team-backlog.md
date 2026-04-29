@@ -9,7 +9,7 @@ Critical / High resolution summary (for cross-reference):
 - C2 — Stripe sync zombie products → **fixed inline.**
 - C3 — no cart/listings tests → `docs/todo/cart-listings-test-coverage.md`.
 - H1 — hidden-filter test gap → **fixed inline.**
-- H2 — widget/cart subtotal drift → `docs/todo/cart-visibility-helper.md`.
+- H2 — widget/cart subtotal drift → **resolved, archived at `docs/todo/archive/cart-visibility-helper.md`.**
 - H3 + H9 — unavailable rows only visually disabled → **resolved, archived at `docs/todo/archive/cart-unavailable-row-disabling.md`.**
 - H4 — banner shows raw SKU → **fixed inline (with init parity fix).**
 - H5 — checkout confirm + server guard → **resolved, archived at `docs/todo/archive/cart-checkout-unavailable-handling.md`.**
@@ -52,9 +52,9 @@ Two independent implementations of the visibility predicate. If the rule evolves
 
 `row.querySelector('strong')?.textContent` for name, `row.dataset.rawPrice` for price, `row.querySelector('.cs-cart-control-input').value` for qty. Any markup refactor to `Cart.astro` (wrapping name in a different tag, renaming a class) silently breaks subtotal and error messages. Implicit contract between HTML structure and TS logic.
 
-**Fix (STATUS: resolved by H2 todo):** `docs/todo/cart-visibility-helper.md` already prescribes replacing DOM-derived cart math with structured inputs (server-rendered `priceMap` + `disabledSkus` on the root element, name from `dataset.name`). Land that and M3 closes. If for some reason H2 is descoped, add per-row `data-name`, `data-raw-price`, `data-moq` already exist — just switch `getVisibleItems` to read from them instead of selectors.
+**Fix (STATUS: resolved by H2 todo):** `docs/todo/archive/cart-visibility-helper.md` already prescribed replacing DOM-derived cart math with structured inputs (server-rendered `priceMap` + `disabledSkus` on the root element, name from `dataset.name`). H2 has shipped and M3 is closed alongside it.
 
-**Dependency:** Closed by `cart-visibility-helper.md`. Do NOT do separately.
+**Dependency:** Closed by `docs/todo/archive/cart-visibility-helper.md`. Do NOT do separately.
 
 ---
 
