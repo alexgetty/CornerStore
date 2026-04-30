@@ -160,6 +160,40 @@ describe('Nav.astro - inner per-item accordion (exclusive via name=)', () => {
   });
 });
 
+describe('Nav.astro - aria-current contract through the drawer', () => {
+  it('plain links keep aria-current="page" when active', () => {
+    const out = readAstro();
+    // Plain-link branch (no children). The aria-current attribute is
+    // applied via a spread when normalizedCurrentPath matches. Pinning
+    // the spread expression so the branch can't silently drop the
+    // current-page contract during a refactor.
+    expect(out).toMatch(
+      /<li>\s*<a\s+href=\{item\.href\}[\s\S]*?normalizedCurrentPath === normalizePath\(item\.href \?\? ''\)[\s\S]*?"aria-current": "page"/,
+    );
+  });
+
+  it('combo-item link keeps aria-current="page" when active inside the drawer', () => {
+    const out = readAstro();
+    // Combo branch's <a class="cs-nav-dropdown-link"> must carry the same
+    // aria-current spread. Drawer wrapping must NOT swallow the contract.
+    expect(out).toMatch(
+      /<a\s+href=\{item\.href\}\s+class="cs-nav-dropdown-link"[\s\S]*?normalizedCurrentPath === normalizePath\(item\.href\)[\s\S]*?"aria-current": "page"/,
+    );
+  });
+
+  it('child links inside any dropdown keep aria-current="page" when active', () => {
+    const out = readAstro();
+    // Inside the dropdown <ul class="cs-nav-dropdown-menu">, each child
+    // <a> applies the same aria-current spread keyed off child.href.
+    // Both branches (combo + dropdown-only) emit identical child markup,
+    // so we expect at least two occurrences.
+    const childMatches = out.match(
+      /normalizedCurrentPath === normalizePath\(child\.href \?\? ''\)/g,
+    ) ?? [];
+    expect(childMatches.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
 describe('theme/theme.css - nav drawer tokens', () => {
   it.each([
     '--cs-nav-drawer-surface',
