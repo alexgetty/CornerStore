@@ -213,6 +213,109 @@
    * pinned by tests/unit/components/nav-mobile-disclosure.test.ts.
    * ------------------------------------------------------------------ */
   @media (max-width: 40rem) {
-    /* Filled in by Task 7 (mobile drawer styling). */
+    .cs-nav-drawer[open] {
+      background-color: var(--cs-nav-drawer-surface, transparent);
+    }
+
+    .cs-nav-drawer[open] > nav {
+      padding-top: var(--cs-nav-drawer-padding, 1rem);
+      padding-right: var(--cs-nav-drawer-padding, 1rem);
+      padding-bottom: var(--cs-nav-drawer-padding, 1rem);
+      padding-left: var(--cs-nav-drawer-padding, 1rem);
+    }
+
+    .cs-nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--cs-nav-chevron-size, 2.75rem);
+      height: var(--cs-nav-chevron-size, 2.75rem);
+      color: var(--cs-body-text-color, currentColor);
+    }
+
+    /* Three-bar hamburger drawn from currentColor borders + a single
+       absolutely-positioned middle line. No SVG, no asset bytes. */
+    .cs-nav-toggle-icon {
+      position: relative;
+      display: block;
+      width: var(--cs-nav-toggle-icon-width, 1.25rem);
+      height: var(--cs-nav-toggle-icon-height, 0.875rem);
+      border-top-width: var(--cs-border-width-emphasis, 2px);
+      border-top-style: solid;
+      border-top-color: currentColor;
+      border-bottom-width: var(--cs-border-width-emphasis, 2px);
+      border-bottom-style: solid;
+      border-bottom-color: currentColor;
+    }
+
+    .cs-nav-toggle-icon::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: var(--cs-border-width-emphasis, 2px);
+      background-color: currentColor;
+      transform: translateY(-50%);
+    }
+
+    .cs-nav-links {
+      flex-direction: column;
+      gap: var(--cs-nav-drawer-gap, 0.75rem);
+    }
+
+    /* Combo items lay out as a flex row: link grows, chevron is fixed,
+       and the dropdown menu wraps to full width below them. */
+    .cs-nav-dropdown-combo > details {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .cs-nav-dropdown-combo .cs-nav-dropdown-link {
+      flex: 1 1 auto;
+    }
+
+    .cs-nav-dropdown-combo .cs-nav-dropdown-menu {
+      flex-basis: 100%;
+    }
+
+    /* Chevron: tap-target-sized box with a SVG arrow drawn via mask-image
+       so it recolors via --cs-nav-chevron-color. */
+    .cs-nav-chevron {
+      flex: 0 0 auto;
+      width: var(--cs-nav-chevron-size, 2.75rem);
+      height: var(--cs-nav-chevron-size, 2.75rem);
+      background-color: var(--cs-nav-chevron-color, currentColor);
+      mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
+      -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
+      mask-position: center;
+      -webkit-mask-position: center;
+      mask-repeat: no-repeat;
+      -webkit-mask-repeat: no-repeat;
+      mask-size: 1rem 1rem;
+      -webkit-mask-size: 1rem 1rem;
+      transition: transform var(--cs-nav-animation-duration, 0.2s) ease;
+    }
+
+    /* Override the desktop absolute-positioned dropdown menu: render
+       in-flow as a vertical list inside the drawer. */
+    .cs-nav-dropdown-menu {
+      position: static;
+      left: auto;
+      right: auto;
+      transform: none;
+      flex-direction: column;
+    }
+
+    /* Inner accordions: reveal the menu when [open]. Desktop hover/focus
+       cascade does not trigger here, so [open] is the disclosure mechanism. */
+    .cs-nav-dropdown details[open] > .cs-nav-dropdown-menu {
+      display: flex;
+    }
+
+    .cs-nav-dropdown details[open] .cs-nav-chevron {
+      transform: rotate(180deg);
+    }
   }
 }

@@ -243,6 +243,11 @@
      the surrounding text color. */
   --cs-nav-chevron-size: 2.75rem;
   --cs-nav-chevron-color: currentColor;
+  /* Hamburger glyph dimensions — three horizontal lines drawn from
+     currentColor. Width controls the line length; height controls the
+     spacing between top and bottom lines (the middle line is centered). */
+  --cs-nav-toggle-icon-width: 1.25rem;
+  --cs-nav-toggle-icon-height: 0.875rem;
   /* Drawer + per-item-dropdown open/close height transition duration.
      Skipped under prefers-reduced-motion: reduce. */
   --cs-nav-animation-duration: 0.2s;

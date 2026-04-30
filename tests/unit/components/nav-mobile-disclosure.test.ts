@@ -59,6 +59,36 @@ const readTheme = (): string => readFileSync(themePath, 'utf8');
 // changes width, this test must be updated explicitly.
 const MOBILE_BREAKPOINT_LITERAL = '40rem';
 
+/**
+ * Extract a balanced @media block keyed to a single feature/value pair.
+ * Used to scope assertions to the mobile or desktop block in Nav.css.
+ */
+function extractMediaBlock(
+  css: string,
+  feature: 'max-width' | 'min-width',
+  value: string,
+): string {
+  const escaped = value.replace(/\./g, '\\.');
+  const re = new RegExp(
+    `@media\\s*\\(\\s*${feature}:\\s*${escaped}\\s*\\)\\s*\\{`,
+  );
+  const match = css.match(re);
+  if (!match || match.index === undefined) {
+    throw new Error(
+      `expected an @media (${feature}: ${value}) block in Nav.css`,
+    );
+  }
+  let depth = 1;
+  let i = match.index + match[0].length;
+  while (i < css.length && depth > 0) {
+    const c = css[i];
+    if (c === '{') depth++;
+    else if (c === '}') depth--;
+    i++;
+  }
+  return css.slice(match.index, i);
+}
+
 describe('Nav.astro - top-level <details> drawer wraps the nav', () => {
   it('wraps the nav <ul> in a <details class="cs-nav-drawer">', () => {
     const out = readAstro();
@@ -288,6 +318,59 @@ describe('Nav.css - mobile breakpoint and desktop bypass', () => {
     // every desktop user.
     expect(css).toMatch(
       /\.cs-nav-dropdown:hover\s+\.cs-nav-dropdown-menu[\s\S]*?\.cs-nav-dropdown:focus-within\s+\.cs-nav-dropdown-menu\s*\{[^}]*display:\s*flex/,
+    );
+  });
+});
+
+describe('Nav.css - mobile drawer styling inside the breakpoint', () => {
+  it('the mobile media query stacks .cs-nav-links vertically', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    expect(block).toMatch(
+      /\.cs-nav-links\s*\{[^}]*flex-direction:\s*column/,
+    );
+  });
+
+  it('the mobile media query paints .cs-nav-drawer with --cs-nav-drawer-surface', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    expect(block).toMatch(
+      /\.cs-nav-drawer\b[^{]*\{[^}]*background-color:\s*var\(--cs-nav-drawer-surface/,
+    );
+  });
+
+  it('the mobile media query draws the .cs-nav-chevron via mask-image', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    // Mask-image on a token-colored background lets the chevron recolor
+    // with --cs-nav-chevron-color and ships zero asset bytes (the SVG is
+    // an inline data URI).
+    expect(block).toMatch(
+      /\.cs-nav-chevron\s*\{[^}]*mask-image:\s*url\(/,
+    );
+    expect(block).toMatch(
+      /\.cs-nav-chevron\s*\{[^}]*background-color:\s*var\(--cs-nav-chevron-color/,
+    );
+  });
+
+  it('the mobile media query rotates the chevron when its <details> is open', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    expect(block).toMatch(
+      /details\[open\][^{]*\.cs-nav-chevron\s*\{[^}]*transform:\s*rotate\(180deg\)/,
+    );
+  });
+
+  it('the mobile media query gives .cs-nav-toggle and .cs-nav-chevron a 44px floor (WCAG 2.5.5)', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    // Tap targets via the tokenized chevron size; the package fallback
+    // pins the WCAG floor regardless of theme.
+    expect(block).toMatch(
+      /\.cs-nav-chevron\s*\{[\s\S]*?width:\s*var\(--cs-nav-chevron-size,\s*2\.75rem\)/,
+    );
+    expect(block).toMatch(
+      /\.cs-nav-chevron\s*\{[\s\S]*?height:\s*var\(--cs-nav-chevron-size,\s*2\.75rem\)/,
     );
   });
 });
