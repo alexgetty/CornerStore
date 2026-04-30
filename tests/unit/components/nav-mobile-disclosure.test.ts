@@ -59,6 +59,43 @@ const readTheme = (): string => readFileSync(themePath, 'utf8');
 // changes width, this test must be updated explicitly.
 const MOBILE_BREAKPOINT_LITERAL = '40rem';
 
+describe('Nav.astro - top-level <details> drawer wraps the nav', () => {
+  it('wraps the nav <ul> in a <details class="cs-nav-drawer">', () => {
+    const out = readAstro();
+    // The drawer is the disclosure container. Below 40rem it owns the
+    // open/closed state via the native <details> mechanism. Above 40rem
+    // it is bypassed via CSS (the toggle is hidden, content is forced
+    // visible). Source order: <details> wraps <nav> wraps <ul>.
+    expect(out).toMatch(
+      /<details[^>]*\bclass="cs-nav-drawer"[\s\S]*?<ul[\s\S]*?<\/ul>[\s\S]*?<\/details>/,
+    );
+  });
+
+  it('the drawer <summary> carries aria-label="Menu" as the accessible name', () => {
+    const out = readAstro();
+    // The hamburger summary has no visible text (it renders an icon-only
+    // glyph). The accessible name comes from aria-label so screen readers
+    // announce "Menu, button, collapsed/expanded".
+    expect(out).toMatch(
+      /<summary[^>]*\bclass="cs-nav-toggle"[^>]*\baria-label="Menu"|<summary[^>]*\baria-label="Menu"[^>]*\bclass="cs-nav-toggle"/,
+    );
+  });
+
+  it('the drawer <details> does NOT carry a name attribute', () => {
+    const out = readAstro();
+    // Inner per-item <details> use name="cs-nav-accordion" for native
+    // exclusivity. The TOP-level drawer must NOT carry a name - it is
+    // independent of the exclusive group, so opening the drawer does not
+    // close any inner accordion and vice versa.
+    expect(out).not.toMatch(
+      /<details[^>]*\bclass="cs-nav-drawer"[^>]*\bname=/,
+    );
+    expect(out).not.toMatch(
+      /<details[^>]*\bname=[^>]*\bclass="cs-nav-drawer"/,
+    );
+  });
+});
+
 describe('theme/theme.css - nav drawer tokens', () => {
   it.each([
     '--cs-nav-drawer-surface',

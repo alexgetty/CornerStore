@@ -29,50 +29,55 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
   </a>
   <div class="cs-header-actions">
     {nav.length > 0 && (
-      <nav aria-label="Main">
-        <ul class="cs-nav-links">
-          {nav.map((item) => (
-            item.children ? (
-              <li class="cs-nav-dropdown">
-                {item.href ? (
+      <details class="cs-nav-drawer">
+        <summary class="cs-nav-toggle" aria-label="Menu">
+          <span class="cs-nav-toggle-icon" aria-hidden="true"></span>
+        </summary>
+        <nav aria-label="Main">
+          <ul class="cs-nav-links">
+            {nav.map((item) => (
+              item.children ? (
+                <li class="cs-nav-dropdown">
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      class="cs-nav-dropdown-trigger"
+                      {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <button type="button" class="cs-nav-dropdown-trigger">
+                      {item.label}
+                    </button>
+                  )}
+                  <ul class="cs-nav-dropdown-menu">
+                    {item.children.map((child) => (
+                      <li>
+                        <a
+                          href={child.href}
+                          {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ) : (
+                <li>
                   <a
                     href={item.href}
-                    class="cs-nav-dropdown-trigger"
-                    {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
+                    {...(normalizedCurrentPath === normalizePath(item.href ?? '') ? { "aria-current": "page" as const } : {})}
                   >
                     {item.label}
                   </a>
-                ) : (
-                  <button type="button" class="cs-nav-dropdown-trigger">
-                    {item.label}
-                  </button>
-                )}
-                <ul class="cs-nav-dropdown-menu">
-                  {item.children.map((child) => (
-                    <li>
-                      <a
-                        href={child.href}
-                        {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
-                      >
-                        {child.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ) : (
-              <li>
-                <a
-                  href={item.href}
-                  {...(normalizedCurrentPath === normalizePath(item.href ?? '') ? { "aria-current": "page" as const } : {})}
-                >
-                  {item.label}
-                </a>
-              </li>
-            )
-          ))}
-        </ul>
-      </nav>
+                </li>
+              )
+            ))}
+          </ul>
+        </nav>
+      </details>
     )}
     {priceMap && currency && (
       <CartWidget priceMap={priceMap} disabledSkus={disabledSkus} currency={currency} />
