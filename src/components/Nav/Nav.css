@@ -60,6 +60,22 @@
     outline-offset: var(--cs-focus-offset, 2px);
   }
 
+  .cs-nav-drawer {
+    position: relative;
+  }
+
+  /* Native <summary> renders a disclosure marker by default; we draw our
+     own (hamburger / chevron) so strip both the modern marker pseudo and
+     the legacy WebKit list-style. */
+  .cs-nav-drawer summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .cs-nav-drawer summary {
+    list-style: none;
+    cursor: pointer;
+  }
+
   .cs-nav-dropdown {
     position: relative;
   }
@@ -155,5 +171,48 @@
       right: 0;
       transform: none;
     }
+  }
+
+  /* ------------------------------------------------------------------
+   * Desktop bypass: above 40rem the <details> drawer is structural-only.
+   * The hamburger toggle is hidden, the inner <nav> participates as a
+   * direct flex item of the header via display: contents, and the
+   * chevron on combo items is hidden because hover/focus-within drives
+   * the dropdown reveal as today.
+   *
+   * 40.001rem (vs 40rem) because @media query bounds cannot reference
+   * custom properties cross-browser; the +0.001 sub-pixel offset
+   * prevents an overlap with the (max-width: 40rem) mobile block.
+   * ------------------------------------------------------------------ */
+  @media (min-width: 40.001rem) {
+    .cs-nav-toggle {
+      display: none;
+    }
+
+    .cs-nav-drawer > nav {
+      display: contents;
+    }
+
+    .cs-nav-chevron {
+      display: none;
+    }
+  }
+
+  /* ------------------------------------------------------------------
+   * Mobile drawer: nav links collapse to a native <details> disclosure.
+   *
+   * Why 40rem (640px): matches the cart-table collapse breakpoint in
+   * Cart.css. Above this the horizontal link list with hover dropdowns
+   * has the room it needs; below it the list wraps or overflows the
+   * header and we collapse to a vertical disclosure stack.
+   *
+   * The breakpoint is hardcoded because @media query bounds cannot
+   * reference custom properties cross-browser. The --cs-nav-drawer-*
+   * and --cs-nav-chevron-* tokens in theme.css configure the LOOK of
+   * the drawer; the trigger width itself is a structural decision
+   * pinned by tests/unit/components/nav-mobile-disclosure.test.ts.
+   * ------------------------------------------------------------------ */
+  @media (max-width: 40rem) {
+    /* Filled in by Task 7 (mobile drawer styling). */
   }
 }

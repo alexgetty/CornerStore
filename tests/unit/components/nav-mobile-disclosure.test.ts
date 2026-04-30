@@ -242,6 +242,56 @@ describe('Nav.astro - inline script for drawer behavior', () => {
   });
 });
 
+describe('Nav.css - mobile breakpoint and desktop bypass', () => {
+  it(`includes a (max-width: ${MOBILE_BREAKPOINT_LITERAL}) media query`, () => {
+    const css = readCss();
+    const escaped = MOBILE_BREAKPOINT_LITERAL.replace('.', '\\.');
+    const re = new RegExp(`@media\\s*\\(\\s*max-width:\\s*${escaped}\\s*\\)`);
+    expect(css).toMatch(re);
+  });
+
+  it('hides the .cs-nav-toggle hamburger button above the breakpoint', () => {
+    const css = readCss();
+    // Above 40.001rem the drawer is bypassed; the hamburger button must
+    // not render. Pin via min-width media query so the rule is unmistakably
+    // desktop-scoped.
+    expect(css).toMatch(
+      /@media\s*\(\s*min-width:\s*40\.001rem\s*\)[\s\S]*?\.cs-nav-toggle\s*\{[^}]*display:\s*none/,
+    );
+  });
+
+  it('forces .cs-nav-drawer > nav to display: contents above the breakpoint', () => {
+    const css = readCss();
+    // display: contents lets the inner <ul.cs-nav-links> participate as a
+    // direct flex item of the header, so the desktop layout is structurally
+    // identical to the pre-drawer markup.
+    expect(css).toMatch(
+      /@media\s*\(\s*min-width:\s*40\.001rem\s*\)[\s\S]*?\.cs-nav-drawer\s*>\s*nav\s*\{[^}]*display:\s*contents/,
+    );
+  });
+
+  it('hides the .cs-nav-chevron above the breakpoint', () => {
+    const css = readCss();
+    // Combo items use the chevron only on mobile (Pattern A's separate
+    // toggle). On desktop, hover drives the dropdown reveal so the chevron
+    // is hidden.
+    expect(css).toMatch(
+      /@media\s*\(\s*min-width:\s*40\.001rem\s*\)[\s\S]*?\.cs-nav-chevron\s*\{[^}]*display:\s*none/,
+    );
+  });
+
+  it('regression: hover/focus-within dropdown reveal is preserved on desktop', () => {
+    const css = readCss();
+    // The existing desktop dropdown behavior MUST survive the mobile-drawer
+    // restructure. Hover and focus-within both reveal the menu via
+    // display: flex. Pinned to catch a regression that would silently break
+    // every desktop user.
+    expect(css).toMatch(
+      /\.cs-nav-dropdown:hover\s+\.cs-nav-dropdown-menu[\s\S]*?\.cs-nav-dropdown:focus-within\s+\.cs-nav-dropdown-menu\s*\{[^}]*display:\s*flex/,
+    );
+  });
+});
+
 describe('theme/theme.css - nav drawer tokens', () => {
   it.each([
     '--cs-nav-drawer-surface',
