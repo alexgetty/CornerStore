@@ -37,6 +37,46 @@
     gap: var(--cs-nav-gap, 0);
   }
 
+  .cs-nav-toggle {
+    background-color: transparent;
+    border-width: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    color: var(--cs-body-text-color, currentColor);
+    font-family: inherit;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    width: var(--cs-nav-chevron-size, 2.75rem);
+    height: var(--cs-nav-chevron-size, 2.75rem);
+  }
+
+  .cs-nav-toggle-icon {
+    position: relative;
+    display: block;
+    width: var(--cs-nav-toggle-icon-width, 1.25rem);
+    height: var(--cs-nav-toggle-icon-height, 0.875rem);
+    border-top-width: var(--cs-border-width-emphasis, 2px);
+    border-top-style: solid;
+    border-top-color: currentColor;
+    border-bottom-width: var(--cs-border-width-emphasis, 2px);
+    border-bottom-style: solid;
+    border-bottom-color: currentColor;
+  }
+
+  .cs-nav-toggle-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: var(--cs-border-width-emphasis, 2px);
+    background-color: currentColor;
+    transform: translateY(-50%);
+  }
+
   .cs-nav-links {
     display: flex;
     gap: var(--cs-nav-gap, 0);
@@ -60,27 +100,12 @@
     outline-offset: var(--cs-focus-offset, 2px);
   }
 
-  .cs-nav-drawer {
-    position: relative;
-  }
-
-  /* Native <summary> renders a disclosure marker by default; we draw our
-     own (hamburger / chevron) so strip both the modern marker pseudo and
-     the legacy WebKit list-style. */
-  .cs-nav-drawer summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .cs-nav-drawer summary {
-    list-style: none;
-    cursor: pointer;
-  }
-
   .cs-nav-dropdown {
     position: relative;
   }
 
-  .cs-nav-dropdown-trigger {
+  .cs-nav-dropdown-trigger,
+  .cs-nav-dropdown-link {
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-body-text-color, inherit);
     text-decoration: none;
@@ -95,15 +120,39 @@
     cursor: pointer;
   }
 
-  .cs-nav-dropdown-trigger:hover {
+  .cs-nav-dropdown-trigger:hover,
+  .cs-nav-dropdown-link:hover {
     color: var(--cs-heading-text-color, inherit);
   }
 
-  .cs-nav-dropdown-trigger:focus-visible {
+  .cs-nav-dropdown-trigger:focus-visible,
+  .cs-nav-dropdown-link:focus-visible {
     outline-width: var(--cs-focus-width, 2px);
     outline-style: solid;
     outline-color: var(--cs-focus-color, currentColor);
     outline-offset: var(--cs-focus-offset, 2px);
+  }
+
+  .cs-nav-chevron {
+    background-color: var(--cs-nav-chevron-color, currentColor);
+    border-width: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    cursor: pointer;
+    flex: 0 0 auto;
+    width: var(--cs-nav-chevron-size, 2.75rem);
+    height: var(--cs-nav-chevron-size, 2.75rem);
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
+    mask-position: center;
+    -webkit-mask-position: center;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    mask-size: 1rem 1rem;
+    -webkit-mask-size: 1rem 1rem;
+    transition: transform var(--cs-nav-animation-duration, 0.2s) ease;
   }
 
   .cs-nav-dropdown-menu {
@@ -128,7 +177,9 @@
   }
 
   .cs-nav-dropdown:hover .cs-nav-dropdown-menu,
-  .cs-nav-dropdown:focus-within .cs-nav-dropdown-menu {
+  .cs-nav-dropdown:focus-within .cs-nav-dropdown-menu,
+  .cs-nav-dropdown-trigger[aria-expanded="true"] + .cs-nav-dropdown-menu,
+  .cs-nav-chevron[aria-expanded="true"] + .cs-nav-dropdown-menu {
     display: flex;
   }
 
@@ -173,24 +224,9 @@
     }
   }
 
-  /* ------------------------------------------------------------------
-   * Desktop bypass: above 40rem the <details> drawer is structural-only.
-   * The hamburger toggle is hidden, the inner <nav> participates as a
-   * direct flex item of the header via display: contents, and the
-   * chevron on combo items is hidden because hover/focus-within drives
-   * the dropdown reveal as today.
-   *
-   * 40.001rem (vs 40rem) because @media query bounds cannot reference
-   * custom properties cross-browser; the +0.001 sub-pixel offset
-   * prevents an overlap with the (max-width: 40rem) mobile block.
-   * ------------------------------------------------------------------ */
   @media (min-width: 40.001rem) {
     .cs-nav-toggle {
       display: none;
-    }
-
-    .cs-nav-drawer > nav {
-      display: contents;
     }
 
     .cs-nav-chevron {
@@ -198,65 +234,24 @@
     }
   }
 
-  /* ------------------------------------------------------------------
-   * Mobile drawer: nav links collapse to a native <details> disclosure.
-   *
-   * Why 40rem (640px): matches the cart-table collapse breakpoint in
-   * Cart.css. Above this the horizontal link list with hover dropdowns
-   * has the room it needs; below it the list wraps or overflows the
-   * header and we collapse to a vertical disclosure stack.
-   *
-   * The breakpoint is hardcoded because @media query bounds cannot
-   * reference custom properties cross-browser. The --cs-nav-drawer-*
-   * and --cs-nav-chevron-* tokens in theme.css configure the LOOK of
-   * the drawer; the trigger width itself is a structural decision
-   * pinned by tests/unit/components/nav-mobile-disclosure.test.ts.
-   * ------------------------------------------------------------------ */
   @media (max-width: 40rem) {
-    .cs-nav-drawer[open] {
-      background-color: var(--cs-nav-drawer-surface, transparent);
+    .cs-nav-toggle {
+      display: inline-flex;
     }
 
-    .cs-nav-drawer[open] > nav {
+    .cs-nav-drawer {
+      display: none;
+      flex-basis: 100%;
+      order: 99;
+    }
+
+    .cs-nav-toggle[aria-expanded="true"] + .cs-nav-drawer {
+      display: block;
+      background-color: var(--cs-nav-drawer-surface, transparent);
       padding-top: var(--cs-nav-drawer-padding, 1rem);
       padding-right: var(--cs-nav-drawer-padding, 1rem);
       padding-bottom: var(--cs-nav-drawer-padding, 1rem);
       padding-left: var(--cs-nav-drawer-padding, 1rem);
-    }
-
-    .cs-nav-toggle {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: var(--cs-nav-chevron-size, 2.75rem);
-      height: var(--cs-nav-chevron-size, 2.75rem);
-      color: var(--cs-body-text-color, currentColor);
-    }
-
-    /* Three-bar hamburger drawn from currentColor borders + a single
-       absolutely-positioned middle line. No SVG, no asset bytes. */
-    .cs-nav-toggle-icon {
-      position: relative;
-      display: block;
-      width: var(--cs-nav-toggle-icon-width, 1.25rem);
-      height: var(--cs-nav-toggle-icon-height, 0.875rem);
-      border-top-width: var(--cs-border-width-emphasis, 2px);
-      border-top-style: solid;
-      border-top-color: currentColor;
-      border-bottom-width: var(--cs-border-width-emphasis, 2px);
-      border-bottom-style: solid;
-      border-bottom-color: currentColor;
-    }
-
-    .cs-nav-toggle-icon::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: var(--cs-border-width-emphasis, 2px);
-      background-color: currentColor;
-      transform: translateY(-50%);
     }
 
     .cs-nav-links {
@@ -264,9 +259,7 @@
       gap: var(--cs-nav-drawer-gap, 0.75rem);
     }
 
-    /* Combo items lay out as a flex row: link grows, chevron is fixed,
-       and the dropdown menu wraps to full width below them. */
-    .cs-nav-dropdown-combo > details {
+    .cs-nav-dropdown-combo {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -280,26 +273,6 @@
       flex-basis: 100%;
     }
 
-    /* Chevron: tap-target-sized box with a SVG arrow drawn via mask-image
-       so it recolors via --cs-nav-chevron-color. */
-    .cs-nav-chevron {
-      flex: 0 0 auto;
-      width: var(--cs-nav-chevron-size, 2.75rem);
-      height: var(--cs-nav-chevron-size, 2.75rem);
-      background-color: var(--cs-nav-chevron-color, currentColor);
-      mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
-      -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
-      mask-position: center;
-      -webkit-mask-position: center;
-      mask-repeat: no-repeat;
-      -webkit-mask-repeat: no-repeat;
-      mask-size: 1rem 1rem;
-      -webkit-mask-size: 1rem 1rem;
-      transition: transform var(--cs-nav-animation-duration, 0.2s) ease;
-    }
-
-    /* Override the desktop absolute-positioned dropdown menu: render
-       in-flow as a vertical list inside the drawer. */
     .cs-nav-dropdown-menu {
       position: static;
       left: auto;
@@ -308,47 +281,12 @@
       flex-direction: column;
     }
 
-    /* Inner accordions: reveal the menu when [open]. Desktop hover/focus
-       cascade does not trigger here, so [open] is the disclosure mechanism. */
-    .cs-nav-dropdown details[open] > .cs-nav-dropdown-menu {
-      display: flex;
-    }
-
-    .cs-nav-dropdown details[open] .cs-nav-chevron {
+    .cs-nav-chevron[aria-expanded="true"] {
       transform: rotate(180deg);
-    }
-
-    /* Animation: interpolate-size lets us transition height from 0 to auto.
-       transition-behavior: allow-discrete bridges the content-visibility
-       discrete jump between closed and open states. */
-    .cs-nav-drawer > nav {
-      interpolate-size: allow-keywords;
-      height: 0;
-      overflow: hidden;
-      transition: height var(--cs-nav-animation-duration, 0.2s) ease,
-                  content-visibility var(--cs-nav-animation-duration, 0.2s) allow-discrete;
-    }
-
-    .cs-nav-drawer[open] > nav {
-      height: auto;
-    }
-
-    .cs-nav-dropdown details > .cs-nav-dropdown-menu {
-      interpolate-size: allow-keywords;
-      height: 0;
-      overflow: hidden;
-      transition: height var(--cs-nav-animation-duration, 0.2s) ease,
-                  content-visibility var(--cs-nav-animation-duration, 0.2s) allow-discrete;
-    }
-
-    .cs-nav-dropdown details[open] > .cs-nav-dropdown-menu {
-      height: auto;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .cs-nav-drawer > nav,
-    .cs-nav-dropdown details > .cs-nav-dropdown-menu,
     .cs-nav-chevron {
       transition-duration: 0.01ms;
     }

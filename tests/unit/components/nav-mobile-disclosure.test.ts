@@ -3,33 +3,20 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /*
- * Mobile nav disclosure pattern - the Nav component collapses to a native
- * <details>/<summary> drawer below 40rem.
+ * Mobile nav disclosure pattern.
  *
- * Why this exists
- * ---------------
- * The desktop nav is a horizontal link list with hover/focus-within
- * dropdowns. Below 40rem links overflow or wrap awkwardly and dropdowns
- * behave inconsistently on touch. This file pins the responsive pattern
- * (top-level <details> drawer + inner exclusive <details> accordions for
- * dropdowns + Pattern A for link+children combos) so future refactors can't
- * silently undo it.
+ * Above 40rem the nav renders as a horizontal link list with hover /
+ * focus-within dropdowns. Below 40rem it collapses to a hamburger button
+ * + sibling <nav> drawer, with each per-item dropdown its own
+ * <button aria-expanded> + sibling <ul> menu. ESC, click-outside, and
+ * one-open-at-a-time exclusivity are handled by an inline <script>.
  *
- * Pattern: native disclosure widget, no custom hamburger JS state.
- * - Top-level <details class="cs-nav-drawer"> wraps the <ul>. Its <summary>
- *   is the hamburger toggle, visible only below 40rem.
- * - Per-item dropdowns are <details name="cs-nav-accordion"> for native
- *   exclusivity (one open at a time). Inner <summary> is the trigger.
- * - Combo items (href + children) use Pattern A: an <a> sibling for the
- *   label and a separate <summary class="cs-nav-chevron"> for the toggle,
- *   inside the same <details>. Two distinct tap targets.
- * - Above 40rem, all <details> are bypassed via CSS (the toggle is hidden,
- *   inner content is forced visible, hover/focus-within drives the dropdown
- *   reveal as today).
- * - Inline <script> binds Escape and click-outside to close the drawer.
+ * Combo items (children + href) follow Pattern A: the visible label is
+ * an <a href> link; the toggle is a separate <button class=cs-nav-chevron>
+ * sibling. Two distinct tap targets.
  *
  * Tests are source-level (regex on Nav.astro and Nav.css) - same approach
- * as cart-mobile-stack.test.ts. CSS-rendering coverage is a separate concern.
+ * as cart-mobile-stack.test.ts.
  */
 
 const navAstroPath = join(
@@ -54,15 +41,8 @@ const readAstro = (): string => readFileSync(navAstroPath, 'utf8');
 const readCss = (): string => readFileSync(navCssPath, 'utf8');
 const readTheme = (): string => readFileSync(themePath, 'utf8');
 
-// The mobile collapse triggers at this width. Pinned in the test so the
-// breakpoint is a documented contract. Matches Cart.css. If the pattern
-// changes width, this test must be updated explicitly.
 const MOBILE_BREAKPOINT_LITERAL = '40rem';
 
-/**
- * Extract a balanced @media block keyed to a single feature/value pair.
- * Used to scope assertions to the mobile or desktop block in Nav.css.
- */
 function extractMediaBlock(
   css: string,
   feature: 'max-width' | 'min-width' | 'prefers-reduced-motion',
@@ -89,123 +69,102 @@ function extractMediaBlock(
   return css.slice(match.index, i);
 }
 
-describe('Nav.astro - top-level <details> drawer wraps the nav', () => {
-  it('wraps the nav <ul> in a <details class="cs-nav-drawer">', () => {
+describe('Nav.astro - hamburger toggle controls drawer visibility', () => {
+  it('renders a <button class="cs-nav-toggle"> with aria-expanded="false" by default', () => {
     const out = readAstro();
-    // The drawer is the disclosure container. Below 40rem it owns the
-    // open/closed state via the native <details> mechanism. Above 40rem
-    // it is bypassed via CSS (the toggle is hidden, content is forced
-    // visible). Source order: <details> wraps <nav> wraps <ul>.
     expect(out).toMatch(
-      /<details[^>]*\bclass="cs-nav-drawer"[\s\S]*?<ul[\s\S]*?<\/ul>[\s\S]*?<\/details>/,
+      /<button[\s\S]*?\bclass="cs-nav-toggle"[\s\S]*?\baria-expanded="false"/,
     );
   });
 
-  it('the drawer <summary> carries aria-label="Menu" as the accessible name', () => {
+  it('the toggle button carries aria-controls pointing to the nav id', () => {
     const out = readAstro();
-    // The hamburger summary has no visible text (it renders an icon-only
-    // glyph). The accessible name comes from aria-label so screen readers
-    // announce "Menu, button, collapsed/expanded".
-    expect(out).toMatch(
-      /<summary[^>]*\bclass="cs-nav-toggle"[^>]*\baria-label="Menu"|<summary[^>]*\baria-label="Menu"[^>]*\bclass="cs-nav-toggle"/,
-    );
+    // aria-controls names the drawer the button toggles. Must match the
+    // <nav> element's id so screen readers announce the relationship.
+    expect(out).toMatch(/<button[\s\S]*?\baria-controls="cs-nav-main"/);
+    expect(out).toMatch(/<nav[\s\S]*?\bid="cs-nav-main"/);
   });
 
-  it('the drawer <details> does NOT carry a name attribute', () => {
+  it('the toggle button carries aria-label="Menu" as the accessible name', () => {
     const out = readAstro();
-    // Inner per-item <details> use name="cs-nav-accordion" for native
-    // exclusivity. The TOP-level drawer must NOT carry a name - it is
-    // independent of the exclusive group, so opening the drawer does not
-    // close any inner accordion and vice versa.
-    expect(out).not.toMatch(
-      /<details[^>]*\bclass="cs-nav-drawer"[^>]*\bname=/,
-    );
-    expect(out).not.toMatch(
-      /<details[^>]*\bname=[^>]*\bclass="cs-nav-drawer"/,
+    // The hamburger button has no visible text (it renders an icon-only
+    // glyph), so aria-label supplies the accessible name.
+    expect(out).toMatch(/<button[\s\S]*?\baria-label="Menu"/);
+  });
+
+  it('the drawer is a <nav class="cs-nav-drawer"> sibling of the toggle', () => {
+    const out = readAstro();
+    // <button class=cs-nav-toggle> immediately followed by <nav class=cs-nav-drawer>
+    // - the adjacent-sibling CSS rule
+    // .cs-nav-toggle[aria-expanded="true"] + .cs-nav-drawer drives mobile
+    // visibility.
+    expect(out).toMatch(
+      /<button[\s\S]*?\bclass="cs-nav-toggle"[\s\S]*?<\/button>\s*<nav[^>]*\bclass="cs-nav-drawer"/,
     );
   });
 });
 
-describe('Nav.astro - inner per-item accordion (exclusive via name=)', () => {
-  it('dropdown-only items (children, no href) render as <details><summary>label</summary>', () => {
+describe('Nav.astro - per-item dropdown buttons', () => {
+  it('dropdown-only items render <button class="cs-nav-dropdown-trigger" aria-expanded="false">', () => {
     const out = readAstro();
-    // Source pattern in the JSX: when item has children and no href, the
-    // item branch renders a <details name="cs-nav-accordion"> containing a
-    // <summary class="cs-nav-dropdown-trigger"> with the label expression
-    // {item.label}, followed by the existing <ul class="cs-nav-dropdown-menu">.
-    // No <button> or <a> trigger.
     expect(out).toMatch(
-      /<details\s+name="cs-nav-accordion">\s*<summary[^>]*\bclass="cs-nav-dropdown-trigger"[^>]*>\s*\{item\.label\}\s*<\/summary>/,
+      /<button[\s\S]*?\bclass="cs-nav-dropdown-trigger"[\s\S]*?\baria-expanded="false"/,
     );
   });
 
-  it('combo items (children + href) render <a> as label and sibling <summary> as chevron (Pattern A)', () => {
+  it('dropdown-only items: trigger label is {item.label}', () => {
     const out = readAstro();
-    // The combo branch uses an <a class="cs-nav-dropdown-link"> for the
-    // visible label (link tap navigates) and a sibling <summary
-    // class="cs-nav-chevron"> as the toggle (chevron tap opens submenu).
-    // Both live inside the same <details name="cs-nav-accordion">. Match
-    // class and href in either attribute order.
     expect(out).toMatch(
-      /<details\s+name="cs-nav-accordion">[\s\S]*?<a\s[^>]*\bclass="cs-nav-dropdown-link"[\s\S]*?<\/a>[\s\S]*?<summary[^>]*\bclass="cs-nav-chevron"/,
+      /<button[\s\S]*?\bclass="cs-nav-dropdown-trigger"[\s\S]*?>\s*\{item\.label\}\s*<\/button>/,
     );
+  });
+
+  it('combo items render <a class="cs-nav-dropdown-link"> for the label', () => {
+    const out = readAstro();
     expect(out).toMatch(
-      /<a\s[^>]*\bclass="cs-nav-dropdown-link"[^>]*\bhref=\{item\.href\}|<a\s[^>]*\bhref=\{item\.href\}[^>]*\bclass="cs-nav-dropdown-link"/,
+      /<a\s[^>]*\bhref=\{item\.href\}[\s\S]*?\bclass="cs-nav-dropdown-link"|<a\s[^>]*\bclass="cs-nav-dropdown-link"[^>]*\bhref=\{item\.href\}/,
+    );
+  });
+
+  it('combo items render a sibling <button class="cs-nav-chevron" aria-expanded="false">', () => {
+    const out = readAstro();
+    // Pattern A: the chevron is a separate button sibling of the link, so
+    // the link tap navigates and the button tap toggles the submenu. Two
+    // distinct tap targets.
+    expect(out).toMatch(
+      /<button[\s\S]*?\bclass="cs-nav-chevron"[\s\S]*?\baria-expanded="false"/,
+    );
+  });
+
+  it('combo chevron carries aria-label="Toggle {label} submenu"', () => {
+    const out = readAstro();
+    expect(out).toMatch(
+      /<button[\s\S]*?\bclass="cs-nav-chevron"[\s\S]*?\baria-label=\{`Toggle \$\{item\.label\} submenu`\}/,
     );
   });
 
   it('combo items wrap in <li class="cs-nav-dropdown cs-nav-dropdown-combo">', () => {
     const out = readAstro();
-    // The combo modifier class scopes the desktop chevron-hide and the
-    // mobile flex-row layout. Pinning the class here keeps that scope
-    // contract intact even when JSX reflows.
     expect(out).toMatch(/<li\s+class="cs-nav-dropdown cs-nav-dropdown-combo">/);
   });
 
-  it('combo chevron <summary> carries aria-label="Toggle {label} submenu"', () => {
+  it('regression: legacy <details>/<summary> markup is gone', () => {
     const out = readAstro();
-    // The chevron is icon-only. Its accessible name comes from aria-label
-    // and includes the parent label so a screen reader user knows which
-    // submenu the toggle controls. Match the templated form.
-    expect(out).toMatch(
-      /<summary[^>]*\bclass="cs-nav-chevron"[^>]*\baria-label=\{`Toggle \$\{item\.label\} submenu`\}/,
-    );
-  });
-
-  it('every inner <details> carries name="cs-nav-accordion" for native exclusivity', () => {
-    const out = readAstro();
-    // Two inner branches (dropdown-only + combo). Both must carry the
-    // shared name. The browser handles exclusivity: opening one closes
-    // the others. Zero JS cost for the exclusive behavior.
-    const inner = out.match(/<details\s+name="cs-nav-accordion">/g) ?? [];
-    expect(inner.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('regression: the legacy <button class="cs-nav-dropdown-trigger"> trigger is gone', () => {
-    const out = readAstro();
-    // The button-based trigger is replaced by <summary> for native
-    // disclosure semantics. Pin the absence so a future revert can't
-    // sneak it back in.
-    expect(out).not.toMatch(/<button[^>]*\bclass="cs-nav-dropdown-trigger"/);
+    expect(out).not.toMatch(/<details/);
+    expect(out).not.toMatch(/<summary/);
   });
 });
 
-describe('Nav.astro - aria-current contract through the drawer', () => {
+describe('Nav.astro - aria-current contract preserved', () => {
   it('plain links keep aria-current="page" when active', () => {
     const out = readAstro();
-    // Plain-link branch (no children). The aria-current attribute is
-    // applied via a spread when normalizedCurrentPath matches. Pinning
-    // the spread expression so the branch can't silently drop the
-    // current-page contract during a refactor.
     expect(out).toMatch(
       /<li>\s*<a\s+href=\{item\.href\}[\s\S]*?normalizedCurrentPath === normalizePath\(item\.href \?\? ''\)[\s\S]*?"aria-current": "page"/,
     );
   });
 
-  it('combo-item link keeps aria-current="page" when active inside the drawer', () => {
+  it('combo-item link keeps aria-current="page" when active', () => {
     const out = readAstro();
-    // Combo branch's <a class="cs-nav-dropdown-link"> must carry the same
-    // aria-current spread. Drawer wrapping must NOT swallow the contract.
     expect(out).toMatch(
       /<a\s+href=\{item\.href\}\s+class="cs-nav-dropdown-link"[\s\S]*?normalizedCurrentPath === normalizePath\(item\.href\)[\s\S]*?"aria-current": "page"/,
     );
@@ -213,10 +172,6 @@ describe('Nav.astro - aria-current contract through the drawer', () => {
 
   it('child links inside any dropdown keep aria-current="page" when active', () => {
     const out = readAstro();
-    // Inside the dropdown <ul class="cs-nav-dropdown-menu">, each child
-    // <a> applies the same aria-current spread keyed off child.href.
-    // Both branches (combo + dropdown-only) emit identical child markup,
-    // so we expect at least two occurrences.
     const childMatches = out.match(
       /normalizedCurrentPath === normalizePath\(child\.href \?\? ''\)/g,
     ) ?? [];
@@ -224,55 +179,53 @@ describe('Nav.astro - aria-current contract through the drawer', () => {
   });
 });
 
-describe('Nav.astro - inline script for drawer behavior', () => {
-  it('binds a keydown Escape handler that closes .cs-nav-drawer', () => {
+describe('Nav.astro - inline script for drawer + dropdown behavior', () => {
+  it('the script lives inline in Nav.astro', () => {
     const out = readAstro();
-    // Escape closes the open drawer. The handler is scoped to drawers
-    // querySelected at script-load time, and only acts when the drawer
-    // is open. Match the structural shape: addEventListener('keydown',
-    // ...) with an Escape check and drawer.open = false.
+    expect(out).toMatch(/<script>[\s\S]*?<\/script>/);
+  });
+
+  it('binds a click handler that toggles the drawer toggle aria-expanded', () => {
+    const out = readAstro();
+    // The toggle button click flips aria-expanded between true and false
+    // via the setExpanded / isExpanded helpers.
     expect(out).toMatch(
-      /addEventListener\(\s*['"]keydown['"][\s\S]*?Escape[\s\S]*?drawer\.open\s*=\s*false/,
+      /toggle\.addEventListener\(\s*['"]click['"][\s\S]*?setExpanded\(toggle/,
     );
   });
 
-  it('binds a pointerdown click-outside handler that closes .cs-nav-drawer', () => {
+  it('binds Escape to close the drawer (aria-expanded -> false)', () => {
     const out = readAstro();
-    // Click-outside on touch + mouse: pointerdown is the unified primitive.
-    // The handler must check that the drawer contains() the target before
-    // closing - clicks INSIDE the drawer should NOT close it (otherwise
-    // tapping a nav link to navigate would close the drawer mid-navigation
-    // and feel broken).
     expect(out).toMatch(
-      /addEventListener\(\s*['"]pointerdown['"][\s\S]*?drawer\.contains\([^)]+\)[\s\S]*?drawer\.open\s*=\s*false/,
+      /addEventListener\(\s*['"]keydown['"][\s\S]*?Escape[\s\S]*?setExpanded\(toggle,\s*false\)/,
     );
   });
 
-  it('scrolls the drawer into view on open via the toggle event', () => {
+  it('binds pointerdown click-outside to close the drawer', () => {
     const out = readAstro();
-    // When the user opens a long drawer mid-scroll, the open state is
-    // visually below the fold. Native <details> does not auto-scroll;
-    // we add scrollIntoView({ block: 'nearest' }) on the toggle event.
-    // 'nearest' avoids unnecessary jumps when the drawer is already in
-    // view.
     expect(out).toMatch(
-      /addEventListener\(\s*['"]toggle['"][\s\S]*?drawer\.open[\s\S]*?scrollIntoView\(\s*\{\s*block:\s*['"]nearest['"]\s*\}\s*\)/,
+      /addEventListener\(\s*['"]pointerdown['"][\s\S]*?contains\([^)]+\)[\s\S]*?setExpanded\(toggle,\s*false\)/,
     );
   });
 
-  it('the script lives inline in Nav.astro (not a separate module)', () => {
+  it('scrolls the drawer into view when the toggle expands', () => {
     const out = readAstro();
-    // Tightly coupled to the markup it operates on; keeping it inline
-    // makes the contract obvious and avoids a separate file the build
-    // would have to ship to the static output. Verify a <script> tag
-    // is present and contains the drawer query selector.
     expect(out).toMatch(
-      /<script>[\s\S]*?querySelectorAll(?:<[^>]+>)?\(\s*['"]details\.cs-nav-drawer['"]\s*\)[\s\S]*?<\/script>/,
+      /scrollIntoView\(\s*\{\s*block:\s*['"]nearest['"]\s*\}\s*\)/,
+    );
+  });
+
+  it('per-item dropdown clicks close all other dropdowns (one-open-at-a-time)', () => {
+    const out = readAstro();
+    // Exclusivity: when one dropdown opens, all others get aria-expanded=false.
+    // This replaces the native name= mechanism we used with <details>.
+    expect(out).toMatch(
+      /dropdowns\.forEach\([\s\S]*?other !== btn[\s\S]*?setExpanded\(other,\s*false\)/,
     );
   });
 });
 
-describe('Nav.css - mobile breakpoint and desktop bypass', () => {
+describe('Nav.css - mobile breakpoint and desktop behavior', () => {
   it(`includes a (max-width: ${MOBILE_BREAKPOINT_LITERAL}) media query`, () => {
     const css = readCss();
     const escaped = MOBILE_BREAKPOINT_LITERAL.replace('.', '\\.');
@@ -280,128 +233,76 @@ describe('Nav.css - mobile breakpoint and desktop bypass', () => {
     expect(css).toMatch(re);
   });
 
-  it('hides the .cs-nav-toggle hamburger button above the breakpoint', () => {
+  it('hides .cs-nav-toggle above the breakpoint', () => {
     const css = readCss();
-    // Above 40.001rem the drawer is bypassed; the hamburger button must
-    // not render. Pin via min-width media query so the rule is unmistakably
-    // desktop-scoped.
     expect(css).toMatch(
       /@media\s*\(\s*min-width:\s*40\.001rem\s*\)[\s\S]*?\.cs-nav-toggle\s*\{[^}]*display:\s*none/,
     );
   });
 
-  it('forces .cs-nav-drawer > nav to display: contents above the breakpoint', () => {
+  it('hides .cs-nav-chevron above the breakpoint', () => {
     const css = readCss();
-    // display: contents lets the inner <ul.cs-nav-links> participate as a
-    // direct flex item of the header, so the desktop layout is structurally
-    // identical to the pre-drawer markup.
-    expect(css).toMatch(
-      /@media\s*\(\s*min-width:\s*40\.001rem\s*\)[\s\S]*?\.cs-nav-drawer\s*>\s*nav\s*\{[^}]*display:\s*contents/,
-    );
-  });
-
-  it('hides the .cs-nav-chevron above the breakpoint', () => {
-    const css = readCss();
-    // Combo items use the chevron only on mobile (Pattern A's separate
-    // toggle). On desktop, hover drives the dropdown reveal so the chevron
-    // is hidden.
     expect(css).toMatch(
       /@media\s*\(\s*min-width:\s*40\.001rem\s*\)[\s\S]*?\.cs-nav-chevron\s*\{[^}]*display:\s*none/,
     );
   });
 
-  it('regression: hover/focus-within dropdown reveal is preserved on desktop', () => {
+  it('hides .cs-nav-drawer by default below the breakpoint', () => {
     const css = readCss();
-    // The existing desktop dropdown behavior MUST survive the mobile-drawer
-    // restructure. Hover and focus-within both reveal the menu via
-    // display: flex. Pinned to catch a regression that would silently break
-    // every desktop user.
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    expect(block).toMatch(
+      /\.cs-nav-drawer\s*\{[^}]*display:\s*none/,
+    );
+  });
+
+  it('reveals .cs-nav-drawer when the toggle is aria-expanded="true"', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    expect(block).toMatch(
+      /\.cs-nav-toggle\[aria-expanded="true"\]\s*\+\s*\.cs-nav-drawer\s*\{[^}]*display:\s*block/,
+    );
+  });
+
+  it('reveals .cs-nav-dropdown-menu when its trigger or chevron is aria-expanded="true"', () => {
+    const css = readCss();
+    // This rule lives outside any media query so the same aria toggle
+    // works at every viewport (sticks the menu open on click). Hover and
+    // focus-within still also reveal on desktop.
     expect(css).toMatch(
-      /\.cs-nav-dropdown:hover\s+\.cs-nav-dropdown-menu[\s\S]*?\.cs-nav-dropdown:focus-within\s+\.cs-nav-dropdown-menu\s*\{[^}]*display:\s*flex/,
+      /\.cs-nav-dropdown-trigger\[aria-expanded="true"\]\s*\+\s*\.cs-nav-dropdown-menu/,
+    );
+    expect(css).toMatch(
+      /\.cs-nav-chevron\[aria-expanded="true"\]\s*\+\s*\.cs-nav-dropdown-menu/,
     );
   });
-});
 
-describe('Nav.css - mobile drawer styling inside the breakpoint', () => {
-  it('the mobile media query stacks .cs-nav-links vertically', () => {
+  it('preserves desktop hover / focus-within reveal of the dropdown menu', () => {
+    const css = readCss();
+    expect(css).toMatch(
+      /\.cs-nav-dropdown:hover\s+\.cs-nav-dropdown-menu[\s\S]*?\.cs-nav-dropdown:focus-within\s+\.cs-nav-dropdown-menu/,
+    );
+  });
+
+  it('rotates the chevron 180deg when its aria-expanded is true at mobile width', () => {
     const css = readCss();
     const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
     expect(block).toMatch(
-      /\.cs-nav-links\s*\{[^}]*flex-direction:\s*column/,
+      /\.cs-nav-chevron\[aria-expanded="true"\]\s*\{[^}]*transform:\s*rotate\(180deg\)/,
     );
   });
 
-  it('the mobile media query paints .cs-nav-drawer with --cs-nav-drawer-surface', () => {
+  it('the chevron is drawn via mask-image so it recolors via --cs-nav-chevron-color', () => {
     const css = readCss();
-    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
-    expect(block).toMatch(
-      /\.cs-nav-drawer\b[^{]*\{[^}]*background-color:\s*var\(--cs-nav-drawer-surface/,
+    expect(css).toMatch(
+      /\.cs-nav-chevron\s*\{[\s\S]*?mask-image:\s*url\(/,
+    );
+    expect(css).toMatch(
+      /\.cs-nav-chevron\s*\{[\s\S]*?background-color:\s*var\(--cs-nav-chevron-color/,
     );
   });
 
-  it('the mobile media query draws the .cs-nav-chevron via mask-image', () => {
+  it('prefers-reduced-motion zeroes the chevron transition duration', () => {
     const css = readCss();
-    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
-    // Mask-image on a token-colored background lets the chevron recolor
-    // with --cs-nav-chevron-color and ships zero asset bytes (the SVG is
-    // an inline data URI).
-    expect(block).toMatch(
-      /\.cs-nav-chevron\s*\{[^}]*mask-image:\s*url\(/,
-    );
-    expect(block).toMatch(
-      /\.cs-nav-chevron\s*\{[^}]*background-color:\s*var\(--cs-nav-chevron-color/,
-    );
-  });
-
-  it('the mobile media query rotates the chevron when its <details> is open', () => {
-    const css = readCss();
-    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
-    expect(block).toMatch(
-      /details\[open\][^{]*\.cs-nav-chevron\s*\{[^}]*transform:\s*rotate\(180deg\)/,
-    );
-  });
-
-  it('the mobile media query gives .cs-nav-toggle and .cs-nav-chevron a 44px floor (WCAG 2.5.5)', () => {
-    const css = readCss();
-    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
-    // Tap targets via the tokenized chevron size; the package fallback
-    // pins the WCAG floor regardless of theme.
-    expect(block).toMatch(
-      /\.cs-nav-chevron\s*\{[\s\S]*?width:\s*var\(--cs-nav-chevron-size,\s*2\.75rem\)/,
-    );
-    expect(block).toMatch(
-      /\.cs-nav-chevron\s*\{[\s\S]*?height:\s*var\(--cs-nav-chevron-size,\s*2\.75rem\)/,
-    );
-  });
-});
-
-describe('Nav.css - drawer animation', () => {
-  it('the drawer panel transitions height with allow-discrete', () => {
-    const css = readCss();
-    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
-    // interpolate-size + allow-discrete is the modern combo for animating
-    // height from 0 to auto and bridging the discrete content-visibility
-    // jump between closed and open states.
-    expect(block).toMatch(
-      /\.cs-nav-drawer\s*>\s*nav\s*\{[\s\S]*?interpolate-size:\s*allow-keywords/,
-    );
-    expect(block).toMatch(
-      /\.cs-nav-drawer\s*>\s*nav\s*\{[\s\S]*?allow-discrete/,
-    );
-  });
-
-  it('inner dropdown menus transition height with allow-discrete', () => {
-    const css = readCss();
-    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
-    expect(block).toMatch(
-      /details\s*>\s*\.cs-nav-dropdown-menu\s*\{[\s\S]*?interpolate-size:\s*allow-keywords/,
-    );
-  });
-
-  it('prefers-reduced-motion zeroes drawer + accordion transition durations', () => {
-    const css = readCss();
-    // Match the reduce block at any position in the file. Inside it, the
-    // drawer panel and inner accordion menu both get transition-duration: 0s.
     const reduce = extractMediaBlock(css, 'prefers-reduced-motion', 'reduce');
     expect(reduce).toMatch(/transition-duration:\s*0\.01ms/);
   });
@@ -423,26 +324,16 @@ describe('theme/theme.css - nav drawer tokens', () => {
 
 describe('Nav dropdown menu alignment token', () => {
   it('theme/theme.css declares --cs-nav-dropdown-menu-align with default center', () => {
-    // The token controls horizontal placement of the desktop dropdown menu
-    // relative to its trigger. Legal values: left | center | right. Default
-    // center preserves the historical placement, so existing themes don't
-    // shift visually when this token is introduced.
     expect(readTheme()).toMatch(/--cs-nav-dropdown-menu-align:\s*center/);
   });
 
   it('Nav.css overrides placement for the left keyword via @container style query', () => {
-    // Style queries walk the inheritance chain checking the custom property
-    // value, so no container-type ancestor is needed. The left override
-    // anchors the menu's left edge to the trigger.
     expect(readCss()).toMatch(
       /@container\s+style\(--cs-nav-dropdown-menu-align:\s*left\)/,
     );
   });
 
   it('Nav.css overrides placement for the right keyword via @container style query', () => {
-    // Mirror of the left override. Anchors the menu's right edge to the
-    // trigger so menus near the right edge of the nav don't clip the
-    // viewport.
     expect(readCss()).toMatch(
       /@container\s+style\(--cs-nav-dropdown-menu-align:\s*right\)/,
     );

@@ -29,56 +29,69 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
   </a>
   <div class="cs-header-actions">
     {nav.length > 0 && (
-      <details class="cs-nav-drawer">
-        <summary class="cs-nav-toggle" aria-label="Menu">
+      <>
+        <button
+          type="button"
+          class="cs-nav-toggle"
+          aria-expanded="false"
+          aria-controls="cs-nav-main"
+          aria-label="Menu"
+        >
           <span class="cs-nav-toggle-icon" aria-hidden="true"></span>
-        </summary>
-        <nav aria-label="Main">
+        </button>
+        <nav id="cs-nav-main" class="cs-nav-drawer" aria-label="Main">
           <ul class="cs-nav-links">
             {nav.map((item) => (
               item.children ? (
                 item.href ? (
                   <li class="cs-nav-dropdown cs-nav-dropdown-combo">
-                    <details name="cs-nav-accordion">
-                      <a
-                        href={item.href}
-                        class="cs-nav-dropdown-link"
-                        {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
-                      >
-                        {item.label}
-                      </a>
-                      <summary class="cs-nav-chevron" aria-label={`Toggle ${item.label} submenu`}></summary>
-                      <ul class="cs-nav-dropdown-menu">
-                        {item.children.map((child) => (
-                          <li>
-                            <a
-                              href={child.href}
-                              {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
-                            >
-                              {child.label}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
+                    <a
+                      href={item.href}
+                      class="cs-nav-dropdown-link"
+                      {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
+                    >
+                      {item.label}
+                    </a>
+                    <button
+                      type="button"
+                      class="cs-nav-chevron"
+                      aria-expanded="false"
+                      aria-label={`Toggle ${item.label} submenu`}
+                    ></button>
+                    <ul class="cs-nav-dropdown-menu">
+                      {item.children.map((child) => (
+                        <li>
+                          <a
+                            href={child.href}
+                            {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 ) : (
                   <li class="cs-nav-dropdown">
-                    <details name="cs-nav-accordion">
-                      <summary class="cs-nav-dropdown-trigger">{item.label}</summary>
-                      <ul class="cs-nav-dropdown-menu">
-                        {item.children.map((child) => (
-                          <li>
-                            <a
-                              href={child.href}
-                              {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
-                            >
-                              {child.label}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
+                    <button
+                      type="button"
+                      class="cs-nav-dropdown-trigger"
+                      aria-expanded="false"
+                    >
+                      {item.label}
+                    </button>
+                    <ul class="cs-nav-dropdown-menu">
+                      {item.children.map((child) => (
+                        <li>
+                          <a
+                            href={child.href}
+                            {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 )
               ) : (
@@ -94,7 +107,7 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
             ))}
           </ul>
         </nav>
-      </details>
+      </>
     )}
     {priceMap && currency && (
       <CartWidget priceMap={priceMap} disabledSkus={disabledSkus} currency={currency} />
@@ -103,24 +116,46 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
 </header>
 
 <script>
-  // Drawer behavior for the mobile nav. Three responsibilities, all
-  // scoped to <details class="cs-nav-drawer">. Inner per-item <details>
-  // are handled natively (exclusive via name=, auto-close when the
-  // parent drawer closes), so this script does not touch them.
-  //
-  // 1. Escape closes the open drawer.
-  // 2. pointerdown outside the drawer closes it (touch + mouse unified).
-  // 3. On open, scroll the drawer into view (block: 'nearest' avoids
-  //    unnecessary jumps when it is already in frame).
-  document.querySelectorAll<HTMLDetailsElement>('details.cs-nav-drawer').forEach((drawer) => {
+  const toggle = document.querySelector<HTMLButtonElement>('.cs-nav-toggle');
+  const drawer = document.querySelector<HTMLElement>('.cs-nav-drawer');
+  const dropdowns = document.querySelectorAll<HTMLButtonElement>(
+    '.cs-nav-dropdown-trigger, .cs-nav-chevron',
+  );
+
+  function setExpanded(btn: HTMLButtonElement, value: boolean) {
+    btn.setAttribute('aria-expanded', value ? 'true' : 'false');
+  }
+
+  function isExpanded(btn: HTMLButtonElement) {
+    return btn.getAttribute('aria-expanded') === 'true';
+  }
+
+  if (toggle && drawer) {
+    toggle.addEventListener('click', () => {
+      const next = !isExpanded(toggle);
+      setExpanded(toggle, next);
+      if (next) drawer.scrollIntoView({ block: 'nearest' });
+    });
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && drawer.open) drawer.open = false;
+      if (e.key === 'Escape' && isExpanded(toggle)) setExpanded(toggle, false);
     });
+
     document.addEventListener('pointerdown', (e) => {
-      if (drawer.open && !drawer.contains(e.target as Node)) drawer.open = false;
+      if (!isExpanded(toggle)) return;
+      const target = e.target as Node;
+      if (toggle.contains(target) || drawer.contains(target)) return;
+      setExpanded(toggle, false);
     });
-    drawer.addEventListener('toggle', () => {
-      if (drawer.open) drawer.scrollIntoView({ block: 'nearest' });
+  }
+
+  dropdowns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = !isExpanded(btn);
+      dropdowns.forEach((other) => {
+        if (other !== btn) setExpanded(other, false);
+      });
+      setExpanded(btn, next);
     });
   });
 </script>
