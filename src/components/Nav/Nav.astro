@@ -101,3 +101,26 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
     )}
   </div>
 </header>
+
+<script>
+  // Drawer behavior for the mobile nav. Three responsibilities, all
+  // scoped to <details class="cs-nav-drawer">. Inner per-item <details>
+  // are handled natively (exclusive via name=, auto-close when the
+  // parent drawer closes), so this script does not touch them.
+  //
+  // 1. Escape closes the open drawer.
+  // 2. pointerdown outside the drawer closes it (touch + mouse unified).
+  // 3. On open, scroll the drawer into view (block: 'nearest' avoids
+  //    unnecessary jumps when it is already in frame).
+  document.querySelectorAll<HTMLDetailsElement>('details.cs-nav-drawer').forEach((drawer) => {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.open) drawer.open = false;
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (drawer.open && !drawer.contains(e.target as Node)) drawer.open = false;
+    });
+    drawer.addEventListener('toggle', () => {
+      if (drawer.open) drawer.scrollIntoView({ block: 'nearest' });
+    });
+  });
+</script>

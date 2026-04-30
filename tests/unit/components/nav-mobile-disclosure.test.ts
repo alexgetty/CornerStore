@@ -194,6 +194,54 @@ describe('Nav.astro - aria-current contract through the drawer', () => {
   });
 });
 
+describe('Nav.astro - inline script for drawer behavior', () => {
+  it('binds a keydown Escape handler that closes .cs-nav-drawer', () => {
+    const out = readAstro();
+    // Escape closes the open drawer. The handler is scoped to drawers
+    // querySelected at script-load time, and only acts when the drawer
+    // is open. Match the structural shape: addEventListener('keydown',
+    // ...) with an Escape check and drawer.open = false.
+    expect(out).toMatch(
+      /addEventListener\(\s*['"]keydown['"][\s\S]*?Escape[\s\S]*?drawer\.open\s*=\s*false/,
+    );
+  });
+
+  it('binds a pointerdown click-outside handler that closes .cs-nav-drawer', () => {
+    const out = readAstro();
+    // Click-outside on touch + mouse: pointerdown is the unified primitive.
+    // The handler must check that the drawer contains() the target before
+    // closing - clicks INSIDE the drawer should NOT close it (otherwise
+    // tapping a nav link to navigate would close the drawer mid-navigation
+    // and feel broken).
+    expect(out).toMatch(
+      /addEventListener\(\s*['"]pointerdown['"][\s\S]*?drawer\.contains\([^)]+\)[\s\S]*?drawer\.open\s*=\s*false/,
+    );
+  });
+
+  it('scrolls the drawer into view on open via the toggle event', () => {
+    const out = readAstro();
+    // When the user opens a long drawer mid-scroll, the open state is
+    // visually below the fold. Native <details> does not auto-scroll;
+    // we add scrollIntoView({ block: 'nearest' }) on the toggle event.
+    // 'nearest' avoids unnecessary jumps when the drawer is already in
+    // view.
+    expect(out).toMatch(
+      /addEventListener\(\s*['"]toggle['"][\s\S]*?drawer\.open[\s\S]*?scrollIntoView\(\s*\{\s*block:\s*['"]nearest['"]\s*\}\s*\)/,
+    );
+  });
+
+  it('the script lives inline in Nav.astro (not a separate module)', () => {
+    const out = readAstro();
+    // Tightly coupled to the markup it operates on; keeping it inline
+    // makes the contract obvious and avoids a separate file the build
+    // would have to ship to the static output. Verify a <script> tag
+    // is present and contains the drawer query selector.
+    expect(out).toMatch(
+      /<script>[\s\S]*?querySelectorAll(?:<[^>]+>)?\(\s*['"]details\.cs-nav-drawer['"]\s*\)[\s\S]*?<\/script>/,
+    );
+  });
+});
+
 describe('theme/theme.css - nav drawer tokens', () => {
   it.each([
     '--cs-nav-drawer-surface',
