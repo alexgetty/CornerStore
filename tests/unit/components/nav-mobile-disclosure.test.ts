@@ -65,7 +65,7 @@ const MOBILE_BREAKPOINT_LITERAL = '40rem';
  */
 function extractMediaBlock(
   css: string,
-  feature: 'max-width' | 'min-width',
+  feature: 'max-width' | 'min-width' | 'prefers-reduced-motion',
   value: string,
 ): string {
   const escaped = value.replace(/\./g, '\\.');
@@ -372,6 +372,38 @@ describe('Nav.css - mobile drawer styling inside the breakpoint', () => {
     expect(block).toMatch(
       /\.cs-nav-chevron\s*\{[\s\S]*?height:\s*var\(--cs-nav-chevron-size,\s*2\.75rem\)/,
     );
+  });
+});
+
+describe('Nav.css - drawer animation', () => {
+  it('the drawer panel transitions height with allow-discrete', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    // interpolate-size + allow-discrete is the modern combo for animating
+    // height from 0 to auto and bridging the discrete content-visibility
+    // jump between closed and open states.
+    expect(block).toMatch(
+      /\.cs-nav-drawer\s*>\s*nav\s*\{[\s\S]*?interpolate-size:\s*allow-keywords/,
+    );
+    expect(block).toMatch(
+      /\.cs-nav-drawer\s*>\s*nav\s*\{[\s\S]*?allow-discrete/,
+    );
+  });
+
+  it('inner dropdown menus transition height with allow-discrete', () => {
+    const css = readCss();
+    const block = extractMediaBlock(css, 'max-width', MOBILE_BREAKPOINT_LITERAL);
+    expect(block).toMatch(
+      /details\s*>\s*\.cs-nav-dropdown-menu\s*\{[\s\S]*?interpolate-size:\s*allow-keywords/,
+    );
+  });
+
+  it('prefers-reduced-motion zeroes drawer + accordion transition durations', () => {
+    const css = readCss();
+    // Match the reduce block at any position in the file. Inside it, the
+    // drawer panel and inner accordion menu both get transition-duration: 0s.
+    const reduce = extractMediaBlock(css, 'prefers-reduced-motion', 'reduce');
+    expect(reduce).toMatch(/transition-duration:\s*0\.01ms/);
   });
 });
 

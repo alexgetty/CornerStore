@@ -317,5 +317,40 @@
     .cs-nav-dropdown details[open] .cs-nav-chevron {
       transform: rotate(180deg);
     }
+
+    /* Animation: interpolate-size lets us transition height from 0 to auto.
+       transition-behavior: allow-discrete bridges the content-visibility
+       discrete jump between closed and open states. */
+    .cs-nav-drawer > nav {
+      interpolate-size: allow-keywords;
+      height: 0;
+      overflow: hidden;
+      transition: height var(--cs-nav-animation-duration, 0.2s) ease,
+                  content-visibility var(--cs-nav-animation-duration, 0.2s) allow-discrete;
+    }
+
+    .cs-nav-drawer[open] > nav {
+      height: auto;
+    }
+
+    .cs-nav-dropdown details > .cs-nav-dropdown-menu {
+      interpolate-size: allow-keywords;
+      height: 0;
+      overflow: hidden;
+      transition: height var(--cs-nav-animation-duration, 0.2s) ease,
+                  content-visibility var(--cs-nav-animation-duration, 0.2s) allow-discrete;
+    }
+
+    .cs-nav-dropdown details[open] > .cs-nav-dropdown-menu {
+      height: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cs-nav-drawer > nav,
+    .cs-nav-dropdown details > .cs-nav-dropdown-menu,
+    .cs-nav-chevron {
+      transition-duration: 0.01ms;
+    }
   }
 }
