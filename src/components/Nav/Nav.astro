@@ -37,33 +37,50 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
           <ul class="cs-nav-links">
             {nav.map((item) => (
               item.children ? (
-                <li class="cs-nav-dropdown">
-                  {item.href ? (
-                    <a
-                      href={item.href}
-                      class="cs-nav-dropdown-trigger"
-                      {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
-                    >
-                      {item.label}
-                    </a>
-                  ) : (
-                    <button type="button" class="cs-nav-dropdown-trigger">
-                      {item.label}
-                    </button>
-                  )}
-                  <ul class="cs-nav-dropdown-menu">
-                    {item.children.map((child) => (
-                      <li>
-                        <a
-                          href={child.href}
-                          {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
-                        >
-                          {child.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
+                item.href ? (
+                  <li class="cs-nav-dropdown cs-nav-dropdown-combo">
+                    <details name="cs-nav-accordion">
+                      <a
+                        href={item.href}
+                        class="cs-nav-dropdown-link"
+                        {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
+                      >
+                        {item.label}
+                      </a>
+                      <summary class="cs-nav-chevron" aria-label={`Toggle ${item.label} submenu`}></summary>
+                      <ul class="cs-nav-dropdown-menu">
+                        {item.children.map((child) => (
+                          <li>
+                            <a
+                              href={child.href}
+                              {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
+                            >
+                              {child.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </li>
+                ) : (
+                  <li class="cs-nav-dropdown">
+                    <details name="cs-nav-accordion">
+                      <summary class="cs-nav-dropdown-trigger">{item.label}</summary>
+                      <ul class="cs-nav-dropdown-menu">
+                        {item.children.map((child) => (
+                          <li>
+                            <a
+                              href={child.href}
+                              {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
+                            >
+                              {child.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </li>
+                )
               ) : (
                 <li>
                   <a

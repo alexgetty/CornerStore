@@ -96,6 +96,70 @@ describe('Nav.astro - top-level <details> drawer wraps the nav', () => {
   });
 });
 
+describe('Nav.astro - inner per-item accordion (exclusive via name=)', () => {
+  it('dropdown-only items (children, no href) render as <details><summary>label</summary>', () => {
+    const out = readAstro();
+    // Source pattern in the JSX: when item has children and no href, the
+    // item branch renders a <details name="cs-nav-accordion"> containing a
+    // <summary class="cs-nav-dropdown-trigger"> with the label expression
+    // {item.label}, followed by the existing <ul class="cs-nav-dropdown-menu">.
+    // No <button> or <a> trigger.
+    expect(out).toMatch(
+      /<details\s+name="cs-nav-accordion">\s*<summary[^>]*\bclass="cs-nav-dropdown-trigger"[^>]*>\s*\{item\.label\}\s*<\/summary>/,
+    );
+  });
+
+  it('combo items (children + href) render <a> as label and sibling <summary> as chevron (Pattern A)', () => {
+    const out = readAstro();
+    // The combo branch uses an <a class="cs-nav-dropdown-link"> for the
+    // visible label (link tap navigates) and a sibling <summary
+    // class="cs-nav-chevron"> as the toggle (chevron tap opens submenu).
+    // Both live inside the same <details name="cs-nav-accordion">. Match
+    // class and href in either attribute order.
+    expect(out).toMatch(
+      /<details\s+name="cs-nav-accordion">[\s\S]*?<a\s[^>]*\bclass="cs-nav-dropdown-link"[\s\S]*?<\/a>[\s\S]*?<summary[^>]*\bclass="cs-nav-chevron"/,
+    );
+    expect(out).toMatch(
+      /<a\s[^>]*\bclass="cs-nav-dropdown-link"[^>]*\bhref=\{item\.href\}|<a\s[^>]*\bhref=\{item\.href\}[^>]*\bclass="cs-nav-dropdown-link"/,
+    );
+  });
+
+  it('combo items wrap in <li class="cs-nav-dropdown cs-nav-dropdown-combo">', () => {
+    const out = readAstro();
+    // The combo modifier class scopes the desktop chevron-hide and the
+    // mobile flex-row layout. Pinning the class here keeps that scope
+    // contract intact even when JSX reflows.
+    expect(out).toMatch(/<li\s+class="cs-nav-dropdown cs-nav-dropdown-combo">/);
+  });
+
+  it('combo chevron <summary> carries aria-label="Toggle {label} submenu"', () => {
+    const out = readAstro();
+    // The chevron is icon-only. Its accessible name comes from aria-label
+    // and includes the parent label so a screen reader user knows which
+    // submenu the toggle controls. Match the templated form.
+    expect(out).toMatch(
+      /<summary[^>]*\bclass="cs-nav-chevron"[^>]*\baria-label=\{`Toggle \$\{item\.label\} submenu`\}/,
+    );
+  });
+
+  it('every inner <details> carries name="cs-nav-accordion" for native exclusivity', () => {
+    const out = readAstro();
+    // Two inner branches (dropdown-only + combo). Both must carry the
+    // shared name. The browser handles exclusivity: opening one closes
+    // the others. Zero JS cost for the exclusive behavior.
+    const inner = out.match(/<details\s+name="cs-nav-accordion">/g) ?? [];
+    expect(inner.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('regression: the legacy <button class="cs-nav-dropdown-trigger"> trigger is gone', () => {
+    const out = readAstro();
+    // The button-based trigger is replaced by <summary> for native
+    // disclosure semantics. Pin the absence so a future revert can't
+    // sneak it back in.
+    expect(out).not.toMatch(/<button[^>]*\bclass="cs-nav-dropdown-trigger"/);
+  });
+});
+
 describe('theme/theme.css - nav drawer tokens', () => {
   it.each([
     '--cs-nav-drawer-surface',
