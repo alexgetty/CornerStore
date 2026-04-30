@@ -255,3 +255,31 @@ describe('theme/theme.css - nav drawer tokens', () => {
     expect(readTheme()).toMatch(re);
   });
 });
+
+describe('Nav dropdown menu alignment token', () => {
+  it('theme/theme.css declares --cs-nav-dropdown-menu-align with default center', () => {
+    // The token controls horizontal placement of the desktop dropdown menu
+    // relative to its trigger. Legal values: left | center | right. Default
+    // center preserves the historical placement, so existing themes don't
+    // shift visually when this token is introduced.
+    expect(readTheme()).toMatch(/--cs-nav-dropdown-menu-align:\s*center/);
+  });
+
+  it('Nav.css overrides placement for the left keyword via @container style query', () => {
+    // Style queries walk the inheritance chain checking the custom property
+    // value, so no container-type ancestor is needed. The left override
+    // anchors the menu's left edge to the trigger.
+    expect(readCss()).toMatch(
+      /@container\s+style\(--cs-nav-dropdown-menu-align:\s*left\)/,
+    );
+  });
+
+  it('Nav.css overrides placement for the right keyword via @container style query', () => {
+    // Mirror of the left override. Anchors the menu's right edge to the
+    // trigger so menus near the right edge of the nav don't clip the
+    // viewport.
+    expect(readCss()).toMatch(
+      /@container\s+style\(--cs-nav-dropdown-menu-align:\s*right\)/,
+    );
+  });
+});

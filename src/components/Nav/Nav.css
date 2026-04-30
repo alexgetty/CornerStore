@@ -95,6 +95,7 @@
     position: absolute;
     top: 100%;
     left: 50%;
+    right: auto;
     transform: translateX(-50%);
     flex-direction: column;
     padding-top: var(--cs-nav-dropdown-menu-padding-y, 0);
@@ -138,5 +139,21 @@
     outline-style: solid;
     outline-color: var(--cs-focus-color, currentColor);
     outline-offset: var(--cs-focus-offset, 2px);
+  }
+
+  @container style(--cs-nav-dropdown-menu-align: left) {
+    .cs-nav-dropdown-menu {
+      left: 0;
+      right: auto;
+      transform: none;
+    }
+  }
+
+  @container style(--cs-nav-dropdown-menu-align: right) {
+    .cs-nav-dropdown-menu {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
   }
 }
