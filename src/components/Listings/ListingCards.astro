@@ -36,6 +36,7 @@ const isWholesale = wholesaleMargin != null;
             data-moq={listing.moq ?? ''}
             data-currency={listing.currency}
             data-status={listing.status ?? ''}
+            data-images={listing.images.length > 0 ? JSON.stringify(listing.images) : undefined}
           >
             <figure class="cs-listing-image">
               {
