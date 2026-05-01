@@ -248,6 +248,21 @@
      spacing between top and bottom lines (the middle line is centered). */
   --cs-nav-toggle-icon-width: 1.25rem;
   --cs-nav-toggle-icon-height: 0.875rem;
+  /* Inline chevron next to a dropdown trigger label (em-relative so it
+     scales with the surrounding text). Used both via ::after on the
+     dropdown-only trigger and on the combo chevron at desktop width. */
+  --cs-nav-chevron-inline-width: 0.75em;
+  --cs-nav-chevron-inline-height: 0.5em;
+  --cs-nav-chevron-inline-gap: 0.375em;
+  /* Mobile drawer: big fat rows, generous tap targets, large text. The
+     drawer fills the viewport below the sticky header; the toggle morphs
+     into an X to close. The header height is published live to
+     --cs-header-height by Nav.astro's inline script. */
+  --cs-nav-mobile-row-gap: 0.5rem;
+  --cs-nav-mobile-row-min-height: 3.5rem;
+  --cs-nav-mobile-row-padding-y: 0.75rem;
+  --cs-nav-mobile-text-size: var(--cs-text-5);
+  --cs-nav-mobile-submenu-indent: 1.5rem;
   /* Drawer + per-item-dropdown open/close height transition duration.
      Skipped under prefers-reduced-motion: reduce. */
   --cs-nav-animation-duration: 0.2s;

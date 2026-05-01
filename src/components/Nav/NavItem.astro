@@ -1,0 +1,83 @@
+---
+import type { ResolvedNavItem } from "../../lib/storefront";
+import { slugify } from "../../lib/storefront/slugify.js";
+
+interface Props {
+  item: ResolvedNavItem;
+  currentPath?: string;
+  normalizedCurrentPath?: string;
+  index?: number;
+}
+
+const { item, normalizedCurrentPath, index = 0 } = Astro.props;
+
+function normalizePath(p: string): string {
+  return p === '/' ? p : p.replace(/\/$/, '');
+}
+
+const { label, href, children } = item;
+const hasChildren = Array.isArray(children) && children.length > 0;
+const menuId = `cs-nav-menu-${slugify(label)}-${index}`;
+
+const labelIsCurrent =
+  href !== undefined &&
+  normalizedCurrentPath !== undefined &&
+  normalizedCurrentPath === normalizePath(href);
+---
+
+<li
+  class:list={["cs-nav-item", { "cs-nav-has-children": hasChildren }]}
+>
+  <div class="cs-nav-row">
+    {href ? (
+      <a
+        class="cs-nav-label"
+        href={href}
+        {...(labelIsCurrent ? { "aria-current": "page" as const } : {})}
+      >
+        {label}
+      </a>
+    ) : hasChildren ? (
+      <button
+        type="button"
+        class="cs-nav-label"
+        aria-expanded="false"
+        aria-controls={menuId}
+      >
+        {label}
+      </button>
+    ) : (
+      <span class="cs-nav-label">{label}</span>
+    )}
+    {hasChildren && (
+      <button
+        type="button"
+        class="cs-nav-chevron"
+        aria-expanded="false"
+        aria-controls={menuId}
+        aria-label={`Toggle ${label} submenu`}
+      ></button>
+    )}
+  </div>
+  {hasChildren && (
+    <ul id={menuId} class="cs-nav-dropdown-menu">
+      {children!.map((child) => {
+        const childIsCurrent =
+          child.href !== undefined &&
+          normalizedCurrentPath !== undefined &&
+          normalizedCurrentPath === normalizePath(child.href ?? '');
+        return (
+          <li>
+            <a
+              href={child.href}
+              class="cs-nav-submenu-link"
+              {...(childIsCurrent ? { "aria-current": "page" as const } : {})}
+            >
+              {child.label}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  )}
+</li>

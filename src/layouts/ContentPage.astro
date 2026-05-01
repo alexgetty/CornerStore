@@ -33,7 +33,7 @@ for (const listing of listings) {
 ---
 
 <Base title={`${title} — ${config.name}`} description={description}>
-  <Nav storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} priceMap={priceMap} disabledSkus={disabledSkus} currency={DEFAULT_CURRENCY} />
+  <Nav slot="header" storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} priceMap={priceMap} disabledSkus={disabledSkus} currency={DEFAULT_CURRENCY} />
   <main id="main-content">
     <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
     <slot />

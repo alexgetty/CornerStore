@@ -11,10 +11,21 @@
  * so the package never silently breaks if a consumer's theme omits a token.
  */
 @layer package {
+  /* Body fills the viewport and never scrolls itself. Scroll lives inside
+     .cs-page-scroll so the sticky header is OUT of the scroll container -
+     the scrollbar starts below the header instead of running its full
+     height. */
   body {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .cs-page-scroll {
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   header,

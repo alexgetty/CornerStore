@@ -44,6 +44,9 @@ if (themeExists) {
   </head>
   <body>
     <a href="#main-content" class="cs-skip-link">Skip to main content</a>
-    <slot />
+    <slot name="header" />
+    <div class="cs-page-scroll">
+      <slot />
+    </div>
   </body>
 </html>

@@ -1,6 +1,7 @@
 ---
 import "./Nav.css";
 import CartWidget from "../CartWidget/CartWidget.astro";
+import NavItem from "./NavItem.astro";
 import type { ResolvedNavItem } from "../../lib/storefront";
 
 interface Props {
@@ -29,133 +30,125 @@ const normalizedCurrentPath = currentPath ? normalizePath(currentPath) : undefin
   </a>
   <div class="cs-header-actions">
     {nav.length > 0 && (
-      <>
-        <button
-          type="button"
-          class="cs-nav-toggle"
-          aria-expanded="false"
-          aria-controls="cs-nav-main"
-          aria-label="Menu"
-        >
-          <span class="cs-nav-toggle-icon" aria-hidden="true"></span>
-        </button>
-        <nav id="cs-nav-main" class="cs-nav-drawer" aria-label="Main">
-          <ul class="cs-nav-links">
-            {nav.map((item) => (
-              item.children ? (
-                item.href ? (
-                  <li class="cs-nav-dropdown cs-nav-dropdown-combo">
-                    <a
-                      href={item.href}
-                      class="cs-nav-dropdown-link"
-                      {...(normalizedCurrentPath === normalizePath(item.href) ? { "aria-current": "page" as const } : {})}
-                    >
-                      {item.label}
-                    </a>
-                    <button
-                      type="button"
-                      class="cs-nav-chevron"
-                      aria-expanded="false"
-                      aria-label={`Toggle ${item.label} submenu`}
-                    ></button>
-                    <ul class="cs-nav-dropdown-menu">
-                      {item.children.map((child) => (
-                        <li>
-                          <a
-                            href={child.href}
-                            {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
-                          >
-                            {child.label}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ) : (
-                  <li class="cs-nav-dropdown">
-                    <button
-                      type="button"
-                      class="cs-nav-dropdown-trigger"
-                      aria-expanded="false"
-                    >
-                      {item.label}
-                    </button>
-                    <ul class="cs-nav-dropdown-menu">
-                      {item.children.map((child) => (
-                        <li>
-                          <a
-                            href={child.href}
-                            {...(normalizedCurrentPath === normalizePath(child.href ?? '') ? { "aria-current": "page" as const } : {})}
-                          >
-                            {child.label}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                )
-              ) : (
-                <li>
-                  <a
-                    href={item.href}
-                    {...(normalizedCurrentPath === normalizePath(item.href ?? '') ? { "aria-current": "page" as const } : {})}
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              )
-            ))}
-          </ul>
-        </nav>
-      </>
+      <nav id="cs-nav-main" class="cs-nav-drawer" aria-label="Main">
+        <ul class="cs-nav-links">
+          {nav.map((item, index) => (
+            <NavItem
+              item={item}
+              normalizedCurrentPath={normalizedCurrentPath}
+              index={index}
+            />
+          ))}
+        </ul>
+      </nav>
     )}
     {priceMap && currency && (
       <CartWidget priceMap={priceMap} disabledSkus={disabledSkus} currency={currency} />
+    )}
+    {nav.length > 0 && (
+      <button
+        type="button"
+        class="cs-nav-toggle"
+        aria-expanded="false"
+        aria-controls="cs-nav-main"
+        aria-label="Menu"
+      >
+        <span class="cs-nav-toggle-icon" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
     )}
   </div>
 </header>
 
 <script>
+  const header = document.querySelector<HTMLElement>('.cs-header');
   const toggle = document.querySelector<HTMLButtonElement>('.cs-nav-toggle');
   const drawer = document.querySelector<HTMLElement>('.cs-nav-drawer');
-  const dropdowns = document.querySelectorAll<HTMLButtonElement>(
-    '.cs-nav-dropdown-trigger, .cs-nav-chevron',
+  // Every disclosure participant: chevron buttons + label-buttons that
+  // carry aria-expanded (the unlinked-parent variant).
+  const disclosureToggles = document.querySelectorAll<HTMLButtonElement>(
+    '.cs-nav-chevron, .cs-nav-label[aria-expanded]',
   );
 
-  function setExpanded(btn: HTMLButtonElement, value: boolean) {
+  function setExpanded(btn: HTMLElement, value: boolean) {
     btn.setAttribute('aria-expanded', value ? 'true' : 'false');
   }
 
-  function isExpanded(btn: HTMLButtonElement) {
+  function isExpanded(btn: HTMLElement) {
     return btn.getAttribute('aria-expanded') === 'true';
+  }
+
+  // Publish the live header height so the mobile drawer can start exactly
+  // below the sticky header. Updated on resize and when the ResizeObserver
+  // sees the header itself change (theme tweaks, font load, etc).
+  if (header) {
+    const publish = () => {
+      document.documentElement.style.setProperty(
+        '--cs-header-height',
+        `${header.offsetHeight}px`,
+      );
+    };
+    publish();
+    window.addEventListener('resize', publish);
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(publish).observe(header);
+    }
   }
 
   if (toggle && drawer) {
     toggle.addEventListener('click', () => {
       const next = !isExpanded(toggle);
       setExpanded(toggle, next);
-      if (next) drawer.scrollIntoView({ block: 'nearest' });
+      // Symmetric open/close: opening force-expands every disclosure so the
+      // drawer renders all submenus, closing force-collapses them so the
+      // off-screen DOM state stays honest. Without the close pass the next
+      // open re-fires the force-open over a stale aria-expanded="true".
+      disclosureToggles.forEach((btn) => setExpanded(btn, next));
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && isExpanded(toggle)) setExpanded(toggle, false);
-    });
-
-    document.addEventListener('pointerdown', (e) => {
-      if (!isExpanded(toggle)) return;
-      const target = e.target as Node;
-      if (toggle.contains(target) || drawer.contains(target)) return;
-      setExpanded(toggle, false);
+      if (e.key === 'Escape' && isExpanded(toggle)) {
+        setExpanded(toggle, false);
+        // Mirror the hamburger close: Escape must also reset every
+        // disclosure toggle, not just the drawer toggle, otherwise the
+        // chevrons stay aria-expanded="true" between presses.
+        disclosureToggles.forEach((btn) => setExpanded(btn, false));
+      }
     });
   }
 
-  dropdowns.forEach((btn) => {
+  disclosureToggles.forEach((btn) => {
     btn.addEventListener('click', () => {
       const next = !isExpanded(btn);
-      dropdowns.forEach((other) => {
-        if (other !== btn) setExpanded(other, false);
-      });
-      setExpanded(btn, next);
+      const controls = btn.getAttribute('aria-controls');
+      if (controls) {
+        // Sync every sibling toggle that controls the same menu so the
+        // chevron and label-button on a single row share state.
+        const siblings = document.querySelectorAll<HTMLElement>(
+          `[aria-controls="${controls}"]`,
+        );
+        siblings.forEach((el) => setExpanded(el, next));
+      } else {
+        setExpanded(btn, next);
+      }
     });
   });
+
+  // Crossing INTO desktop must clear any disclosure state left over from
+  // mobile. The hamburger handler force-opens every chevron + label-button
+  // when the drawer opens, and the desktop CSS reveal selector keys off
+  // chevron[aria-expanded="true"], so without this listener every dropdown
+  // pops open the moment the viewport widens past the breakpoint. Mobile
+  // entry intentionally does not reset: the hamburger handler reasserts
+  // the open-everything state on its next click.
+  const desktopQuery = window.matchMedia('(min-width: 40.001rem)');
+  function resetOnDesktopEntry(matches: boolean) {
+    if (!matches) return;
+    if (toggle) setExpanded(toggle, false);
+    disclosureToggles.forEach((btn) => setExpanded(btn, false));
+  }
+  desktopQuery.addEventListener('change', (e) => resetOnDesktopEntry(e.matches));
 </script>

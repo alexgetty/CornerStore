@@ -10,6 +10,7 @@
     border-bottom-style: solid;
     border-bottom-color: var(--cs-border-color, currentColor);
     background-color: var(--cs-header-surface, transparent);
+    z-index: 40;
   }
 
   .cs-store-name {
@@ -58,23 +59,43 @@
     display: block;
     width: var(--cs-nav-toggle-icon-width, 1.25rem);
     height: var(--cs-nav-toggle-icon-height, 0.875rem);
-    border-top-width: var(--cs-border-width-emphasis, 2px);
-    border-top-style: solid;
-    border-top-color: currentColor;
-    border-bottom-width: var(--cs-border-width-emphasis, 2px);
-    border-bottom-style: solid;
-    border-bottom-color: currentColor;
   }
 
-  .cs-nav-toggle-icon::before {
-    content: '';
+  .cs-nav-toggle-icon span {
     position: absolute;
-    top: 50%;
     left: 0;
-    right: 0;
+    width: 100%;
     height: var(--cs-border-width-emphasis, 2px);
     background-color: currentColor;
+    top: 50%;
+    transform-origin: center;
+    transition: transform var(--cs-nav-animation-duration, 0.2s) ease,
+                opacity var(--cs-nav-animation-duration, 0.2s) ease;
+  }
+
+  .cs-nav-toggle-icon span:nth-child(1) {
+    transform: translateY(calc(var(--cs-nav-toggle-icon-height, 0.875rem) / -2 + var(--cs-border-width-emphasis, 2px) / 2));
+  }
+
+  .cs-nav-toggle-icon span:nth-child(2) {
     transform: translateY(-50%);
+  }
+
+  .cs-nav-toggle-icon span:nth-child(3) {
+    transform: translateY(calc(var(--cs-nav-toggle-icon-height, 0.875rem) / 2 - var(--cs-border-width-emphasis, 2px) / 2 - 50%));
+  }
+
+  /* X state: top + bottom rotate to center, middle fades. */
+  .cs-nav-toggle[aria-expanded="true"] .cs-nav-toggle-icon span:nth-child(1) {
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .cs-nav-toggle[aria-expanded="true"] .cs-nav-toggle-icon span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .cs-nav-toggle[aria-expanded="true"] .cs-nav-toggle-icon span:nth-child(3) {
+    transform: translateY(-50%) rotate(-45deg);
   }
 
   .cs-nav-links {
@@ -82,34 +103,29 @@
     gap: var(--cs-nav-gap, 0);
   }
 
-  .cs-nav-links a {
-    font-size: var(--cs-text-3, inherit);
-    color: var(--cs-body-text-color, inherit);
-    text-decoration: none;
-    transition: color var(--cs-transition-fast, 0s);
-  }
-
-  .cs-nav-links a:hover {
-    color: var(--cs-heading-text-color, inherit);
-  }
-
-  .cs-nav-links a:focus-visible {
-    outline-width: var(--cs-focus-width, 2px);
-    outline-style: solid;
-    outline-color: var(--cs-focus-color, currentColor);
-    outline-offset: var(--cs-focus-offset, 2px);
-  }
-
-  .cs-nav-dropdown {
+  .cs-nav-item {
     position: relative;
   }
 
-  .cs-nav-dropdown-trigger,
-  .cs-nav-dropdown-link {
+  .cs-nav-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  /* Unified label styling. <a>, <button>, and <span> all theme through
+     .cs-nav-label so the row reads identically regardless of variant. */
+  .cs-nav-label {
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-body-text-color, inherit);
-    text-decoration: none;
     transition: color var(--cs-transition-fast, 0s);
+  }
+
+  /* The unlinked-parent variant is a real <button> (carries
+     aria-controls; the <a> and <span> variants do not). Strip the
+     browser's default button chrome so it renders as plain text matching
+     the <a> sibling. */
+  .cs-nav-label[aria-controls] {
     background-color: transparent;
     border-width: 0;
     padding-top: 0;
@@ -117,16 +133,15 @@
     padding-bottom: 0;
     padding-left: 0;
     font-family: inherit;
+    text-align: left;
     cursor: pointer;
   }
 
-  .cs-nav-dropdown-trigger:hover,
-  .cs-nav-dropdown-link:hover {
+  .cs-nav-label:hover {
     color: var(--cs-heading-text-color, inherit);
   }
 
-  .cs-nav-dropdown-trigger:focus-visible,
-  .cs-nav-dropdown-link:focus-visible {
+  .cs-nav-label:focus-visible {
     outline-width: var(--cs-focus-width, 2px);
     outline-style: solid;
     outline-color: var(--cs-focus-color, currentColor);
@@ -142,44 +157,30 @@
     padding-left: 0;
     cursor: pointer;
     flex: 0 0 auto;
-    width: var(--cs-nav-chevron-size, 2.75rem);
-    height: var(--cs-nav-chevron-size, 2.75rem);
+    width: var(--cs-nav-chevron-inline-width, 0.75em);
+    height: var(--cs-nav-chevron-inline-height, 0.5em);
+    margin-left: var(--cs-nav-chevron-inline-gap, 0.375em);
     mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
     -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='none' stroke='black' stroke-width='1.5' d='M1 1l5 5 5-5'/></svg>");
     mask-position: center;
     -webkit-mask-position: center;
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
-    mask-size: 1rem 1rem;
-    -webkit-mask-size: 1rem 1rem;
+    mask-size: contain;
+    -webkit-mask-size: contain;
+    vertical-align: middle;
     transition: transform var(--cs-nav-animation-duration, 0.2s) ease;
   }
 
   .cs-nav-dropdown-menu {
     display: none;
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
     flex-direction: column;
-    padding-top: var(--cs-nav-dropdown-menu-padding-y, 0);
-    padding-right: 0;
-    padding-bottom: var(--cs-nav-dropdown-menu-padding-y, 0);
-    padding-left: 0;
-    background-color: var(--cs-header-surface, var(--cs-surface-color, transparent));
-    border-width: var(--cs-border-width, 0);
-    border-style: solid;
-    border-color: var(--cs-border-color, currentColor);
-    border-radius: var(--cs-border-radius, 0);
-    min-width: var(--cs-nav-dropdown-menu-min-width, auto);
-    z-index: 10;
   }
 
-  .cs-nav-dropdown:hover .cs-nav-dropdown-menu,
-  .cs-nav-dropdown:focus-within .cs-nav-dropdown-menu,
-  .cs-nav-dropdown-trigger[aria-expanded="true"] + .cs-nav-dropdown-menu,
-  .cs-nav-chevron[aria-expanded="true"] + .cs-nav-dropdown-menu {
+  /* Click-driven reveal: the chevron lives inside .cs-nav-row, the menu
+     follows the row as a sibling. :has lets the row react to its own
+     chevron's aria state to drive the adjacent menu. */
+  .cs-nav-row:has(.cs-nav-chevron[aria-expanded="true"]) + .cs-nav-dropdown-menu {
     display: flex;
   }
 
@@ -187,8 +188,6 @@
     display: block;
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-body-text-color, inherit);
-    text-decoration: none;
-    white-space: nowrap;
     transition: color var(--cs-transition-fast, 0s);
     padding-top: var(--cs-nav-dropdown-link-padding-y, 0);
     padding-right: var(--cs-nav-dropdown-link-padding-x, 0);
@@ -230,7 +229,45 @@
     }
 
     .cs-nav-chevron {
-      display: none;
+      pointer-events: none;
+    }
+
+    .cs-nav-has-children:hover .cs-nav-chevron,
+    .cs-nav-has-children:focus-within .cs-nav-chevron {
+      transform: rotate(180deg);
+    }
+
+    .cs-nav-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      padding-top: var(--cs-nav-dropdown-menu-padding-y, 0);
+      padding-bottom: var(--cs-nav-dropdown-menu-padding-y, 0);
+      background-color: var(--cs-header-surface, transparent);
+      border-width: var(--cs-border-width, 0);
+      border-style: solid;
+      border-color: var(--cs-border-color, currentColor);
+      border-radius: var(--cs-border-radius, 0);
+      min-width: var(--cs-nav-dropdown-menu-min-width, auto);
+      z-index: 10;
+    }
+
+    .cs-nav-has-children:hover .cs-nav-dropdown-menu,
+    .cs-nav-has-children:focus-within .cs-nav-dropdown-menu {
+      display: flex;
+    }
+
+    /* The unlinked-parent <button class="cs-nav-label" aria-controls=...>
+       inherits cursor: pointer from the button-chrome reset. On desktop
+       the submenu opens via hover / focus-within, not click, so clicking
+       the label is a no-op for visible state. Use `default` (forced
+       arrow) instead of `auto` so the cursor never resolves to an I-beam
+       over the text. Keyboard interaction is unchanged: Enter still
+       flips aria-expanded, and focus-within already reveals the menu. */
+    .cs-nav-label[aria-controls] {
+      cursor: default;
     }
   }
 
@@ -239,46 +276,72 @@
       display: inline-flex;
     }
 
+    /* Drawer covers the entire viewport so the user is fully inside the
+       nav while interacting with it. The toggle stays z-indexed above so
+       the now-an-X morph closes the drawer. */
     .cs-nav-drawer {
       display: none;
-      flex-basis: 100%;
-      order: 99;
     }
 
-    .cs-nav-toggle[aria-expanded="true"] + .cs-nav-drawer {
+    /* DOM order inside .cs-header-actions is drawer -> cart -> toggle so
+       the visual order at every breakpoint matches DOM order without a CSS
+       `order` property. The reveal can't be the adjacent-sibling selector
+       (drawer no longer follows the toggle); it's parent-relative via
+       :has() on the shared .cs-header-actions container. */
+    .cs-header-actions:has(.cs-nav-toggle[aria-expanded="true"]) .cs-nav-drawer {
       display: block;
+      position: fixed;
+      top: var(--cs-header-height, 5rem);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
       background-color: var(--cs-nav-drawer-surface, transparent);
       padding-top: var(--cs-nav-drawer-padding, 1rem);
       padding-right: var(--cs-nav-drawer-padding, 1rem);
       padding-bottom: var(--cs-nav-drawer-padding, 1rem);
       padding-left: var(--cs-nav-drawer-padding, 1rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
+    /* Big fat rows with generous tap targets. */
     .cs-nav-links {
       flex-direction: column;
-      gap: var(--cs-nav-drawer-gap, 0.75rem);
+      gap: var(--cs-nav-mobile-row-gap, 0.5rem);
+      font-size: var(--cs-nav-mobile-text-size, 1.125rem);
     }
 
-    .cs-nav-dropdown-combo {
+    /* Every label, regardless of tag, fills its row and shares the same
+       row-height + padding. Identical box model across variants. */
+    .cs-nav-label {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-    }
-
-    .cs-nav-dropdown-combo .cs-nav-dropdown-link {
       flex: 1 1 auto;
+      width: 100%;
+      min-height: var(--cs-nav-mobile-row-min-height, 3.5rem);
+      padding-top: var(--cs-nav-mobile-row-padding-y, 0.75rem);
+      padding-bottom: var(--cs-nav-mobile-row-padding-y, 0.75rem);
+      font-size: var(--cs-nav-mobile-text-size, 1.125rem);
     }
 
-    .cs-nav-dropdown-combo .cs-nav-dropdown-menu {
-      flex-basis: 100%;
+    .cs-nav-chevron {
+      width: var(--cs-nav-chevron-size, 2.75rem);
+      height: var(--cs-nav-chevron-size, 2.75rem);
+      margin-left: 0;
+      mask-size: var(--cs-nav-chevron-inline-width, 0.75em) var(--cs-nav-chevron-inline-height, 0.5em);
+      -webkit-mask-size: var(--cs-nav-chevron-inline-width, 0.75em) var(--cs-nav-chevron-inline-height, 0.5em);
     }
 
-    .cs-nav-dropdown-menu {
-      position: static;
-      left: auto;
-      right: auto;
-      transform: none;
-      flex-direction: column;
+    /* Submenu items inside the drawer: indent + their own row sizing. */
+    .cs-nav-dropdown-menu a {
+      min-height: var(--cs-nav-mobile-row-min-height, 3.5rem);
+      padding-top: var(--cs-nav-mobile-row-padding-y, 0.75rem);
+      padding-bottom: var(--cs-nav-mobile-row-padding-y, 0.75rem);
+      padding-left: var(--cs-nav-mobile-submenu-indent, 1.5rem);
+      font-size: var(--cs-nav-mobile-text-size, 1.125rem);
+      display: flex;
+      align-items: center;
     }
 
     .cs-nav-chevron[aria-expanded="true"] {
@@ -287,7 +350,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .cs-nav-chevron {
+    .cs-nav-chevron,
+    .cs-nav-toggle-icon span {
       transition-duration: 0.01ms;
     }
   }
