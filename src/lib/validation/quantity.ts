@@ -17,6 +17,6 @@ export function snapToMoq(
     return current + step;
   }
   const next = current - step;
-  if (moq !== null && next > 0 && next < moq) return 0;
+  if (moq !== null && next > 0 && next < moq) return moq;
   return Math.max(0, next);
 }

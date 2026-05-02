@@ -13,6 +13,25 @@
     z-index: 40;
   }
 
+  /* Header-row-height contract.
+     Every visual sibling in the header (logo link, nav drawer, cart widget,
+     hamburger toggle) is forced to the same height so `align-items: center`
+     on `.cs-header` is deterministic across breakpoints. Without this, the
+     row's height tracks the tallest child, that child changes per
+     breakpoint (logo on desktop, hamburger toggle on mobile), and smaller
+     text re-anchors as the row's center moves. Identical heights = stable
+     center = no cross-breakpoint drift.
+     Inner display: flex + align-items: center centers each box's contents
+     (text, icon) within the fixed-height row. */
+  .cs-header > .cs-store-name,
+  .cs-header .cs-nav-drawer,
+  .cs-header .cs-nav-toggle,
+  .cs-header .cs-cart-widget {
+    display: flex;
+    align-items: center;
+    height: var(--cs-header-row-height, 2.75rem);
+  }
+
   .cs-store-name {
     font-size: var(--cs-text-6, inherit);
     font-weight: var(--cs-heading-font-weight, inherit);
@@ -48,10 +67,9 @@
     color: var(--cs-body-text-color, currentColor);
     font-family: inherit;
     cursor: pointer;
-    align-items: center;
     justify-content: center;
-    width: var(--cs-nav-chevron-size, 2.75rem);
-    height: var(--cs-nav-chevron-size, 2.75rem);
+    width: var(--cs-header-row-height, 2.75rem);
+    height: var(--cs-header-row-height, 2.75rem);
   }
 
   .cs-nav-toggle-icon {
@@ -224,7 +242,10 @@
   }
 
   @media (min-width: 40.001rem) {
-    .cs-nav-toggle {
+    /* Specificity must match the .cs-header .cs-nav-toggle shared rule
+       above (0,2,0) so this display: none wins. Bare .cs-nav-toggle
+       (0,1,0) loses the cascade and the toggle leaks onto desktop. */
+    .cs-header .cs-nav-toggle {
       display: none;
     }
 
@@ -272,14 +293,18 @@
   }
 
   @media (max-width: 40rem) {
-    .cs-nav-toggle {
+    /* Specificity must match the .cs-header .cs-nav-toggle and
+       .cs-header .cs-nav-drawer shared rule above (0,2,0) so these
+       display values win over the always-on display: flex from the
+       shared height contract. */
+    .cs-header .cs-nav-toggle {
       display: inline-flex;
     }
 
     /* Drawer covers the entire viewport so the user is fully inside the
        nav while interacting with it. The toggle stays z-indexed above so
        the now-an-X morph closes the drawer. */
-    .cs-nav-drawer {
+    .cs-header .cs-nav-drawer {
       display: none;
     }
 

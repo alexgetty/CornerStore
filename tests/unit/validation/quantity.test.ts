@@ -41,13 +41,24 @@ describe('snapToMoq', () => {
     expect(snapToMoq(12, 6, 'down')).toBe(6);
   });
 
-  it('snaps down to zero when decrement would go below MOQ', () => {
+  it('snaps down to zero when current equals MOQ', () => {
+    // At MOQ, the only meaningful "less" action is removal from cart.
     expect(snapToMoq(6, 6, 'down')).toBe(0);
   });
 
-  it('snaps down to zero when result is between zero and MOQ', () => {
-    // e.g., current=8, moq=6, step=6, next=2 → 2 is between 0 and 6, snap to 0
-    expect(snapToMoq(8, 6, 'down')).toBe(0);
+  it('snaps down to MOQ when current is above MOQ but step would go below it', () => {
+    // e.g., current=8, moq=6, step=6, next=2 → 2 is below MOQ, snap to MOQ.
+    // This handles user-typed quantities between MOQ+1 and 2*MOQ; clicking
+    // "less" should reduce to MOQ first rather than skipping straight to 0.
+    expect(snapToMoq(8, 6, 'down')).toBe(6);
+    expect(snapToMoq(7, 5, 'down')).toBe(5);
+    expect(snapToMoq(6, 5, 'down')).toBe(5);
+  });
+
+  it('decrements normally when result is at or above MOQ', () => {
+    // current=11, moq=5, step=5, next=6 → 6 is above MOQ, no snap.
+    expect(snapToMoq(11, 5, 'down')).toBe(6);
+    expect(snapToMoq(10, 5, 'down')).toBe(5);
   });
 
   it('increments by 1 when MOQ is null and direction is up', () => {

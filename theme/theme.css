@@ -222,6 +222,13 @@
    * Nav — header chrome + dropdown menu
    * ------------------------------------------------------- */
   --cs-nav-gap: 1.5rem;
+  /* Shared height for every visual sibling inside .cs-header (logo link,
+     nav drawer, cart widget, hamburger toggle). With identical heights,
+     `align-items: center` on .cs-header is deterministic and produces the
+     same vertical alignment regardless of which siblings exist at any
+     breakpoint. The 2.75rem default preserves the WCAG 2.5.5 tap target
+     floor (44px at 16px root) for the mobile hamburger. */
+  --cs-header-row-height: 2.75rem;
   --cs-logo-height: 2rem;
   --cs-logo-margin-right: 0.5rem;
   --cs-nav-dropdown-menu-padding-y: 0.25rem;
@@ -240,7 +247,9 @@
   /* Combo-item chevron (Pattern A: link + sibling chevron toggle). Size
      hits the WCAG 2.5.5 touch-target floor (44px = 2.75rem at default
      16px root). Color stroke pulls currentColor by default so it follows
-     the surrounding text color. */
+     the surrounding text color. Scope: the mobile drawer-row chevron
+     buttons only. The hamburger toggle scales with --cs-header-row-height
+     (header chrome), not this token. */
   --cs-nav-chevron-size: 2.75rem;
   --cs-nav-chevron-color: currentColor;
   /* Hamburger glyph dimensions — three horizontal lines drawn from

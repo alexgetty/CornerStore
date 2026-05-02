@@ -80,6 +80,13 @@ describe('nextQuantity', () => {
       expect(nextQuantity('down', 6, 6)).toBe(0);
     });
 
+    it('snaps to MOQ when current is above MOQ but step would go below it', () => {
+      // User typed 7 manually with MOQ=5; clicking "less" should drop to MOQ
+      // rather than removing the line entirely.
+      expect(nextQuantity('down', 7, 5)).toBe(5);
+      expect(nextQuantity('down', 8, 6)).toBe(6);
+    });
+
     it('never goes below 0', () => {
       expect(nextQuantity('down', 0, null)).toBe(0);
       expect(nextQuantity('down', 1, null)).toBe(0);

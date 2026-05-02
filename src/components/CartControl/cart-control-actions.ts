@@ -28,7 +28,9 @@ export function classifyCartControlTarget(classList: readonly string[]): CartCon
  *   fired by the "Add to Cart" button which is only visible when the current
  *   quantity is 0.
  * - `up` increments by MOQ (or 1 if no MOQ) relative to the current quantity.
- * - `down` snaps toward 0; if a step lands between 0 and MOQ it snaps to 0.
+ * - `down` decrements by MOQ. If the step would land between 0 and MOQ
+ *   (e.g. user typed 7 with MOQ=5), it snaps to MOQ first; only a click from
+ *   exactly MOQ removes the line.
  * - `input` uses the user-entered value verbatim (clamped >= 0, floored to int).
  *   We deliberately do NOT snap `input` to MOQ — the parent surfaces MOQ
  *   violations as validation errors instead of silently coercing the user's
