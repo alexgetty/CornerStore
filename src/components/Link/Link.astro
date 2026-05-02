@@ -1,0 +1,20 @@
+---
+import { getCategories, loadConfig, loadPages } from '../../lib/storefront';
+import { resolveLink } from './resolve';
+
+interface Props {
+  category?: string;
+  page?: string;
+}
+
+const { category, page } = Astro.props;
+
+const config = await loadConfig();
+const [categories, pages] = await Promise.all([
+  getCategories(),
+  loadPages(config),
+]);
+
+const resolved = resolveLink({ category, page, categories, pages, home: config.home });
+---
+{resolved && <a href={resolved.href}>{resolved.label}</a>}

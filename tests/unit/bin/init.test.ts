@@ -249,6 +249,12 @@ describe('bin/scaffold.mjs', () => {
       // the lookup may return undefined — guard before await/call
       expect(out).toMatch(/if\s*\(\s*homeModule\s*\)/);
     });
+
+    it('exposes Link in the MDX components map for init parity', () => {
+      const out = buildIndexPage();
+      expect(out).toMatch(/import\s*\{[^}]*\bLink\b[^}]*\}\s*from\s*'corner-store\/components'/);
+      expect(out).toMatch(/components=\{\{[^}]*\bLink\b[^}]*\}\}/);
+    });
   });
 
   describe('buildSlugPage — astro check safety', () => {
@@ -270,6 +276,12 @@ describe('bin/scaffold.mjs', () => {
     it('does NOT directly call mdxModules[...]() without a guard (runtime + TS unsafe)', () => {
       const out = buildSlugPage();
       expect(out).not.toMatch(/await\s+mdxModules\[[^\]]+\]\(\)/);
+    });
+
+    it('exposes Link in the MDX components map for init parity', () => {
+      const out = buildSlugPage();
+      expect(out).toMatch(/import\s*\{[^}]*\bLink\b[^}]*\}\s*from\s*'corner-store\/components'/);
+      expect(out).toMatch(/components=\{\{[^}]*\bLink\b[^}]*\}\}/);
     });
   });
 

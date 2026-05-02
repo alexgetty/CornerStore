@@ -110,7 +110,7 @@ const checkoutEnabled = config.checkout === 'stripe' && !!config.checkoutUrl;
 export function buildIndexPage() {
   return `---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { Hero, Listings, Listing } from 'corner-store/components';
+import { Hero, Link, Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
 
 const config = await loadConfig();
@@ -129,7 +129,7 @@ if (homeModule) {
 
 {Content ? (
   <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
-    <Content components={{ Hero, Listings, Listing }} />
+    <Content components={{ Hero, Link, Listings, Listing }} />
   </ContentPage>
 ) : (
   <ContentPage title={config.name}>
@@ -142,7 +142,7 @@ if (homeModule) {
 export function buildSlugPage() {
   return `---
 import ContentPage from 'corner-store/layouts/ContentPage';
-import { Hero, Listings, Listing } from 'corner-store/components';
+import { Hero, Link, Listings, Listing } from 'corner-store/components';
 import { loadConfig, loadPages } from 'corner-store';
 
 export async function getStaticPaths() {
@@ -171,7 +171,7 @@ if (loader) {
 
 <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
   {Content ? (
-    <Content components={{ Hero, Listings, Listing }} />
+    <Content components={{ Hero, Link, Listings, Listing }} />
   ) : (
     <p>Create <code>pages/{page.slug}.mdx</code> to fill in this page.</p>
   )}
