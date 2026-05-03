@@ -20,7 +20,7 @@ Exactly one of `category` or `page` must be provided. If both or neither are pas
 - Resolution order: exact `name` match, then exact `slug` match, then `slugify(input)` against `slug`.
 - Label: the category's `name`.
 - Href: `/category/{slug}`.
-- Assumes unique category names. Duplicate-category detection is a separate build-time concern tracked in `docs/todo/dupe-category-names-build-check.md`.
+- Assumes unique category names. Duplicate-category detection is a separate build-time concern tracked in `docs/todo/archive/dupe-category-names-build-check.md`.
 
 ### `page`
 

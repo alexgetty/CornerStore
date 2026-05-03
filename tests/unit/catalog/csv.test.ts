@@ -385,6 +385,92 @@ describe('validateRows', () => {
     expect(products[0]!.name).toBe('Test Product');
     expect(products[0]!.price).toBe(19.99);
   });
+
+  // ── Category case/whitespace dedup ─────────────────────────────────────
+
+  it('keeps first and skips case-only-collision Category', () => {
+    const rows = [
+      makeCSVRow({ SKU: 'A-001', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-002', Category: 'Apparel' }),
+      makeCSVRow({ SKU: 'A-003', Category: 'Apparel' }),
+      makeCSVRow({ SKU: 'A-004', Category: 'hats' }),
+    ];
+    const { products, errors } = validateRows(rows);
+    expect(products).toHaveLength(3);
+    expect(products.map(p => p.sku)).toEqual(['A-001', 'A-002', 'A-003']);
+    expect(errors).toEqual([{
+      row: 5,
+      field: 'Category',
+      message: 'Category "hats" conflicts with "Hats" on row 2',
+    }]);
+  });
+
+  it('keeps first and skips whitespace-padding-collision Category', () => {
+    const rows = [
+      makeCSVRow({ SKU: 'A-001', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-002', Category: ' Hats ' }),
+    ];
+    const { products, errors } = validateRows(rows);
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('A-001');
+    expect(errors).toEqual([{
+      row: 3,
+      field: 'Category',
+      message: 'Category " Hats " conflicts with "Hats" on row 2',
+    }]);
+  });
+
+  it('does not flag identical-case Category duplicates', () => {
+    const rows = [
+      makeCSVRow({ SKU: 'A-001', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-002', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-003', Category: 'Hats' }),
+    ];
+    const { products, errors } = validateRows(rows);
+    expect(errors).toEqual([]);
+    expect(products).toHaveLength(3);
+  });
+
+  it('ignores empty Category for dedup purposes', () => {
+    const rows = [
+      makeCSVRow({ SKU: 'A-001', Category: '' }),
+      makeCSVRow({ SKU: 'A-002', Category: '' }),
+      makeCSVRow({ SKU: 'A-003', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-004', Category: '   ' }),
+    ];
+    const { products, errors } = validateRows(rows);
+    expect(errors).toEqual([]);
+    expect(products).toHaveLength(4);
+  });
+
+  it('flags every later row in a three-way Category collision against the first row', () => {
+    const rows = [
+      makeCSVRow({ SKU: 'A-001', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-002', Category: 'HATS' }),
+      makeCSVRow({ SKU: 'A-003', Category: 'hats' }),
+    ];
+    const { products, errors } = validateRows(rows);
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('A-001');
+    expect(errors).toEqual([
+      { row: 3, field: 'Category', message: 'Category "HATS" conflicts with "Hats" on row 2' },
+      { row: 4, field: 'Category', message: 'Category "hats" conflicts with "Hats" on row 2' },
+    ]);
+  });
+
+  it('emits Category dedup error alongside other errors on the same row', () => {
+    const rows = [
+      makeCSVRow({ SKU: 'A-001', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-002', Category: 'hats', Name: '' }),
+    ];
+    const { products, errors } = validateRows(rows);
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('A-001');
+    expect(errors).toEqual([
+      { row: 3, field: 'Name', message: 'required' },
+      { row: 3, field: 'Category', message: 'Category "hats" conflicts with "Hats" on row 2' },
+    ]);
+  });
 });
 
 // ─── loadCatalog ─────────────────────────────────────────────────────────────
@@ -543,5 +629,22 @@ describe('loadCatalog strict mode (default)', () => {
 
     // strict default would throw; options.lenient: true should not throw
     await expect(loadCatalog('/fake/catalog.csv', { lenient: true })).resolves.toEqual([]);
+  });
+
+  it('lenient mode warns about Category collision and keeps the first-seen row', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const csv = makeCSV([
+      makeCSVRow({ SKU: 'A-001', Category: 'Hats' }),
+      makeCSVRow({ SKU: 'A-002', Category: 'hats' }),
+    ]);
+    readFileMock.mockResolvedValue(csv);
+
+    const products = await loadCatalog('/fake/catalog.csv', { lenient: true });
+    expect(products).toHaveLength(1);
+    expect(products[0]!.sku).toBe('A-001');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Row 3, Category: Category "hats" conflicts with "Hats" on row 2'),
+    );
+    consoleSpy.mockRestore();
   });
 });

@@ -28,6 +28,7 @@ function parseRow(
   row: Record<string, string>,
   rowNum: number,
   seenSkus: Set<string>,
+  seenCategories: Map<string, { original: string; row: number }>,
 ): { errors: CatalogValidationError[]; product: CatalogProduct } {
   const errors: CatalogValidationError[] = [];
 
@@ -71,6 +72,21 @@ function parseRow(
     errors.push({ row: rowNum, field: 'Description', message: `exceeds ${MAX_DESCRIPTION_LENGTH} characters` });
   }
 
+  const rawCategory = row['Category'] ?? '';
+  const normalizedCategory = rawCategory.trim().toLowerCase();
+  if (normalizedCategory) {
+    const seen = seenCategories.get(normalizedCategory);
+    if (seen && seen.original !== rawCategory) {
+      errors.push({
+        row: rowNum,
+        field: 'Category',
+        message: `Category "${rawCategory}" conflicts with "${seen.original}" on row ${seen.row}`,
+      });
+    } else if (!seen) {
+      seenCategories.set(normalizedCategory, { original: rawCategory, row: rowNum });
+    }
+  }
+
   const hiddenVal = (row['Hidden'] ?? '').trim().toLowerCase();
 
   const featuredVal = (row['Featured'] ?? '').trim().toLowerCase();
@@ -108,9 +124,10 @@ export function validateRows(
   const allErrors: CatalogValidationError[] = [];
   const products: CatalogProduct[] = [];
   const seenSkus = new Set<string>();
+  const seenCategories = new Map<string, { original: string; row: number }>();
 
   for (let i = 0; i < records.length; i++) {
-    const { errors, product } = parseRow(records[i]!, i + 2, seenSkus);
+    const { errors, product } = parseRow(records[i]!, i + 2, seenSkus, seenCategories);
     if (errors.length > 0) {
       allErrors.push(...errors);
     } else {
