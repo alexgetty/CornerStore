@@ -87,7 +87,6 @@
    * Shadows & overlays
    * ------------------------------------------------------- */
   --cs-listing-shadow-hover: 0 2px 12px rgba(0, 0, 0, 0.08);
-  --cs-lightbox-backdrop: rgba(0, 0, 0, 0.7);
 
   /* -------------------------------------------------------
    * Border Radius
@@ -191,7 +190,7 @@
   --cs-listing-price-margin-top: 0.25rem;
 
   /* -------------------------------------------------------
-   * Listing Table — order sheet rows + lightbox
+   * Listing Table — order sheet rows
    * ------------------------------------------------------- */
   --cs-order-table-margin: 1.5rem;
   --cs-order-cell-padding: 0.5rem 0.75rem;
@@ -201,8 +200,6 @@
   --cs-order-col-qty-width: 140px;
   --cs-order-col-total-width: 100px;
   --cs-order-col-remove-width: 40px;
-  --cs-lightbox-max-width: 90vw;
-  --cs-lightbox-max-height: 90vh;
 
   /* -------------------------------------------------------
    * Listings — empty state + view toggle + view icons

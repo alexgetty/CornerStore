@@ -257,36 +257,20 @@ function handleAction(control: HTMLElement, action: CartControlAction, inputValu
 }
 
 // ---------------------------------------------------------------------------
-// Table lightbox + broken image fallback
+// Table broken-image fallback
+//
+// Image gallery / overlay UI is the consumer's concern. Both ListingCards and
+// ListingTable emit the same trigger primitive: a <button class="cs-listing-image-btn"
+// type="button" aria-haspopup="dialog" data-images=...> that exposes the full
+// image array as JSON. Consumers attach their own click handler to that button.
+// The only client-side concern that stays in the library is swapping a broken
+// thumbnail for the .cs-no-image placeholder so the column doesn't render a
+// stranded broken image icon. This intentionally stays a single-concern
+// function and keeps its name so the call-site in main initialization is
+// unchanged.
 // ---------------------------------------------------------------------------
 
 function wireTableExtras(root: HTMLElement) {
-  const lightbox = root.querySelector('.cs-lightbox') as HTMLElement | null;
-  const lightboxImg = root.querySelector('.cs-lightbox-img') as HTMLImageElement | null;
-  const lightboxBackdrop = root.querySelector('.cs-lightbox-backdrop') as HTMLElement | null;
-
-  if (lightbox && lightboxImg && lightboxBackdrop) {
-    root.querySelectorAll<HTMLButtonElement>('.cs-thumb-btn').forEach((btn) => {
-      if (btn.dataset.wired) return;
-      btn.dataset.wired = 'true';
-      btn.addEventListener('click', () => {
-        lightboxImg.src = btn.dataset.fullSrc ?? '';
-        lightboxImg.alt = btn.dataset.alt ?? '';
-        lightbox.hidden = false;
-      });
-    });
-
-    if (!lightboxBackdrop.dataset.wired) {
-      lightboxBackdrop.dataset.wired = 'true';
-      lightboxBackdrop.addEventListener('click', () => { lightbox.hidden = true; });
-      lightboxImg.addEventListener('click', (e) => { e.stopPropagation(); });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !lightbox.hidden) lightbox.hidden = true;
-      });
-    }
-  }
-
-  // Table broken image fallback
   root.querySelectorAll<HTMLImageElement>('.cs-thumb').forEach((img) => {
     if (img.dataset.wired) return;
     img.dataset.wired = 'true';
@@ -294,7 +278,7 @@ function wireTableExtras(root: HTMLElement) {
       const placeholder = document.createElement('span');
       placeholder.className = 'cs-no-image';
       placeholder.setAttribute('aria-hidden', 'true');
-      img.closest('.cs-thumb-btn')?.replaceWith(placeholder);
+      img.closest('.cs-listing-image-btn')?.replaceWith(placeholder);
     });
   });
 }

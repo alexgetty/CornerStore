@@ -69,7 +69,12 @@ const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.ca
               >
                 <td class="cs-col-image" role="cell">
                   {thumb ? (
-                    <button type="button" class="cs-thumb-btn" data-full-src={thumb.url} data-alt={thumb.alt || listing.name}>
+                    <button
+                      type="button"
+                      class="cs-listing-image-btn"
+                      aria-haspopup="dialog"
+                      data-images={JSON.stringify(listing.images)}
+                    >
                       <img src={thumb.url} alt={thumb.alt || listing.name} class="cs-thumb" loading="lazy" />
                     </button>
                   ) : (
@@ -110,13 +115,4 @@ const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.ca
         </tbody>
       </table>
   ))}
-
-  <div class="cs-lightbox" hidden>
-    <div class="cs-lightbox-backdrop"></div>
-    <img class="cs-lightbox-img" src="" alt="" />
-  </div>
 </section>
-
-<script>
-  // Client-side logic wired by Listings orchestrator
-</script>

@@ -3,31 +3,38 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /*
- * ListingCards.astro - data-images attribute on <article class="cs-listing">.
+ * ListingCards.astro - cs-listing-image-btn trigger primitive.
  *
- * Consumers of the card DOM (galleries, lightboxes, hover swaps, etc.) need
- * access to every image for a listing without re-fetching the catalog. The
- * card already renders only `images[0]` inside the <figure>; the rest of the
- * array is dropped on the floor. Surface the full array as a JSON-encoded
- * data attribute on the article element so client code can read
- * `JSON.parse(el.dataset.images)` and build whatever UI it wants.
+ * Both ListingCards.astro and ListingTable.astro emit the SAME accessible
+ * trigger primitive when a listing has images: the inline <img> is wrapped
+ * in <button class="cs-listing-image-btn" type="button" aria-haspopup="dialog"
+ * data-images=...>. The package owns the trigger element and its
+ * accessibility semantics. The lightbox / dialog UI itself is the consumer's
+ * concern.
  *
- * Contract:
- *   - Multi-image listing: data-images is a JSON-stringified array of
- *     {url, alt} objects matching listing.images.
- *   - Single-image listing: data-images is a JSON array of length 1.
- *   - Empty listing.images: attribute is OMITTED entirely. Not the empty
- *     string, not "[]". Astro skips attributes with value `undefined`, so
- *     the source-level pattern is a ternary that yields `undefined` when
- *     the array is empty.
+ * Contract (cards):
+ *   - Multi-image listing: <button> wraps <img>. data-images is a JSON-
+ *     stringified array of {url, alt} objects matching listing.images.
+ *   - Single-image listing: same shape, JSON array of length 1.
+ *   - Empty listing.images: NO button. The existing
+ *     <div class="cs-listing-placeholder"> fallback renders unchanged. There
+ *     is no data-images attribute anywhere in the figure.
  *
- * Astro caveat (verified): Astro does NOT auto-JSON arrays passed to
- * attributes - it calls String(value), which produces "[object Object],...".
- * The source must call JSON.stringify explicitly.
+ * Accessibility:
+ *   - type="button" prevents accidental form submission.
+ *   - aria-haspopup="dialog" announces "has popup dialog" to AT.
+ *   - NO aria-label on the button. The accessible name comes from the inner
+ *     <img>'s alt attribute. An aria-label would suppress the alt-derived
+ *     name, which is a regression.
+ *
+ * Removals:
+ *   - data-images is NOT on the <article class="cs-listing"> element. The
+ *     contract surface is the button so consumers read JSON from a single
+ *     element with no DOM walk.
  *
  * Tests assert on the source .astro file - same approach as
- * cart-component-markup.test.ts and nav-mobile-disclosure.test.ts. We don't
- * SSR Astro components in unit tests (per
+ * cart-component-markup.test.ts and listing-table-data-images.test.ts. We
+ * don't SSR Astro components in unit tests (per
  * docs/todo/cart-listings-test-coverage.md).
  */
 
@@ -43,17 +50,14 @@ const readListingCards = (): string => readFileSync(listingCardsPath, 'utf8');
 
 /*
  * Extract the <article ...> opening tag (everything from `<article` through
- * the matching `>` that closes the tag). This is where all the data-*
- * attributes live; scoping assertions to this slice avoids accidental
- * matches inside child markup.
+ * the matching `>` that closes the tag). Used to assert removal of
+ * data-images at the article level and survival of unrelated data-* attrs.
  */
 function extractArticleOpenTag(astro: string): string {
   const start = astro.indexOf('<article');
   if (start === -1) {
     throw new Error('expected <article> in ListingCards.astro');
   }
-  // Walk forward to the matching `>`, ignoring `>` chars inside attribute
-  // expression braces `{...}` (Astro lets JS expressions back into attrs).
   let depth = 0;
   let i = start;
   while (i < astro.length) {
@@ -68,10 +72,67 @@ function extractArticleOpenTag(astro: string): string {
   throw new Error('unterminated <article> opening tag in ListingCards.astro');
 }
 
-describe('ListingCards.astro - data-images attribute on <article class="cs-listing">', () => {
-  it('the article opening tag carries a data-images attribute', () => {
-    const out = readListingCards();
-    const tag = extractArticleOpenTag(out);
+/*
+ * Extract the <button class="cs-listing-image-btn" ...> opening tag. Scoping
+ * assertions to this slice avoids accidental matches inside child markup or
+ * sibling buttons (cart-control buttons, etc.).
+ */
+function extractImageButtonOpenTag(astro: string): string {
+  const marker = 'cs-listing-image-btn';
+  const markerIdx = astro.indexOf(marker);
+  if (markerIdx === -1) {
+    throw new Error(
+      'expected <button class="cs-listing-image-btn"> in ListingCards.astro',
+    );
+  }
+  let i = markerIdx;
+  while (i >= 0 && !(astro[i] === '<' && astro.slice(i, i + 7) === '<button')) {
+    i--;
+  }
+  if (i < 0) {
+    throw new Error(
+      'could not locate <button opening before cs-listing-image-btn class',
+    );
+  }
+  const start = i;
+  let depth = 0;
+  let j = start;
+  while (j < astro.length) {
+    const c = astro[j];
+    if (c === '{') depth++;
+    else if (c === '}') depth--;
+    else if (c === '>' && depth === 0) {
+      return astro.slice(start, j + 1);
+    }
+    j++;
+  }
+  throw new Error('unterminated <button> opening tag in ListingCards.astro');
+}
+
+describe('ListingCards.astro - cs-listing-image-btn trigger primitive', () => {
+  it('renders <button class="cs-listing-image-btn"> when a listing has an image', () => {
+    expect(readListingCards()).toMatch(
+      /<button[^>]*class="cs-listing-image-btn"/,
+    );
+  });
+
+  it('the button declares type="button"', () => {
+    const tag = extractImageButtonOpenTag(readListingCards());
+    expect(tag).toMatch(/\btype="button"/);
+  });
+
+  it('the button declares aria-haspopup="dialog"', () => {
+    const tag = extractImageButtonOpenTag(readListingCards());
+    expect(tag).toMatch(/\baria-haspopup="dialog"/);
+  });
+
+  it('the button does NOT carry an aria-label (alt on the inner <img> is the accessible name)', () => {
+    const tag = extractImageButtonOpenTag(readListingCards());
+    expect(tag).not.toMatch(/\baria-label=/);
+  });
+
+  it('the button carries a data-images attribute', () => {
+    const tag = extractImageButtonOpenTag(readListingCards());
     expect(tag).toMatch(/\bdata-images=/);
   });
 
@@ -81,76 +142,67 @@ describe('ListingCards.astro - data-images attribute on <article class="cs-listi
      * for an array of objects produces "[object Object],[object Object]".
      * The source must call JSON.stringify explicitly. Pin that.
      */
-    const out = readListingCards();
-    const tag = extractArticleOpenTag(out);
+    const tag = extractImageButtonOpenTag(readListingCards());
     expect(tag).toMatch(
       /\bdata-images=\{[^}]*\bJSON\.stringify\(\s*listing\.images\s*\)/,
     );
   });
 
-  it('data-images is omitted (yields undefined) when listing.images is empty', () => {
+  it('the inner <img> keeps src/alt/itemprop="image" inside the button', () => {
     /*
-     * Astro skips attributes whose value is `undefined`. The canonical
-     * shape is a ternary that returns JSON.stringify(...) for non-empty
-     * arrays and `undefined` for the empty case:
-     *
-     *   data-images={listing.images.length > 0
-     *     ? JSON.stringify(listing.images)
-     *     : undefined}
-     *
-     * We pin the structural shape: the ternary's truthy arm calls
-     * JSON.stringify, and the falsy arm is the literal `undefined`.
-     */
-    const out = readListingCards();
-    const tag = extractArticleOpenTag(out);
-    expect(tag).toMatch(
-      /\bdata-images=\{\s*listing\.images\.length\s*>\s*0\s*\?\s*JSON\.stringify\(\s*listing\.images\s*\)\s*:\s*undefined\s*\}/,
-    );
-  });
-
-  it('regression: data-images is NOT set to an empty string or "[]" for empty arrays', () => {
-    /*
-     * Guards against two regressions:
-     *   1. data-images="" (always-on attribute, parses to empty string).
-     *   2. data-images={JSON.stringify(listing.images)} unconditionally
-     *      (yields "[]" for empty arrays - parses, but lies about absence).
-     * Both would defeat the "absent when empty" half of the contract.
-     */
-    const out = readListingCards();
-    const tag = extractArticleOpenTag(out);
-    expect(tag).not.toMatch(/\bdata-images=""/);
-    // Reject an unconditional JSON.stringify that has no length-guard.
-    // Acceptable forms always pair JSON.stringify with `listing.images.length`
-    // somewhere in the same expression. If JSON.stringify(listing.images)
-    // appears WITHOUT a length check anywhere in the article tag, fail.
-    const hasJsonStringify = /\bJSON\.stringify\(\s*listing\.images\s*\)/.test(
-      tag,
-    );
-    const hasLengthGuard = /listing\.images\.length\s*>\s*0/.test(tag);
-    if (hasJsonStringify) {
-      expect(hasLengthGuard).toBe(true);
-    }
-  });
-
-  it('regression: <img src={listing.images[0].url} ...> still renders inside <figure class="cs-listing-image">', () => {
-    /*
-     * The data-images addition is purely additive. The existing single-
-     * image rendering must not change. Pin the shape that already shipped.
+     * Wrapping the image in a button must not alter the image element
+     * itself. itemprop="image" is the schema.org microdata hook and stays
+     * on the <img>, not the wrapping button.
      */
     const out = readListingCards();
     expect(out).toMatch(
-      /<figure\s+class="cs-listing-image">[\s\S]*?<img\s+src=\{listing\.images\[0\]\.url\}\s+alt=\{listing\.images\[0\]\.alt\}\s+itemprop="image"[\s\S]*?<\/figure>/,
+      /<button[^>]*class="cs-listing-image-btn"[\s\S]*?<img\s+src=\{listing\.images\[0\]\.url\}\s+alt=\{listing\.images\[0\]\.alt[\s\S]*?itemprop="image"[\s\S]*?<\/button>/,
     );
+  });
+
+  it('the button is rendered inside <figure class="cs-listing-image">', () => {
+    /*
+     * The figure is the structural wrapper. The button replaces the bare
+     * <img> as the figure's interactive child. Pin that the button lives
+     * inside the existing figure, not in some new wrapper.
+     */
+    const out = readListingCards();
+    expect(out).toMatch(
+      /<figure\s+class="cs-listing-image">[\s\S]*?<button[^>]*class="cs-listing-image-btn"/,
+    );
+  });
+
+  it('the no-image fallback is the existing <div class="cs-listing-placeholder">, not a button', () => {
+    /*
+     * When a listing has no images, no button renders. The existing
+     * placeholder div is kept verbatim with its aria-label.
+     */
+    const out = readListingCards();
+    expect(out).toMatch(
+      /<div\s+class="cs-listing-placeholder"\s+aria-label=\{`\$\{listing\.name\} product image`\}\s*\/>/,
+    );
+    // No disabled button fallback.
+    expect(out).not.toMatch(
+      /<button[^>]*class="cs-listing-image-btn"[^>]*disabled/,
+    );
+  });
+
+  it('removed: data-images is NOT on the <article class="cs-listing"> element', () => {
+    /*
+     * The contract surface is the button, not the article. A consumer
+     * reading images from the article would walk past sibling cards or
+     * miss the no-image case. Pin the absence at the article level.
+     */
+    const tag = extractArticleOpenTag(readListingCards());
+    expect(tag).not.toMatch(/\bdata-images=/);
   });
 
   it('regression: existing data-* attributes (data-sku, data-raw-price, data-currency) survive on the article', () => {
     /*
-     * Belt-and-braces: a careless edit could clobber a sibling attribute
-     * while adding data-images. Pin the existing contract so the new
-     * attribute lands alongside, not in place of.
+     * Belt-and-braces: the article-level cart contract (sku, price, currency)
+     * must survive any image-related refactor.
      */
-    const out = readListingCards();
-    const tag = extractArticleOpenTag(out);
+    const tag = extractArticleOpenTag(readListingCards());
     expect(tag).toMatch(/\bdata-sku=\{listing\.sku\}/);
     expect(tag).toMatch(/\bdata-raw-price=\{effectiveRaw\}/);
     expect(tag).toMatch(/\bdata-currency=\{listing\.currency\}/);

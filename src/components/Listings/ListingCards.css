@@ -39,6 +39,25 @@
     margin: 0;
   }
 
+  /* Button reset for the image-trigger primitive. The card view wraps the
+     inline image in a real button so consumers can wire dialog UI onto the
+     thumbnail. The reset neutralizes user-agent button chrome (padding,
+     background, border, native font) so the wrapper is layout-transparent.
+     The inner img keeps the sizing rules below. */
+  .cs-listing-image-btn {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    appearance: none;
+    font: inherit;
+    color: inherit;
+  }
+
   .cs-listing-image img {
     width: 100%;
     aspect-ratio: var(--cs-image-aspect-ratio, auto);
