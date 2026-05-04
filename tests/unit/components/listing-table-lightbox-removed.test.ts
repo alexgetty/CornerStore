@@ -29,6 +29,16 @@ import { join } from 'node:path';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..');
 
+// The image-trigger markup now lives in the shared ListingRow partial that
+// both ListingTable.astro (catalog table view) and Cart.astro compose. The
+// inline-lightbox removal contract follows the markup to ListingRow.astro.
+const listingRowAstroPath = join(
+  REPO_ROOT,
+  'src',
+  'components',
+  'Listings',
+  'ListingRow.astro',
+);
 const listingTableAstroPath = join(
   REPO_ROOT,
   'src',
@@ -52,31 +62,40 @@ const listingsTsPath = join(
 );
 const themeCssPath = join(REPO_ROOT, 'theme', 'theme.css');
 
-const readAstro = (): string => readFileSync(listingTableAstroPath, 'utf8');
+const readRowAstro = (): string => readFileSync(listingRowAstroPath, 'utf8');
+const readTableAstro = (): string => readFileSync(listingTableAstroPath, 'utf8');
 const readCss = (): string => readFileSync(listingTableCssPath, 'utf8');
 const readTs = (): string => readFileSync(listingsTsPath, 'utf8');
 const readTheme = (): string => readFileSync(themeCssPath, 'utf8');
 
 describe('ListingTable inline-lightbox removal', () => {
-  describe('ListingTable.astro', () => {
+  describe('ListingRow.astro (shared row markup)', () => {
     it('does not contain any cs-lightbox markup', () => {
-      expect(readAstro()).not.toMatch(/cs-lightbox/);
+      expect(readRowAstro()).not.toMatch(/cs-lightbox/);
     });
 
     it('does not contain the old cs-thumb-btn class anywhere', () => {
-      expect(readAstro()).not.toMatch(/cs-thumb-btn/);
+      expect(readRowAstro()).not.toMatch(/cs-thumb-btn/);
     });
 
     it('does not carry data-full-src on the image-trigger button (or anywhere)', () => {
-      expect(readAstro()).not.toMatch(/data-full-src/);
+      expect(readRowAstro()).not.toMatch(/data-full-src/);
     });
 
     it('keeps the cs-listing-image-btn click target intact for consumer-wired overlays', () => {
       // Removal is scoped: the button stays (under the unified class name),
       // only the inline overlay leaves.
-      expect(readAstro()).toMatch(
+      expect(readRowAstro()).toMatch(
         /<button[^>]*class="cs-listing-image-btn"/,
       );
+    });
+  });
+
+  describe('ListingTable.astro (chrome around the shared row)', () => {
+    it('does not contain any cs-lightbox markup at the table chrome level', () => {
+      // The table chrome (header, grouping, table element) must also remain
+      // free of any reintroduced inline lightbox overlay.
+      expect(readTableAstro()).not.toMatch(/cs-lightbox/);
     });
   });
 

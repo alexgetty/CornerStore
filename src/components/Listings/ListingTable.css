@@ -56,7 +56,12 @@
     background: none;
     border: none;
     padding: 0;
-    cursor: pointer;
+    cursor: zoom-in;
+  }
+
+  .cs-listing-image-btn:focus-visible {
+    outline: var(--cs-focus-width, 2px) solid var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
   }
 
   .cs-thumb {

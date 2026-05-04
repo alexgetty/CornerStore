@@ -18,6 +18,7 @@ export default defineConfig({
         'src/lib/cart/types.ts',
         'src/lib/cart/index.ts',
         'src/components/index.ts',
+        'src/components/Lightbox/lightbox.ts',
         'src/components/OrderSheet/order-sheet.ts',
         'src/pages/**/*.ts',
         'src/pages/**/*.astro',

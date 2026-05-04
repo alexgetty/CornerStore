@@ -3,10 +3,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /*
- * ListingTable.astro - data-images attribute on the image-trigger button.
+ * ListingRow.astro - data-images attribute on the image-trigger button.
  *
- * Image gallery responsibility belongs to the consumer, not the table view.
- * The table previously shipped its own single-image lightbox inline (markup,
+ * Image gallery responsibility belongs to the consumer, not the row markup.
+ * The row previously shipped its own single-image lightbox inline (markup,
  * CSS, JS). That's gone. The new contract is a single accessible trigger
  * primitive: when a listing has images, the inline thumbnail is wrapped in a
  * <button class="cs-listing-image-btn" type="button" aria-haspopup="dialog"
@@ -16,6 +16,11 @@ import { join } from 'node:path';
  *
  * The same primitive is emitted by ListingCards.astro. Two views, one
  * trigger contract.
+ *
+ * The shared row partial (ListingRow.astro) is composed by both
+ * ListingTable.astro (catalog table view) and Cart.astro (cart page).
+ * The contract pinned here lives on the row partial because that's where
+ * the markup is authored.
  *
  * Contract:
  *   - Multi-image listing: data-images is a JSON-stringified array of
@@ -45,15 +50,15 @@ import { join } from 'node:path';
  * nav-mobile-disclosure.test.ts, and listing-cards-data-images.test.ts.
  */
 
-const listingTablePath = join(
+const listingRowPath = join(
   process.cwd(),
   'src',
   'components',
   'Listings',
-  'ListingTable.astro',
+  'ListingRow.astro',
 );
 
-const readListingTable = (): string => readFileSync(listingTablePath, 'utf8');
+const readListingTable = (): string => readFileSync(listingRowPath, 'utf8');
 
 /*
  * Extract the <button class="cs-listing-image-btn" ...> opening tag
@@ -66,7 +71,7 @@ function extractImageButtonOpenTag(astro: string): string {
   const markerIdx = astro.indexOf(marker);
   if (markerIdx === -1) {
     throw new Error(
-      'expected <button class="cs-listing-image-btn"> in ListingTable.astro',
+      'expected <button class="cs-listing-image-btn"> in ListingRow.astro',
     );
   }
   // Walk backwards to the opening `<button`.
@@ -104,7 +109,7 @@ function extractImageButtonOpenTag(astro: string): string {
 function extractOrderRowOpenTag(astro: string): string {
   const fallback = astro.indexOf('class="cs-order-row"');
   if (fallback === -1) {
-    throw new Error('expected <tr class="cs-order-row"> in ListingTable.astro');
+    throw new Error('expected <tr class="cs-order-row"> in ListingRow.astro');
   }
   let i = fallback;
   while (i >= 0 && !(astro[i] === '<' && astro.slice(i, i + 3) === '<tr')) i--;
@@ -126,7 +131,7 @@ function extractOrderRowOpenTag(astro: string): string {
   throw new Error('unterminated <tr> opening tag in ListingTable.astro');
 }
 
-describe('ListingTable.astro - cs-listing-image-btn trigger primitive', () => {
+describe('ListingRow.astro - cs-listing-image-btn trigger primitive', () => {
   it('renders <button class="cs-listing-image-btn"> when a listing has an image', () => {
     expect(readListingTable()).toMatch(
       /<button[^>]*class="cs-listing-image-btn"/,

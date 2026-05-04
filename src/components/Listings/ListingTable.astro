@@ -1,8 +1,8 @@
 ---
 import "./ListingTable.css";
-import CartControl from "../CartControl/CartControl.astro";
+import ListingRow from "./ListingRow.astro";
+import ListingThead from "./ListingThead.astro";
 import type { Listing } from "../../lib/storefront";
-import { formatPrice } from "../../lib/storefront";
 
 interface Props {
   listings: Listing[];
@@ -34,85 +34,20 @@ const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.ca
 <section class="cs-listing-table" aria-label="Products" data-currency={currency}>
   {groups.map((group) => (
     <table class="cs-order-sheet-table" role="table">
-      <thead role="rowgroup">
-        <tr role="row">
-          <th class="cs-col-image" scope="col" role="columnheader"><span class="cs-sr-only">Image</span></th>
-          <th class="cs-col-product" scope="col" role="columnheader">
-            {hasCategories && group.category ? `${group.category}s` : <span class="cs-sr-only">Product</span>}
-          </th>
-            {hasWholesale ? (
-              <>
-                <th class="cs-col-price" scope="col" role="columnheader">MSRP</th>
-                <th class="cs-col-price" scope="col" role="columnheader">Wholesale</th>
-              </>
-            ) : (
-              <th class="cs-col-price" scope="col" role="columnheader">Unit Price</th>
-            )}
-            <th class="cs-col-moq" scope="col" role="columnheader">MOQ</th>
-            <th class="cs-col-qty" scope="col" role="columnheader">Qty</th>
-            <th class="cs-col-total" scope="col" role="columnheader">Line Total</th>
-            <th class="cs-col-remove" scope="col" role="columnheader"></th>
-          </tr>
-        </thead>
-        <tbody role="rowgroup">
-          {group.items.map((listing) => {
-            const thumb = listing.images[0];
-            const wholesaleRaw = hasWholesale ? Math.round(listing.rawPrice * wholesaleMargin!) : listing.rawPrice;
-            const effectivePrice = hasWholesale ? formatPrice(wholesaleRaw, currency) : listing.price;
-            return (
-              <tr
-                class="cs-order-row"
-                role="row"
-                data-sku={listing.sku}
-                data-raw-price={wholesaleRaw}
-                data-moq={listing.moq ?? ''}
-              >
-                <td class="cs-col-image" role="cell">
-                  {thumb ? (
-                    <button
-                      type="button"
-                      class="cs-listing-image-btn"
-                      aria-haspopup="dialog"
-                      data-images={JSON.stringify(listing.images)}
-                    >
-                      <img src={thumb.url} alt={thumb.alt || listing.name} class="cs-thumb" loading="lazy" />
-                    </button>
-                  ) : (
-                    <span class="cs-no-image" aria-hidden="true"></span>
-                  )}
-                </td>
-                <td class="cs-col-product" role="cell">
-                  <strong>{listing.name}</strong>
-                  <span class="cs-order-sku">{listing.sku}</span>
-                  {listing.description && <span class="cs-order-desc">{listing.description}</span>}
-                </td>
-                {hasWholesale ? (
-                  <>
-                    <td class="cs-col-price cs-msrp" role="cell">{listing.price}</td>
-                    <td class="cs-col-price" role="cell">{effectivePrice}</td>
-                  </>
-                ) : (
-                  <td class="cs-col-price" role="cell">{listing.price}</td>
-                )}
-                <td class="cs-col-moq" role="cell">{listing.moq ? `Min ${listing.moq}` : ''}</td>
-                <td class="cs-col-qty" role="cell">
-                  <CartControl
-                    sku={listing.sku}
-                    name={listing.name}
-                    moq={listing.moq}
-                    status={listing.status}
-                  />
-                </td>
-                <td class="cs-col-total" role="cell">
-                  <span class="cs-line-total">$0.00</span>
-                </td>
-                <td class="cs-col-remove" role="cell">
-                  <button type="button" class="cs-remove-btn" aria-label={`Remove ${listing.name}`} hidden>&times;</button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <ListingThead
+        hasWholesale={hasWholesale}
+        productLabel={hasCategories && group.category ? `${group.category}s` : null}
+      />
+      <tbody role="rowgroup">
+        {group.items.map((listing) => (
+          <ListingRow
+            listing={listing}
+            currency={currency}
+            hasWholesale={hasWholesale}
+            wholesaleMargin={wholesaleMargin}
+          />
+        ))}
+      </tbody>
+    </table>
   ))}
 </section>

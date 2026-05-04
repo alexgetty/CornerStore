@@ -84,9 +84,34 @@ describe('ListingCards.css - .cs-listing-image-btn reset', () => {
     expect(body).toMatch(/color:\s*inherit\b/);
   });
 
-  it('declares cursor pointer and appearance none for parity with native buttons', () => {
+  it('declares cursor zoom-in (lightbox affordance) and appearance none', () => {
+    /*
+     * The button class is package-owned and the only thing the trigger does
+     * is open the lightbox. The cursor moves from `pointer` to `zoom-in` to
+     * communicate the dialog interaction visually. Pin `zoom-in` so a
+     * regression to `pointer` (which doesn't signal "this opens a viewer")
+     * fails loudly here.
+     */
     const body = extractImageBtnRuleBody(readCss());
-    expect(body).toMatch(/cursor:\s*pointer\b/);
+    expect(body).toMatch(/cursor:\s*zoom-in\b/);
     expect(body).toMatch(/appearance:\s*none\b/);
+  });
+
+  it('declares a :focus-visible outline using --cs-focus-color (with currentColor fallback)', () => {
+    /*
+     * Keyboard users tabbing through a card grid need a visible focus ring on
+     * the image trigger. The package owns the button, so the affordance lives
+     * on the package class (not in theme territory). The outline color reads
+     * a token with a currentColor fallback so themes that omit the token
+     * still get a visible (if context-colored) ring.
+     */
+    const css = readCss();
+    const re = /\.cs-listing-image-btn:focus-visible\s*\{([\s\S]*?)\}/;
+    const match = re.exec(css);
+    expect(match, 'expected a .cs-listing-image-btn:focus-visible rule').not.toBeNull();
+    const body = match![1]!;
+    expect(body).toMatch(/outline:/);
+    expect(body).toMatch(/outline-offset:/);
+    expect(body).toMatch(/var\(--cs-focus-color,\s*currentColor\)/);
   });
 });

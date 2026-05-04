@@ -1,5 +1,6 @@
 ---
 import "./ListingCards.css";
+import "../Lightbox/Lightbox.css";
 import CartControl from "../CartControl/CartControl.astro";
 import type { Listing } from "../../lib/storefront";
 import { rawPriceToDecimal, formatPrice } from "../../lib/storefront";
@@ -88,3 +89,7 @@ const isWholesale = wholesaleMargin != null;
     <p class="cs-listings-empty">No products available.</p>
   )}
 </section>
+
+<script>
+  import "../Lightbox/lightbox.ts";
+</script>

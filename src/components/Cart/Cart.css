@@ -11,122 +11,13 @@
     text-underline-offset: var(--cs-text-underline-offset, auto);
   }
 
-  .cs-cart-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: var(--cs-cart-block-margin, 0);
-  }
-
-  .cs-cart-table th,
-  .cs-cart-table td {
-    padding: var(--cs-cart-cell-padding, 0);
-    text-align: left;
-    vertical-align: middle;
-    border-bottom-width: var(--cs-border-width, 0);
-    border-bottom-style: solid;
-    border-bottom-color: var(--cs-border-color, currentColor);
-  }
-
-  .cs-cart-table thead th {
-    font-size: var(--cs-text-3, inherit);
-    font-weight: var(--cs-emphasis-font-weight, inherit);
-    color: var(--cs-body-text-color, inherit);
-    border-bottom-width: var(--cs-border-width-emphasis, 0);
-  }
-
-  .cs-cart-product {
-    display: flex;
-    align-items: center;
-    gap: var(--cs-cart-product-gap, 0);
-  }
-
-  .cs-cart-thumb {
-    width: var(--cs-cart-thumb-size, auto);
-    height: var(--cs-cart-thumb-size, auto);
-    object-fit: cover;
-    border-radius: var(--cs-thumb-border-radius, 0);
-    flex-shrink: 0;
-  }
-
-  /* Scoped to the cart product cell to avoid colliding with the order-table
-     placeholder, which uses the same class name. */
-  .cs-cart-product .cs-no-image {
-    display: block;
-    width: var(--cs-cart-thumb-size, auto);
-    height: var(--cs-cart-thumb-size, auto);
-    background: var(--cs-image-background, transparent);
-    border-radius: var(--cs-thumb-border-radius, 0);
-    flex-shrink: 0;
-  }
-
-  .cs-cart-product strong {
-    display: block;
-  }
-
-  .cs-cart-sku {
-    display: block;
-    font-size: var(--cs-text-3, inherit);
-    color: var(--cs-muted-text-color, inherit);
-  }
-
-  .cs-cart-moq {
-    display: block;
-    font-size: var(--cs-text-3, inherit);
-    color: var(--cs-muted-text-color, inherit);
-  }
-
-  .cs-col-price,
-  .cs-col-total {
-    text-align: right;
-    white-space: nowrap;
-  }
-
-  .cs-col-qty {
-    width: var(--cs-cart-col-qty-width, auto);
-  }
-
-  .cs-col-total {
-    width: var(--cs-cart-col-total-width, auto);
-  }
-
-  .cs-col-remove {
-    width: var(--cs-cart-col-remove-width, auto);
-  }
-
-  .cs-msrp {
-    text-decoration: line-through;
-    color: var(--cs-muted-text-color, inherit);
-  }
-
-  /* --- Quantity controls live in CartControl.css --- */
-
-  /* Tighten the stepper inside a cart cell so it matches the cart's compact
-     row height (matches the ListingTable approach). */
-  .cs-cart-row .cs-cart-control-down,
-  .cs-cart-row .cs-cart-control-up {
-    width: var(--cs-cart-stepper-cell-size, auto);
-    height: var(--cs-cart-stepper-cell-size, auto);
-  }
-
-  .cs-cart-row .cs-cart-control-input {
-    height: var(--cs-cart-stepper-cell-size, auto);
-    width: var(--cs-cart-stepper-cell-input-width, auto);
-    flex: 0 0 auto;
-    font-size: var(--cs-text-3, inherit);
-  }
-
-  .cs-remove-btn {
-    background: none;
-    border: none;
-    font-size: var(--cs-remove-btn-font-size, inherit);
-    cursor: pointer;
-    color: var(--cs-muted-text-color, inherit);
-    padding: var(--cs-remove-btn-padding, 0);
-    transition: color var(--cs-transition-fast, 0s);
-  }
-
-  .cs-remove-btn:hover {
-    color: var(--cs-error-color, currentColor);
+  /* Cart rows surface the remove button. Catalog rows render the same shared
+     <ListingRow /> markup with the remove button initially `hidden`; the
+     catalog-side JS toggles it on/off per row qty. In the cart, every visible
+     row is in the cart, so the remove button is always live — un-hide it
+     here scoped to .cs-cart so the markup itself stays unified. */
+  .cs-cart .cs-remove-btn[hidden] {
+    display: inline-block;
   }
 
   /* Subtotal lives in the table's <tfoot>. The label cell is a
@@ -134,8 +25,7 @@
      for the value, and table-navigation mode treats the row as the table's
      summary instead of unrelated trailing content. The value cell shares
      .cs-col-total with the per-row line totals above so it lands in the same
-     column visually. No flex wrapper, no min-width hack — table layout owns
-     the alignment now. */
+     column visually. */
   .cs-totals-label {
     font-weight: var(--cs-emphasis-font-weight, inherit);
     color: var(--cs-body-text-color, inherit);
@@ -317,7 +207,7 @@
     font-size: var(--cs-text-3, inherit);
   }
 
-  .cs-cart-row.cs-cart-unavailable {
+  .cs-order-row.cs-cart-unavailable {
     opacity: var(--cs-disabled-opacity, 1);
   }
 
@@ -366,149 +256,5 @@
 
   .cs-clear-cart-confirm[hidden] {
     display: none;
-  }
-
-  /* ------------------------------------------------------------------
-   * Mobile collapse: cart table -> stacked labeled cards.
-   *
-   * Why 40rem (640px): five columns at desktop sizes (Product cell with
-   * 60px thumb, Price, Qty stepper at 160px, Total, Remove) need ~600px
-   * of horizontal space before the stepper starts crowding the price /
-   * total numbers and the product name truncates uselessly. 40rem is the
-   * width below which the table model stops carrying its weight.
-   *
-   * The breakpoint is hardcoded here because CSS @media queries cannot
-   * reference custom properties cross-browser (the env() / spec proposal
-   * isn't shipped). The token --cs-cart-mobile-* family in theme.css
-   * configures the LOOK of the stack; the trigger width itself is a
-   * structural decision pinned by tests/unit/components/cart-mobile-stack.test.ts.
-   *
-   * Pattern: display-block stack with data-label pseudo-elements.
-   * - thead disappears (column headers no longer relevant once each cell
-   *   is labeled inline).
-   * - tr becomes a card; td becomes a labeled flex row inside it.
-   * - data-label="Price" on the cell -> ::before renders "Price:".
-   * - tfoot subtotal row collapses the same way and reads as the summary.
-   * - Stepper buttons + qty input + remove button hit WCAG 2.5.5 (44px).
-   * ------------------------------------------------------------------ */
-  @media (max-width: 40rem) {
-    .cs-cart-table thead {
-      display: none;
-    }
-
-    .cs-cart-table tr {
-      display: block;
-      margin-bottom: var(--cs-cart-mobile-card-margin, 0);
-      padding: var(--cs-cart-mobile-row-padding, 0);
-      border-bottom-width: var(--cs-border-width, 0);
-      border-bottom-style: solid;
-      border-bottom-color: var(--cs-border-color, currentColor);
-    }
-
-    /* Each cell becomes a labeled flex row. The label sits left, the
-       value sits right - matching a typical receipt / line-item layout. */
-    .cs-cart-table tbody td,
-    .cs-cart-table tfoot td {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--cs-cart-mobile-row-gap, 0);
-      width: 100%;
-      padding: var(--cs-cart-mobile-row-gap, 0) 0;
-      text-align: right;
-      border-bottom-width: 0;
-      white-space: normal;
-    }
-
-    /* The visible column label, injected from data-label="...". This is
-       the mobile-only labeling contract. */
-    .cs-cart-table tbody td[data-label]::before,
-    .cs-cart-table tfoot td[data-label]::before {
-      content: attr(data-label) ":";
-      font-weight: var(--cs-emphasis-font-weight, inherit);
-      color: var(--cs-body-text-color, inherit);
-      flex: 0 0 auto;
-    }
-
-    /* Product cell is the row's headline. Stays full-width without a
-       label and lets the existing flex layout (thumb + name) own it. */
-    .cs-cart-table tbody td.cs-col-product {
-      justify-content: flex-start;
-      text-align: left;
-      padding-top: 0;
-    }
-
-    /* Qty cell hosts the CartControl stepper. The cart-control element
-       defaults to width:100% which lets it shrink to fit alongside the
-       data-label inside the flex row. The two stepper buttons stay at
-       the touch-target size; the input flex:1's into the remaining
-       horizontal space. */
-    .cs-cart-table tbody td.cs-col-qty .cs-cart-control {
-      flex: 0 1 auto;
-    }
-
-    /* Remove button gets its own line at the bottom of the card so the
-       large tap target doesn't compete with price/qty for horizontal
-       space. Right-align so it lands under the prices. */
-    .cs-cart-table tbody td.cs-col-remove {
-      justify-content: flex-end;
-      padding-bottom: 0;
-    }
-
-    /* Stepper buttons + input grow to the WCAG touch target. Desktop
-       sizes (--cs-cart-stepper-cell-size, 2rem) stay untouched outside
-       this media query. */
-    .cs-cart-row .cs-cart-control-down,
-    .cs-cart-row .cs-cart-control-up {
-      width: var(--cs-cart-touch-target, 44px);
-      height: var(--cs-cart-touch-target, 44px);
-    }
-
-    .cs-cart-row .cs-cart-control-input {
-      height: var(--cs-cart-touch-target, 44px);
-    }
-
-    /* Remove button: ensure tap target. The desktop visual stays
-       (background:none, font-size from token) - we just enforce a floor
-       on the hit area. */
-    .cs-remove-btn {
-      min-width: var(--cs-cart-touch-target, 44px);
-      min-height: var(--cs-cart-touch-target, 44px);
-    }
-
-    /* tfoot subtotal row participates in the stack. The trailing remove
-       cell exists only for desktop column alignment - hide it here. The
-       label cell is a <th scope="row"> that becomes the row's heading,
-       laid out as a flex row alongside the value cell so the subtotal
-       reads as "Subtotal       $30.00" on one line. */
-    .cs-cart-table tfoot tr.cs-totals-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: var(--cs-cart-mobile-row-gap, 0);
-    }
-
-    .cs-cart-table tfoot .cs-col-remove {
-      display: none;
-    }
-
-    .cs-cart-table tfoot th.cs-totals-label {
-      flex: 0 0 auto;
-      text-align: left;
-      padding: var(--cs-cart-mobile-row-gap, 0) 0;
-    }
-
-    .cs-cart-table tfoot td.cs-col-total {
-      justify-content: flex-end;
-    }
-
-    /* Reset the desktop column-width tokens inside the stack - they have
-       no meaning when each cell is full-width. */
-    .cs-cart-table .cs-col-qty,
-    .cs-cart-table .cs-col-total,
-    .cs-cart-table .cs-col-remove,
-    .cs-cart-table .cs-col-price {
-      width: auto;
-    }
   }
 }

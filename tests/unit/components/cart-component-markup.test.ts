@@ -47,14 +47,15 @@ describe('Cart.astro — subtotal renders in <tfoot> inside the cart table', () 
     expect(tfootMatch![0]).toContain('cs-subtotal-value');
   });
 
-  it('the <tfoot> sits inside the .cs-cart-table (not a sibling element)', () => {
+  it('the <tfoot> sits inside the cart table (not a sibling element)', () => {
     const out = readCart();
-    // The cart table opens with class="cs-cart-table" and closes with
-    // </table>. The <tfoot> must live between those.
+    // The cart table now uses the same class as the catalog table
+    // (.cs-order-sheet-table) since the cart row IS the catalog row. The
+    // <tfoot> must live inside that <table>.
     const tableMatch = out.match(
-      /<table\s+class="cs-cart-table"[\s\S]*?<\/table>/,
+      /<table\s+class="cs-order-sheet-table"[^>]*>[\s\S]*?<\/table>/,
     );
-    expect(tableMatch, 'expected .cs-cart-table source block').not.toBeNull();
+    expect(tableMatch, 'expected .cs-order-sheet-table source block').not.toBeNull();
     expect(tableMatch![0]).toMatch(/<tfoot>[\s\S]*<\/tfoot>/);
   });
 
@@ -71,17 +72,18 @@ describe('Cart.astro — subtotal renders in <tfoot> inside the cart table', () 
     expect(tfootMatch![0]).toMatch(/<th[^>]*\bscope="row"/);
   });
 
-  it('subtotal label colspan is hasWholesale ? 4 : 3 (covers leading cols, leaves total + remove)', () => {
+  it('subtotal label colspan is hasWholesale ? 6 : 5 (covers leading cols, leaves total + remove)', () => {
     const out = readCart();
     const tfootMatch = out.match(/<tfoot>[\s\S]*?<\/tfoot>/);
     expect(tfootMatch).not.toBeNull();
-    // The colspan must adapt to the wholesale column variant. Default has
-    // 5 columns (Product, Price, Qty, Total, Remove): label spans 3, leaving
-    // total + remove. Wholesale has 6 (Product, MSRP, Wholesale, Qty, Total,
-    // Remove): label spans 4. Pin the conditional rather than a literal so
-    // the test fails if someone hardcodes one variant.
+    // The colspan must adapt to the wholesale column variant. The cart now
+    // uses the unified row from ListingRow.astro: 7 columns default (Image,
+    // Product, Price, MOQ, Qty, Total, Remove) -> label spans 5; 8 columns
+    // wholesale (Image, Product, MSRP, Wholesale, MOQ, Qty, Total, Remove)
+    // -> label spans 6. Pin the conditional rather than a literal so the
+    // test fails if someone hardcodes one variant.
     expect(tfootMatch![0]).toMatch(
-      /colspan=\{\s*hasWholesale\s*\?\s*4\s*:\s*3\s*\}/,
+      /colspan=\{\s*hasWholesale\s*\?\s*6\s*:\s*5\s*\}/,
     );
   });
 

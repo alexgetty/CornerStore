@@ -52,10 +52,15 @@
     margin: 0;
     background: transparent;
     border: 0;
-    cursor: pointer;
+    cursor: zoom-in;
     appearance: none;
     font: inherit;
     color: inherit;
+  }
+
+  .cs-listing-image-btn:focus-visible {
+    outline: var(--cs-focus-width, 2px) solid var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
   }
 
   .cs-listing-image img {

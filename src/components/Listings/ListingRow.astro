@@ -1,0 +1,81 @@
+---
+import "../Lightbox/Lightbox.css";
+import CartControl from "../CartControl/CartControl.astro";
+import type { Listing } from "../../lib/storefront";
+import { formatPrice } from "../../lib/storefront";
+
+interface Props {
+  listing: Listing;
+  currency: string;
+  hasWholesale: boolean;
+  wholesaleMargin?: number;
+}
+
+const { listing, currency, hasWholesale, wholesaleMargin } = Astro.props;
+
+const thumb = listing.images[0];
+const wholesaleRaw = hasWholesale ? Math.round(listing.rawPrice * wholesaleMargin!) : listing.rawPrice;
+const effectivePrice = hasWholesale ? formatPrice(wholesaleRaw, currency) : listing.price;
+---
+
+<tr
+  class="cs-order-row"
+  role="row"
+  data-sku={listing.sku}
+  data-raw-price={wholesaleRaw}
+  data-moq={listing.moq ?? ''}
+  data-status={listing.status ?? ''}
+  data-name={listing.name}
+>
+  <td class="cs-col-image" role="cell">
+    {thumb ? (
+      <button
+        type="button"
+        class="cs-listing-image-btn"
+        aria-haspopup="dialog"
+        data-images={JSON.stringify(listing.images)}
+      >
+        <img src={thumb.url} alt={thumb.alt || listing.name} class="cs-thumb" loading="lazy" />
+      </button>
+    ) : (
+      <span class="cs-no-image" aria-hidden="true"></span>
+    )}
+  </td>
+  <td class="cs-col-product" role="cell">
+    <strong>{listing.name}</strong>
+    <span class="cs-order-sku">{listing.sku}</span>
+    {listing.description && <span class="cs-order-desc">{listing.description}</span>}
+    {listing.status && <span class="cs-sr-only">Unavailable: {listing.status}</span>}
+  </td>
+  {hasWholesale ? (
+    <>
+      <td class="cs-col-price cs-msrp" role="cell">{listing.price}</td>
+      <td class="cs-col-price" role="cell">{effectivePrice}</td>
+    </>
+  ) : (
+    <td class="cs-col-price" role="cell">{listing.price}</td>
+  )}
+  <td class="cs-col-moq" role="cell">{listing.moq ? `Min ${listing.moq}` : ''}</td>
+  <td class="cs-col-qty" role="cell">
+    <CartControl
+      sku={listing.sku}
+      name={listing.name}
+      moq={listing.moq}
+      status={listing.status}
+    />
+  </td>
+  <td class="cs-col-total" role="cell">
+    {listing.status ? (
+      <span class="cs-line-total">&mdash;</span>
+    ) : (
+      <span class="cs-line-total">$0.00</span>
+    )}
+  </td>
+  <td class="cs-col-remove" role="cell">
+    <button type="button" class="cs-remove-btn" aria-label={`Remove ${listing.name}`} hidden>&times;</button>
+  </td>
+</tr>
+
+<script>
+  import "../Lightbox/lightbox.ts";
+</script>

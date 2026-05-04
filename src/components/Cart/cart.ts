@@ -28,7 +28,7 @@ function init(root: HTMLElement) {
 
   const emptyEl = root.querySelector('.cs-cart-empty') as HTMLElement;
   const contentEl = root.querySelector('.cs-cart-content') as HTMLElement;
-  const rows = root.querySelectorAll<HTMLElement>('.cs-cart-row');
+  const rows = root.querySelectorAll<HTMLElement>('.cs-order-row');
   const subtotalEl = root.querySelector('.cs-subtotal-value') as HTMLElement;
   const submitBtn = root.querySelector('.cs-submit-btn') as HTMLButtonElement;
   const errorsEl = root.querySelector('.cs-order-errors') as HTMLElement;
@@ -168,7 +168,7 @@ function init(root: HTMLElement) {
     // is single-sourced.
     const removeBtn = target.closest<HTMLElement>('.cs-remove-btn');
     if (removeBtn) {
-      const row = removeBtn.closest<HTMLElement>('.cs-cart-row');
+      const row = removeBtn.closest<HTMLElement>('.cs-order-row');
       if (row) {
         const control = row.querySelector<HTMLElement>('.cs-cart-control');
         if (control) handleCartControlAction(control, 'input', 0);
@@ -215,7 +215,7 @@ function init(root: HTMLElement) {
 
     if (input) input.value = String(next);
 
-    const row = control.closest<HTMLElement>('.cs-cart-row');
+    const row = control.closest<HTMLElement>('.cs-order-row');
     if (row) updateRow(row);
 
     commitMutation(sku, next);
@@ -514,7 +514,7 @@ function init(root: HTMLElement) {
         '.cs-order-actions, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
       ).forEach((el) => el.remove());
 
-      pdfContent.querySelectorAll('.cs-cart-row[hidden]').forEach((row) => row.remove());
+      pdfContent.querySelectorAll('.cs-order-row[hidden]').forEach((row) => row.remove());
 
       pdfContent.querySelectorAll('.cs-cart-control-input').forEach((input) => {
         const val = (input as HTMLInputElement).value;

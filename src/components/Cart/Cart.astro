@@ -1,8 +1,9 @@
 ---
 import "./Cart.css";
-import CartControl from "../CartControl/CartControl.astro";
+import "../Listings/ListingTable.css";
+import ListingRow from "../Listings/ListingRow.astro";
+import ListingThead from "../Listings/ListingThead.astro";
 import type { Listing } from "../../lib/storefront";
-import { formatPrice } from "../../lib/storefront";
 
 interface Props {
   storeName: string;
@@ -61,87 +62,21 @@ for (const listing of listings) {
     <div class="cs-cart-unavailable-banner" hidden role="alert">
       <button type="button" class="cs-clear-unavailable">Remove unavailable items</button>
     </div>
-    <table class="cs-cart-table">
-      <thead>
-        <tr>
-          <th class="cs-col-product">Product</th>
-          {hasWholesale ? (
-            <>
-              <th class="cs-col-price">MSRP</th>
-              <th class="cs-col-price">Wholesale</th>
-            </>
-          ) : (
-            <th class="cs-col-price">Price</th>
-          )}
-          <th class="cs-col-qty">Qty</th>
-          <th class="cs-col-total">Total</th>
-          <th class="cs-col-remove"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {listings.map((listing) => {
-          const thumb = listing.images[0];
-          const effectiveRaw = hasWholesale
-            ? Math.round(listing.rawPrice * wholesaleMargin!)
-            : listing.rawPrice;
-          return (
-            <tr
-              class="cs-cart-row"
-              data-sku={listing.sku}
-              data-raw-price={effectiveRaw}
-              data-moq={listing.moq ?? ''}
-              data-status={listing.status ?? ''}
-              data-name={listing.name}
-              hidden
-            >
-              <td class="cs-col-product">
-                <div class="cs-cart-product">
-                  {thumb ? (
-                    <img src={thumb.url} alt={thumb.alt || listing.name} class="cs-cart-thumb" loading="lazy" />
-                  ) : (
-                    <span class="cs-no-image"></span>
-                  )}
-                  <div>
-                    <strong>{listing.name}</strong>
-                    <span class="cs-cart-sku">{listing.sku}</span>
-                    {listing.moq && <span class="cs-cart-moq">Min {listing.moq}</span>}
-                    {listing.status && <span class="cs-sr-only">Unavailable: {listing.status}</span>}
-                  </div>
-                </div>
-              </td>
-              {hasWholesale ? (
-                <>
-                  <td class="cs-col-price cs-msrp" data-label="MSRP">{listing.price}</td>
-                  <td class="cs-col-price" data-label="Wholesale">{formatPrice(effectiveRaw, currency)}</td>
-                </>
-              ) : (
-                <td class="cs-col-price" data-label="Price">{listing.price}</td>
-              )}
-              <td class="cs-col-qty" data-label="Qty">
-                <CartControl
-                  sku={listing.sku}
-                  name={listing.name}
-                  moq={listing.moq}
-                  status={listing.status}
-                />
-              </td>
-              <td class="cs-col-total" data-label="Total">
-                {listing.status ? (
-                  <span class="cs-line-total">&mdash;</span>
-                ) : (
-                  <span class="cs-line-total">$0.00</span>
-                )}
-              </td>
-              <td class="cs-col-remove">
-                <button type="button" class="cs-remove-btn" aria-label={`Remove ${listing.name}`}>&times;</button>
-              </td>
-            </tr>
-          );
-        })}
+    <table class="cs-order-sheet-table" role="table">
+      <ListingThead hasWholesale={hasWholesale} />
+      <tbody role="rowgroup">
+        {listings.map((listing) => (
+          <ListingRow
+            listing={listing}
+            currency={currency}
+            hasWholesale={hasWholesale}
+            wholesaleMargin={wholesaleMargin}
+          />
+        ))}
       </tbody>
       <tfoot>
         <tr class="cs-totals-row">
-          <th colspan={hasWholesale ? 4 : 3} scope="row" class="cs-totals-label">Subtotal</th>
+          <th colspan={hasWholesale ? 6 : 5} scope="row" class="cs-totals-label">Subtotal</th>
           <td class="cs-col-total">
             <span class="cs-subtotal-value cs-totals-value">$0.00</span>
           </td>

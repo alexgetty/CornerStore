@@ -1,0 +1,188 @@
+/* =============================================================
+ * Lightbox: full-viewport product image preview.
+ *
+ * Package-layer baseline. The script (`lightbox.ts`) builds the
+ * overlay DOM lazily on the first trigger click and toggles
+ * `body.cs-lightbox-open` while the overlay is visible.
+ *
+ * Token surface (read at use sites with `var(..., fallback)` so the
+ * package never silently breaks if a consumer's theme omits a token):
+ *
+ *   --cs-lightbox-backdrop          backdrop fill (default black palette token)
+ *   --cs-lightbox-control-size      close/prev/next button size (default 3rem)
+ *   --cs-lightbox-control-icon-size inner SVG size (default 1.25rem)
+ *
+ * Additional internal tokens (--cs-lightbox-*) carry defaults via
+ * var(..., neutral) at the use site. They are NOT declared on :root —
+ * matches the package convention from defaults.css.
+ * ============================================================= */
+@layer package {
+
+  /* --- Overlay container --- */
+
+  .cs-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--cs-lightbox-backdrop, var(--cs-black, black));
+  }
+
+  .cs-lightbox[hidden] {
+    display: none;
+  }
+
+  /* --- Image: contain inside the viewport, never upscale --- */
+
+  .cs-lightbox-image {
+    display: block;
+    max-width: 100vw;
+    max-height: 100vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    pointer-events: none; /* clicks on image fall through to backdrop */
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* --- Shared button reset for overlay controls --- */
+
+  .cs-lightbox-close,
+  .cs-lightbox-prev,
+  .cs-lightbox-next {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--cs-lightbox-control-color, var(--cs-white, white));
+    border-width: var(--cs-border-width, 1px);
+    border-style: solid;
+    border-color: var(--cs-lightbox-control-border, currentColor);
+    cursor: pointer;
+    appearance: none;
+    padding: 0;
+    transition: var(--cs-transition-normal, 0.2s ease);
+  }
+
+  /* Inner SVG: explicit size so rendering does not depend on font metrics.
+     Color flips on parent hover via stroke="currentColor". */
+  .cs-lightbox-close > svg,
+  .cs-lightbox-prev > svg,
+  .cs-lightbox-next > svg {
+    display: block;
+    width: var(--cs-lightbox-control-icon-size, 1.25rem);
+    height: var(--cs-lightbox-control-icon-size, 1.25rem);
+  }
+
+  .cs-lightbox-close:hover,
+  .cs-lightbox-prev:hover,
+  .cs-lightbox-next:hover {
+    background: var(--cs-lightbox-control-color, var(--cs-white, white));
+    color: var(--cs-lightbox-backdrop, var(--cs-black, black));
+    border-color: var(--cs-lightbox-control-color, var(--cs-white, white));
+  }
+
+  .cs-lightbox-close:focus-visible,
+  .cs-lightbox-prev:focus-visible,
+  .cs-lightbox-next:focus-visible {
+    outline: var(--cs-focus-width, 2px) solid var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
+  }
+
+  /* --- Close: top right --- */
+
+  .cs-lightbox-close {
+    top: var(--cs-lightbox-edge-inset, 1rem);
+    right: var(--cs-lightbox-edge-inset, 1rem);
+    width: var(--cs-lightbox-control-size, 3rem);
+    height: var(--cs-lightbox-control-size, 3rem);
+  }
+
+  /* --- Prev / next: edge-anchored, vertically centered --- */
+
+  .cs-lightbox-prev,
+  .cs-lightbox-next {
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--cs-lightbox-control-size, 3rem);
+    height: var(--cs-lightbox-control-size, 3rem);
+  }
+
+  .cs-lightbox-prev {
+    left: var(--cs-lightbox-edge-inset, 1rem);
+  }
+
+  .cs-lightbox-next {
+    right: var(--cs-lightbox-edge-inset, 1rem);
+  }
+
+  /* --- Dot indicators: bottom centered --- */
+
+  .cs-lightbox-dots {
+    position: absolute;
+    left: 50%;
+    bottom: var(--cs-lightbox-dots-bottom, 1.25rem);
+    transform: translateX(-50%);
+    display: flex;
+    gap: var(--cs-lightbox-dots-gap, 0.5rem);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .cs-lightbox-dots > li {
+    display: block;
+  }
+
+  .cs-lightbox-dot {
+    display: block;
+    width: var(--cs-lightbox-dot-size, 0.75rem);
+    height: var(--cs-lightbox-dot-size, 0.75rem);
+    padding: 0;
+    background: transparent;
+    border-width: var(--cs-border-width, 1px);
+    border-style: solid;
+    border-color: var(--cs-lightbox-dot-border, currentColor);
+    cursor: pointer;
+    appearance: none;
+    transition: var(--cs-transition-normal, 0.2s ease);
+  }
+
+  .cs-lightbox-dot:hover {
+    border-color: var(--cs-lightbox-control-color, var(--cs-white, white));
+  }
+
+  .cs-lightbox-dot[aria-current="true"] {
+    background: var(--cs-lightbox-control-color, var(--cs-white, white));
+    border-color: var(--cs-lightbox-control-color, var(--cs-white, white));
+  }
+
+  .cs-lightbox-dot:focus-visible {
+    outline: var(--cs-focus-width, 2px) solid var(--cs-focus-color, currentColor);
+    outline-offset: var(--cs-focus-offset, 2px);
+  }
+
+  /* --- Single-image mode: hide nav surfaces entirely.
+     The script also relies on `display: none` here to make these
+     elements non-focusable (focus trap excludes them via offsetParent). --- */
+
+  .cs-lightbox[data-single="true"] .cs-lightbox-prev,
+  .cs-lightbox[data-single="true"] .cs-lightbox-next,
+  .cs-lightbox[data-single="true"] .cs-lightbox-dots {
+    display: none;
+  }
+
+  /* --- Scroll lock helper.
+     The package owns `body { overflow: hidden }` and uses
+     `.cs-page-scroll` as the actual scroll container, so freezing scroll
+     for the lightbox means freezing `.cs-page-scroll`, not `body`. --- */
+
+  body.cs-lightbox-open .cs-page-scroll {
+    overflow: hidden;
+  }
+}

@@ -1,0 +1,29 @@
+---
+interface Props {
+  hasWholesale: boolean;
+  productLabel?: string | null;
+}
+
+const { hasWholesale, productLabel = null } = Astro.props;
+---
+
+<thead role="rowgroup">
+  <tr role="row">
+    <th class="cs-col-image" scope="col" role="columnheader"><span class="cs-sr-only">Image</span></th>
+    <th class="cs-col-product" scope="col" role="columnheader">
+      {productLabel ? productLabel : <span class="cs-sr-only">Product</span>}
+    </th>
+    {hasWholesale ? (
+      <>
+        <th class="cs-col-price" scope="col" role="columnheader">MSRP</th>
+        <th class="cs-col-price" scope="col" role="columnheader">Wholesale</th>
+      </>
+    ) : (
+      <th class="cs-col-price" scope="col" role="columnheader">Unit Price</th>
+    )}
+    <th class="cs-col-moq" scope="col" role="columnheader">MOQ</th>
+    <th class="cs-col-qty" scope="col" role="columnheader">Qty</th>
+    <th class="cs-col-total" scope="col" role="columnheader">Line Total</th>
+    <th class="cs-col-remove" scope="col" role="columnheader"></th>
+  </tr>
+</thead>

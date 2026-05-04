@@ -125,30 +125,16 @@
   --cs-letter-spacing-loose: 0.05em;
 
   /* -------------------------------------------------------
-   * Cart — table, totals, actions, banners
+   * Cart — totals, actions, banners
+   *
+   * Cart rows render via the shared <ListingRow /> partial under the order
+   * sheet table chrome (--cs-order-* tokens). Cart-only tokens are limited
+   * to the empty state, the action row, error/notice blocks, and the
+   * unavailable banner.
    * ------------------------------------------------------- */
   --cs-cart-empty-padding: 3rem 0;
-  --cs-cart-table-margin-bottom: 1rem;
-  --cs-cart-cell-padding: 0.75rem;
-  --cs-cart-product-gap: 0.75rem;
-  --cs-cart-thumb-size: 60px;
-  --cs-cart-col-qty-width: 160px;
-  --cs-cart-col-total-width: 100px;
-  --cs-cart-col-remove-width: 40px;
   --cs-cart-stepper-cell-size: 2rem;
   --cs-cart-stepper-cell-input-width: 3.5rem;
-  /* Mobile-stack pattern: when the cart table collapses to readable cards
-     (below the breakpoint hardcoded in src/components/Cart/Cart.css, see
-     comment there). The card padding, the gap inside each row's labeled
-     cell flex, and the spacing between cards. */
-  --cs-cart-mobile-row-padding: 0.875rem;
-  --cs-cart-mobile-row-gap: 0.5rem;
-  --cs-cart-mobile-card-margin: 0.75rem;
-  /* WCAG 2.5.5 minimum touch target. Used inside the cart's mobile media
-     query for stepper buttons, the qty input, and the remove button. The
-     package CSS falls back to 44px so the floor is enforced even if a
-     theme drops the token. Themes can scale up but should not scale down. */
-  --cs-cart-touch-target: 44px;
   --cs-cart-block-margin: 1rem;
   --cs-cart-section-margin: 1.5rem;
   --cs-cart-list-padding-left: 1.25rem;
