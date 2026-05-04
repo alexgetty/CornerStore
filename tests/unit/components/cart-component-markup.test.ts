@@ -50,12 +50,12 @@ describe('Cart.astro — subtotal renders in <tfoot> inside the cart table', () 
   it('the <tfoot> sits inside the cart table (not a sibling element)', () => {
     const out = readCart();
     // The cart table now uses the same class as the catalog table
-    // (.cs-order-sheet-table) since the cart row IS the catalog row. The
+    // (.cs-listing-table) since the cart row IS the catalog row. The
     // <tfoot> must live inside that <table>.
     const tableMatch = out.match(
-      /<table\s+class="cs-order-sheet-table"[^>]*>[\s\S]*?<\/table>/,
+      /<table\s+class="cs-listing-table"[^>]*>[\s\S]*?<\/table>/,
     );
-    expect(tableMatch, 'expected .cs-order-sheet-table source block').not.toBeNull();
+    expect(tableMatch, 'expected .cs-listing-table source block').not.toBeNull();
     expect(tableMatch![0]).toMatch(/<tfoot>[\s\S]*<\/tfoot>/);
   });
 

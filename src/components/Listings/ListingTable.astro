@@ -33,7 +33,7 @@ const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.ca
 
 <section class="cs-listing-table" aria-label="Products" data-currency={currency}>
   {groups.map((group) => (
-    <table class="cs-order-sheet-table" role="table">
+    <table class="cs-listing-table" role="table">
       <ListingThead
         hasWholesale={hasWholesale}
         productLabel={hasCategories && group.category ? `${group.category}s` : null}

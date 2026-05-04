@@ -127,10 +127,10 @@
   /* -------------------------------------------------------
    * Cart — totals, actions, banners
    *
-   * Cart rows render via the shared <ListingRow /> partial under the order
-   * sheet table chrome (--cs-order-* tokens). Cart-only tokens are limited
-   * to the empty state, the action row, error/notice blocks, and the
-   * unavailable banner.
+   * Cart rows render via the shared <ListingRow /> partial under the
+   * shared listing-table chrome (--cs-listing-* tokens). Cart-only tokens
+   * are limited to the empty state, the action row, error/notice blocks,
+   * and the unavailable banner.
    * ------------------------------------------------------- */
   --cs-cart-empty-padding: 3rem 0;
   --cs-cart-stepper-cell-size: 2rem;
@@ -176,16 +176,16 @@
   --cs-listing-price-margin-top: 0.25rem;
 
   /* -------------------------------------------------------
-   * Listing Table — order sheet rows
+   * Listing Table — shared catalog + cart row chrome
    * ------------------------------------------------------- */
-  --cs-order-table-margin: 1.5rem;
-  --cs-order-cell-padding: 0.5rem 0.75rem;
-  --cs-order-desc-margin-top: 0.25rem;
-  --cs-order-thumb-size: 48px;
-  --cs-order-col-image-width: 60px;
-  --cs-order-col-qty-width: 140px;
-  --cs-order-col-total-width: 100px;
-  --cs-order-col-remove-width: 40px;
+  --cs-listing-table-margin: 1.5rem;
+  --cs-listing-cell-padding: 0.5rem 0.75rem;
+  --cs-listing-desc-margin-top: 0.25rem;
+  --cs-listing-thumb-size: 48px;
+  --cs-listing-col-image-width: 60px;
+  --cs-listing-col-qty-width: 140px;
+  --cs-listing-col-total-width: 100px;
+  --cs-listing-col-remove-width: 40px;
 
   /* -------------------------------------------------------
    * Listings — empty state + view toggle + view icons

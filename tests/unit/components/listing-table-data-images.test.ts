@@ -42,7 +42,7 @@ import { join } from 'node:path';
  *   - No <button class="cs-thumb-btn"> anywhere.
  *   - No data-full-src or data-alt on the button.
  *   - No <div class="cs-lightbox"> overlay markup at the bottom of the section.
- *   - No data-images on the <tr class="cs-order-row"> row element. The row
+ *   - No data-images on the <tr class="cs-listing-row"> row element. The row
  *     used to expose images for a previous iteration; the contract surface
  *     is now the button, not the row.
  *
@@ -102,19 +102,19 @@ function extractImageButtonOpenTag(astro: string): string {
 }
 
 /*
- * Extract the <tr class="cs-order-row" ...> opening tag. Used to assert
+ * Extract the <tr class="cs-listing-row" ...> opening tag. Used to assert
  * removals (data-images no longer on the row) and the survival of existing
  * data-* attributes there.
  */
 function extractOrderRowOpenTag(astro: string): string {
-  const fallback = astro.indexOf('class="cs-order-row"');
+  const fallback = astro.indexOf('class="cs-listing-row"');
   if (fallback === -1) {
-    throw new Error('expected <tr class="cs-order-row"> in ListingRow.astro');
+    throw new Error('expected <tr class="cs-listing-row"> in ListingRow.astro');
   }
   let i = fallback;
   while (i >= 0 && !(astro[i] === '<' && astro.slice(i, i + 3) === '<tr')) i--;
   if (i < 0) {
-    throw new Error('could not locate <tr opening before cs-order-row class');
+    throw new Error('could not locate <tr opening before cs-listing-row class');
   }
   const start = i;
   let depth = 0;
@@ -204,7 +204,7 @@ describe('ListingRow.astro - cs-listing-image-btn trigger primitive', () => {
     expect(readListingTable()).not.toMatch(/cs-lightbox/);
   });
 
-  it('removed: data-images is NOT on the <tr class="cs-order-row"> (it lives on the button)', () => {
+  it('removed: data-images is NOT on the <tr class="cs-listing-row"> (it lives on the button)', () => {
     /*
      * A previous iteration of this work parked data-images on the row. The
      * new contract puts it on the button so consumers read JSON from one

@@ -30,12 +30,12 @@ Non-destructive signal that directs the user to /cart, where H5's "Remove unavai
 
 ### 1. `src/components/Listings/ListingTable.astro` — status cell
 
-The qty cell now always mounts `<CartControl>`; status rows get a disabled button from CartControl itself. Add a sibling `.cs-order-cart-indicator` inside `.cs-col-qty` so the "N in cart" signal has a slot:
+The qty cell now always mounts `<CartControl>`; status rows get a disabled button from CartControl itself. Add a sibling `.cs-listing-cart-indicator` inside `.cs-col-qty` so the "N in cart" signal has a slot:
 
 ```astro
 <td class="cs-col-qty">
   <CartControl sku={listing.sku} name={listing.name} moq={listing.moq} status={listing.status} />
-  {listing.status && <span class="cs-order-cart-indicator" hidden></span>}
+  {listing.status && <span class="cs-listing-cart-indicator" hidden></span>}
 </td>
 ```
 
@@ -80,7 +80,7 @@ root.querySelectorAll<HTMLElement>('.cs-listing').forEach((card) => {
 For the table-view branch, add a disabled-addBtn guard before the existing hydrate path:
 
 ```ts
-root.querySelectorAll<HTMLElement>('.cs-order-row').forEach((row) => {
+root.querySelectorAll<HTMLElement>('.cs-listing-row').forEach((row) => {
   const sku = row.dataset.sku ?? '';
   const item = cart.items.find((i) => i.sku === sku);
   const qty = item?.quantity ?? 0;
@@ -89,7 +89,7 @@ root.querySelectorAll<HTMLElement>('.cs-order-row').forEach((row) => {
 
   if (addBtn?.disabled) {
     // Status row: surface cart qty via indicator if there is any.
-    const indicator = row.querySelector('.cs-order-cart-indicator') as HTMLElement | null;
+    const indicator = row.querySelector('.cs-listing-cart-indicator') as HTMLElement | null;
     if (indicator) {
       if (qty > 0) {
         indicator.textContent = `${qty} in cart`;
@@ -111,7 +111,7 @@ root.querySelectorAll<HTMLElement>('.cs-order-row').forEach((row) => {
 
 Minimal styling:
 - `.cs-listing[data-status] .cs-listing-badge` — make sure the badge is visible and legible over a status-disabled card. Color/position should visually distinguish "in cart" from "count for available item."
-- `.cs-order-cart-indicator` — small inline label, gray text, appears below or next to the status span.
+- `.cs-listing-cart-indicator` — small inline label, gray text, appears below or next to the status span.
 - Decide: same styling as the qty badge on available items, or visually differentiated (warning tone) since it's flagging a conflict? Pick one. Warning-tone (amber/gray) communicates "needs attention" better than primary color.
 
 ### 5. `ListingCards.astro` — data attribute

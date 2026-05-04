@@ -43,13 +43,13 @@
     text-align: right;
   }
 
-  .cs-order-errors {
+  .cs-cart-errors {
     color: var(--cs-error-color, currentColor);
     margin-bottom: var(--cs-cart-block-margin, 0);
     font-size: var(--cs-text-3, inherit);
   }
 
-  .cs-order-errors ul {
+  .cs-cart-errors ul {
     margin: 0;
     padding-left: var(--cs-cart-list-padding-left, 0);
   }
@@ -58,7 +58,7 @@
      row wraps so Checkout (the primary action) lands above Clear all.
      Wrap-reverse + flex: 1 1 100% on each child does the actual stacking;
      the media query below only stretches buttons to full-width tap targets. */
-  .cs-order-actions {
+  .cs-cart-actions {
     display: flex;
     flex-wrap: wrap-reverse;
     align-items: center;
@@ -67,7 +67,7 @@
     margin-bottom: var(--cs-cart-section-margin, 0);
   }
 
-  .cs-order-actions-secondary {
+  .cs-cart-actions-secondary {
     display: inline-flex;
     align-items: center;
     gap: var(--cs-cart-actions-secondary-gap, 0);
@@ -98,17 +98,17 @@
      stacking comes from wrap-reverse + flex: 1 1 100% on each child, not
      from flex-direction. */
   @media (max-width: 480px) {
-    .cs-order-actions-secondary,
-    .cs-order-actions > .cs-submit-btn {
+    .cs-cart-actions-secondary,
+    .cs-cart-actions > .cs-submit-btn {
       flex: 1 1 100%;
     }
 
-    .cs-order-actions-secondary {
+    .cs-cart-actions-secondary {
       justify-content: stretch;
     }
 
-    .cs-order-actions-secondary .cs-clear-cart,
-    .cs-order-actions-secondary .cs-clear-cart-confirm {
+    .cs-cart-actions-secondary .cs-clear-cart,
+    .cs-cart-actions-secondary .cs-clear-cart-confirm {
       flex: 1 1 auto;
       width: 100%;
       justify-content: center;
@@ -207,7 +207,7 @@
     font-size: var(--cs-text-3, inherit);
   }
 
-  .cs-order-row.cs-cart-unavailable {
+  .cs-listing-row.cs-cart-unavailable {
     opacity: var(--cs-disabled-opacity, 1);
   }
 

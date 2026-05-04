@@ -55,7 +55,7 @@ function hydrateFromCart(root: HTMLElement) {
   });
 
   // Hydrate table view rows (if active)
-  root.querySelectorAll<HTMLElement>('.cs-order-row').forEach((row) => {
+  root.querySelectorAll<HTMLElement>('.cs-listing-row').forEach((row) => {
     const sku = row.dataset.sku ?? '';
     const item = cart.items.find((i) => i.sku === sku);
     const qty = item?.quantity ?? 0;
@@ -200,7 +200,7 @@ function wireCartControls(root: HTMLElement) {
     // Table-row remove button: set qty to 0.
     const removeBtn = target.closest<HTMLElement>('.cs-remove-btn');
     if (removeBtn) {
-      const row = removeBtn.closest<HTMLElement>('.cs-order-row');
+      const row = removeBtn.closest<HTMLElement>('.cs-listing-row');
       if (row) {
         const control = row.querySelector<HTMLElement>('.cs-cart-control');
         if (control) {
@@ -250,7 +250,7 @@ function handleAction(control: HTMLElement, action: CartControlAction, inputValu
   }
 
   // Table-specific row-level recomputation (line total, remove-btn visibility).
-  const row = control.closest<HTMLElement>('.cs-order-row');
+  const row = control.closest<HTMLElement>('.cs-listing-row');
   if (row) updateTableRow(row);
 
   syncToCart(sku, next);

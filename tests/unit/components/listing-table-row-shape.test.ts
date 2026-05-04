@@ -42,25 +42,25 @@ describe('ListingRow.astro — MOQ moves into the product cell', () => {
     expect(readRow()).not.toMatch(/class="cs-col-moq"/);
   });
 
-  it('renders a <span class="cs-order-moq"> guarded by listing.moq (omitted when falsy)', () => {
+  it('renders a <span class="cs-listing-moq"> guarded by listing.moq (omitted when falsy)', () => {
     /*
      * Pin the short-circuit form so nobody reintroduces an unconditional
-     * <span class="cs-order-moq"></span> when MOQ is unset. The empty-span
+     * <span class="cs-listing-moq"></span> when MOQ is unset. The empty-span
      * regression is exactly what the move out of a dedicated column was
      * meant to avoid.
      */
     expect(readRow()).toMatch(
-      /\{\s*listing\.moq\s*&&\s*<span\s+class="cs-order-moq">/,
+      /\{\s*listing\.moq\s*&&\s*<span\s+class="cs-listing-moq">/,
     );
   });
 
-  it('the cs-order-moq span content reads "Min {listing.moq}"', () => {
+  it('the cs-listing-moq span content reads "Min {listing.moq}"', () => {
     expect(readRow()).toMatch(
-      /<span\s+class="cs-order-moq">Min\s*\{?\s*listing\.moq\s*\}?\s*<\/span>/,
+      /<span\s+class="cs-listing-moq">Min\s*\{?\s*listing\.moq\s*\}?\s*<\/span>/,
     );
   });
 
-  it('the cs-order-moq span lives inside the cs-col-product <td> (next to cs-order-sku)', () => {
+  it('the cs-listing-moq span lives inside the cs-col-product <td> (next to cs-listing-sku)', () => {
     /*
      * Identity-adjacent metadata. If the span migrates back out of the
      * product cell, the columnar comparison-axis story breaks again.
@@ -70,8 +70,8 @@ describe('ListingRow.astro — MOQ moves into the product cell', () => {
       /<td[^>]*class="cs-col-product"[^>]*>[\s\S]*?<\/td>/,
     );
     expect(productCellMatch, 'expected td.cs-col-product block in ListingRow.astro').not.toBeNull();
-    expect(productCellMatch![0]).toMatch(/class="cs-order-moq"/);
-    expect(productCellMatch![0]).toMatch(/class="cs-order-sku"/);
+    expect(productCellMatch![0]).toMatch(/class="cs-listing-moq"/);
+    expect(productCellMatch![0]).toMatch(/class="cs-listing-sku"/);
   });
 });
 
@@ -155,15 +155,15 @@ describe('ListingTable.css — selectors follow the column collapse', () => {
     expect(readCss()).not.toMatch(/\.cs-col-moq\b/);
   });
 
-  it('declares a .cs-order-moq rule that mirrors .cs-order-sku treatment', () => {
+  it('declares a .cs-listing-moq rule that mirrors .cs-listing-sku treatment', () => {
     /*
      * The MOQ span sits next to the SKU span; both are inline-adjacent
      * metadata under the product name. They should default to the same
      * muted, small, block-level treatment so they read as a stack.
      */
     const css = readCss();
-    const ruleMatch = css.match(/\.cs-order-moq\s*\{[^}]*\}/);
-    expect(ruleMatch, 'expected a .cs-order-moq { ... } rule block').not.toBeNull();
+    const ruleMatch = css.match(/\.cs-listing-moq\s*\{[^}]*\}/);
+    expect(ruleMatch, 'expected a .cs-listing-moq { ... } rule block').not.toBeNull();
     const rule = ruleMatch![0];
     expect(rule).toMatch(/display:\s*block/);
     expect(rule).toMatch(/font-size:\s*var\(--cs-text-3/);

@@ -8,7 +8,7 @@ The cart table previously had its own mobile-stack treatment (`display: block` +
 
 ## Scope
 
-- A single mobile collapse pattern applied to `.cs-order-sheet-table` so both the catalog (table view) and the cart inherit it.
+- A single mobile collapse pattern applied to `.cs-listing-table` so both the catalog (table view) and the cart inherit it.
 - Hit WCAG 2.5.5 (44px) for stepper buttons and remove.
 - Decide between the previous `data-label` stacked-card pattern and an alternative (e.g. simply hiding low-priority columns at narrow widths). The data-label approach was working for the cart but added attribute weight to every row; the new shared row currently does NOT carry `data-label` attributes.
 - Add any new tokens to `theme/theme.css` for card padding / row gap / card margin if the data-label pattern is reintroduced.

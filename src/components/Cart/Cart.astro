@@ -62,7 +62,7 @@ for (const listing of listings) {
     <div class="cs-cart-unavailable-banner" hidden role="alert">
       <button type="button" class="cs-clear-unavailable">Remove unavailable items</button>
     </div>
-    <table class="cs-order-sheet-table" role="table">
+    <table class="cs-listing-table" role="table">
       <ListingThead hasWholesale={hasWholesale} />
       <tbody role="rowgroup">
         {listings.map((listing) => (
@@ -89,11 +89,11 @@ for (const listing of listings) {
       <p class="cs-shipping-status"></p>
     </div>
 
-    <div class="cs-order-errors" hidden></div>
+    <div class="cs-cart-errors" hidden></div>
     <div class="cs-unavailable-notice" hidden></div>
 
-    <div class="cs-order-actions">
-      <div class="cs-order-actions-secondary">
+    <div class="cs-cart-actions">
+      <div class="cs-cart-actions-secondary">
         <button type="button" class="cs-clear-cart">Clear all</button>
         <span class="cs-clear-cart-confirm" hidden role="group" aria-label="Confirm clear cart">
           <span class="cs-clear-cart-prompt">Clear entire cart?</span>

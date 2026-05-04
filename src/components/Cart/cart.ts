@@ -28,10 +28,10 @@ function init(root: HTMLElement) {
 
   const emptyEl = root.querySelector('.cs-cart-empty') as HTMLElement;
   const contentEl = root.querySelector('.cs-cart-content') as HTMLElement;
-  const rows = root.querySelectorAll<HTMLElement>('.cs-order-row');
+  const rows = root.querySelectorAll<HTMLElement>('.cs-listing-row');
   const subtotalEl = root.querySelector('.cs-subtotal-value') as HTMLElement;
   const submitBtn = root.querySelector('.cs-submit-btn') as HTMLButtonElement;
-  const errorsEl = root.querySelector('.cs-order-errors') as HTMLElement;
+  const errorsEl = root.querySelector('.cs-cart-errors') as HTMLElement;
   const mailtoSection = root.querySelector('.cs-mailto-section') as HTMLElement;
   const mailtoLink = root.querySelector('.cs-mailto-link') as HTMLAnchorElement;
   const checkoutError = root.querySelector('.cs-checkout-error') as HTMLElement;
@@ -168,7 +168,7 @@ function init(root: HTMLElement) {
     // is single-sourced.
     const removeBtn = target.closest<HTMLElement>('.cs-remove-btn');
     if (removeBtn) {
-      const row = removeBtn.closest<HTMLElement>('.cs-order-row');
+      const row = removeBtn.closest<HTMLElement>('.cs-listing-row');
       if (row) {
         const control = row.querySelector<HTMLElement>('.cs-cart-control');
         if (control) handleCartControlAction(control, 'input', 0);
@@ -215,7 +215,7 @@ function init(root: HTMLElement) {
 
     if (input) input.value = String(next);
 
-    const row = control.closest<HTMLElement>('.cs-order-row');
+    const row = control.closest<HTMLElement>('.cs-listing-row');
     if (row) updateRow(row);
 
     commitMutation(sku, next);
@@ -349,7 +349,7 @@ function init(root: HTMLElement) {
 
   function updateCartSummary(subtotal: number) {
     // Shipping status block (.cs-cart-summary) manages its own visibility.
-    // Minimum-order status flows through the standard .cs-order-errors path
+    // Minimum-order status flows through the standard .cs-cart-errors path
     // in updateTotals, not a dedicated block.
     let summaryHasContent = false;
 
@@ -503,18 +503,18 @@ function init(root: HTMLElement) {
       const pdfContent = contentEl.cloneNode(true) as HTMLElement;
 
       // Strip interactive controls + dynamic status messaging from the
-      // printable order. .cs-order-actions removes both Clear all and
+      // printable order. .cs-cart-actions removes both Clear all and
       // Checkout/Submit (nested children). .cs-cart-summary drops the
-      // shipping-progress line. .cs-order-errors drops the "$Y minimum,
+      // shipping-progress line. .cs-cart-errors drops the "$Y minimum,
       // $X to go" line (and any MOQ errors) because by the time the order
       // is printed/emailed the gap is no longer relevant; the static
       // subtotal stays via the table's <tfoot> (which is not in the strip
       // list, so it survives unchanged).
       pdfContent.querySelectorAll(
-        '.cs-order-actions, .cs-mailto-section, .cs-order-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
+        '.cs-cart-actions, .cs-mailto-section, .cs-cart-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
       ).forEach((el) => el.remove());
 
-      pdfContent.querySelectorAll('.cs-order-row[hidden]').forEach((row) => row.remove());
+      pdfContent.querySelectorAll('.cs-listing-row[hidden]').forEach((row) => row.remove());
 
       pdfContent.querySelectorAll('.cs-cart-control-input').forEach((input) => {
         const val = (input as HTMLInputElement).value;

@@ -2,15 +2,15 @@
 
   /* --- Table layout (desktop) --- */
 
-  .cs-order-sheet-table {
+  .cs-listing-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: var(--cs-order-table-margin, 0);
+    margin-bottom: var(--cs-listing-table-margin, 0);
   }
 
-  .cs-order-sheet-table th,
-  .cs-order-sheet-table td {
-    padding: var(--cs-order-cell-padding, 0);
+  .cs-listing-table th,
+  .cs-listing-table td {
+    padding: var(--cs-listing-cell-padding, 0);
     text-align: left;
     vertical-align: middle;
     border-bottom-width: var(--cs-border-width, 0);
@@ -18,7 +18,7 @@
     border-bottom-color: var(--cs-border-color, currentColor);
   }
 
-  .cs-order-sheet-table thead th {
+  .cs-listing-table thead th {
     font-size: var(--cs-text-3, inherit);
     font-weight: var(--cs-emphasis-font-weight, inherit);
     color: var(--cs-body-text-color, inherit);
@@ -27,8 +27,8 @@
 
   /* --- Table spacing --- */
 
-  .cs-order-sheet-table + .cs-order-sheet-table {
-    margin-top: var(--cs-order-table-margin, 0);
+  .cs-listing-table + .cs-listing-table {
+    margin-top: var(--cs-listing-table-margin, 0);
   }
 
   /* --- Column sizing --- */
@@ -53,10 +53,10 @@
     display: block;
   }
 
-  .cs-col-image { width: var(--cs-order-col-image-width, auto); }
-  .cs-col-qty { width: var(--cs-order-col-qty-width, auto); }
-  .cs-col-total { width: var(--cs-order-col-total-width, auto); }
-  .cs-col-remove { width: var(--cs-order-col-remove-width, auto); }
+  .cs-col-image { width: var(--cs-listing-col-image-width, auto); }
+  .cs-col-qty { width: var(--cs-listing-col-qty-width, auto); }
+  .cs-col-total { width: var(--cs-listing-col-total-width, auto); }
+  .cs-col-remove { width: var(--cs-listing-col-remove-width, auto); }
 
   /* --- Image thumbnail & placeholder --- */
 
@@ -73,8 +73,8 @@
   }
 
   .cs-thumb {
-    width: var(--cs-order-thumb-size, auto);
-    height: var(--cs-order-thumb-size, auto);
+    width: var(--cs-listing-thumb-size, auto);
+    height: var(--cs-listing-thumb-size, auto);
     max-width: none;
     object-fit: cover;
     border-radius: var(--cs-thumb-border-radius, 0);
@@ -84,8 +84,8 @@
      placeholder, which uses the same class name. */
   .cs-col-image .cs-no-image {
     display: block;
-    width: var(--cs-order-thumb-size, auto);
-    height: var(--cs-order-thumb-size, auto);
+    width: var(--cs-listing-thumb-size, auto);
+    height: var(--cs-listing-thumb-size, auto);
     border-radius: var(--cs-thumb-border-radius, 0);
     background: var(--cs-border-color, currentColor);
   }
@@ -96,36 +96,36 @@
     display: block;
   }
 
-  .cs-order-sku {
+  .cs-listing-sku {
     display: block;
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
     font-family: monospace;
   }
 
-  .cs-order-moq {
+  .cs-listing-moq {
     display: block;
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
   }
 
-  .cs-order-desc {
+  .cs-listing-desc {
     display: block;
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
-    margin-top: var(--cs-order-desc-margin-top, 0);
+    margin-top: var(--cs-listing-desc-margin-top, 0);
   }
 
   /* --- Quantity controls live in CartControl.css --- */
 
   /* Tighten the stepper inside a table cell so it fits the column width. */
-  .cs-order-row .cs-cart-control-down,
-  .cs-order-row .cs-cart-control-up {
+  .cs-listing-row .cs-cart-control-down,
+  .cs-listing-row .cs-cart-control-up {
     width: var(--cs-cart-stepper-cell-size, auto);
     height: var(--cs-cart-stepper-cell-size, auto);
   }
 
-  .cs-order-row .cs-cart-control-input {
+  .cs-listing-row .cs-cart-control-input {
     height: var(--cs-cart-stepper-cell-size, auto);
     width: var(--cs-cart-stepper-cell-input-width, auto);
     flex: 0 0 auto;
