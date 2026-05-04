@@ -67,6 +67,7 @@
   .cs-thumb {
     width: var(--cs-order-thumb-size, auto);
     height: var(--cs-order-thumb-size, auto);
+    max-width: none;
     object-fit: cover;
     border-radius: var(--cs-thumb-border-radius, 0);
   }
