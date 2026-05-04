@@ -34,15 +34,23 @@
   /* --- Column sizing --- */
 
   .cs-col-price,
-  .cs-col-moq,
   .cs-col-total {
     text-align: right;
     white-space: nowrap;
   }
 
+  .cs-col-price {
+    font-variant-numeric: tabular-nums;
+  }
+
   .cs-msrp {
+    display: block;
     color: var(--cs-muted-text-color, inherit);
     text-decoration: line-through;
+  }
+
+  .cs-wholesale {
+    display: block;
   }
 
   .cs-col-image { width: var(--cs-order-col-image-width, auto); }
@@ -95,6 +103,12 @@
     font-family: monospace;
   }
 
+  .cs-order-moq {
+    display: block;
+    font-size: var(--cs-text-3, inherit);
+    color: var(--cs-muted-text-color, inherit);
+  }
+
   .cs-order-desc {
     display: block;
     font-size: var(--cs-text-3, inherit);
@@ -116,13 +130,6 @@
     width: var(--cs-cart-stepper-cell-input-width, auto);
     flex: 0 0 auto;
     font-size: var(--cs-text-3, inherit);
-  }
-
-  /* --- MOQ column --- */
-
-  .cs-col-moq {
-    font-size: var(--cs-text-3, inherit);
-    color: var(--cs-muted-text-color, inherit);
   }
 
   /* --- Remove button --- */

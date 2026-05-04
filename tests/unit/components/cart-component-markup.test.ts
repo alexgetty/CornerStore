@@ -72,19 +72,21 @@ describe('Cart.astro — subtotal renders in <tfoot> inside the cart table', () 
     expect(tfootMatch![0]).toMatch(/<th[^>]*\bscope="row"/);
   });
 
-  it('subtotal label colspan is hasWholesale ? 6 : 5 (covers leading cols, leaves total + remove)', () => {
+  it('subtotal label colspan is 4 (covers leading cols, leaves total + remove)', () => {
     const out = readCart();
     const tfootMatch = out.match(/<tfoot>[\s\S]*?<\/tfoot>/);
     expect(tfootMatch).not.toBeNull();
-    // The colspan must adapt to the wholesale column variant. The cart now
-    // uses the unified row from ListingRow.astro: 7 columns default (Image,
-    // Product, Price, MOQ, Qty, Total, Remove) -> label spans 5; 8 columns
-    // wholesale (Image, Product, MSRP, Wholesale, MOQ, Qty, Total, Remove)
-    // -> label spans 6. Pin the conditional rather than a literal so the
-    // test fails if someone hardcodes one variant.
-    expect(tfootMatch![0]).toMatch(
-      /colspan=\{\s*hasWholesale\s*\?\s*6\s*:\s*5\s*\}/,
-    );
+    // The cart uses the unified row from ListingRow.astro. After the MOQ
+    // and dual-price column collapse, the table is 6 columns in both
+    // variants: Image, Product, Price, Qty, Total, Remove. The subtotal
+    // label spans the first 4 (Image, Product, Price, Qty), leaving Total
+    // and Remove as their own cells. The colspan is therefore a literal
+    // 4 — no longer conditional on hasWholesale.
+    expect(tfootMatch![0]).toMatch(/colspan=\{\s*4\s*\}/);
+    // Pin the absence of the old conditional so a future regression that
+    // re-splits the price column into MSRP + Wholesale doesn't silently
+    // resurrect a stale colspan formula.
+    expect(tfootMatch![0]).not.toMatch(/colspan=\{\s*hasWholesale/);
   });
 
   it('the subtotal value cell is a <td class="cs-col-total"> so it aligns with the Total column above', () => {

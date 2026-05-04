@@ -44,18 +44,18 @@ const effectivePrice = hasWholesale ? formatPrice(wholesaleRaw, currency) : list
   <td class="cs-col-product" role="cell">
     <strong>{listing.name}</strong>
     <span class="cs-order-sku">{listing.sku}</span>
+    {listing.moq && <span class="cs-order-moq">Min {listing.moq}</span>}
     {listing.description && <span class="cs-order-desc">{listing.description}</span>}
     {listing.status && <span class="cs-sr-only">Unavailable: {listing.status}</span>}
   </td>
   {hasWholesale ? (
-    <>
-      <td class="cs-col-price cs-msrp" role="cell">{listing.price}</td>
-      <td class="cs-col-price" role="cell">{effectivePrice}</td>
-    </>
+    <td class="cs-col-price" role="cell">
+      <s class="cs-msrp">{listing.price}</s>
+      <span class="cs-wholesale">{effectivePrice}</span>
+    </td>
   ) : (
     <td class="cs-col-price" role="cell">{listing.price}</td>
   )}
-  <td class="cs-col-moq" role="cell">{listing.moq ? `Min ${listing.moq}` : ''}</td>
   <td class="cs-col-qty" role="cell">
     <CartControl
       sku={listing.sku}
