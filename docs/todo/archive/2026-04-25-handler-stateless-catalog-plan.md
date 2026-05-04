@@ -242,7 +242,7 @@ If "applies wholesale margin to unit amount" still asserts `unit_amount: 1000` �
 
 Run: `npm test`
 
-Expected: all tests pass. There are no other call sites for `getSkuMap`, `getCatalog`, `catalogCache`, or `skuMap` (verified via grep earlier in this session); the only consumer of `createCheckoutHandler` is the BYO-server pattern documented in `docs/todo/init-parity-audit.md`.
+Expected: all tests pass. There are no other call sites for `getSkuMap`, `getCatalog`, `catalogCache`, or `skuMap` (verified via grep earlier in this session); the only consumer of `createCheckoutHandler` is the BYO-server pattern documented in `docs/todo/archive/init-parity-audit.md`.
 
 - [ ] **Step 4: Run typecheck**
 
@@ -265,11 +265,11 @@ DO NOT commit.
 ## Task 3: Update tracking docs
 
 **Files:**
-- Modify: `docs/todo/init-parity-audit.md` — the "Still open" section may reference the cache staleness issue. Add a note that the BYO-server cache concern is closed by this change so the audit doesn't drift.
+- Modify: `docs/todo/archive/init-parity-audit.md` — the "Still open" section may reference the cache staleness issue. Add a note that the BYO-server cache concern is closed by this change so the audit doesn't drift.
 
 - [ ] **Step 1: Read the audit's "Still open" section**
 
-Read `docs/todo/init-parity-audit.md` and look for any mention of cache staleness, `catalogCache`, `skuMap`, or "long-running server". If found, leave a one-line note that the staleness category is now closed by removing the caches in `src/lib/cart/handler.ts`. If not found, this task is a no-op — skip to step 2.
+Read `docs/todo/archive/init-parity-audit.md` and look for any mention of cache staleness, `catalogCache`, `skuMap`, or "long-running server". If found, leave a one-line note that the staleness category is now closed by removing the caches in `src/lib/cart/handler.ts`. If not found, this task is a no-op. Skip to step 2.
 
 - [ ] **Step 2: Report status**
 

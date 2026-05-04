@@ -6,8 +6,7 @@ import { join } from 'node:path';
  * lightbox.ts source-contract test.
  *
  * The lightbox script is heavily DOM-coupled and excluded from coverage (see
- * vitest.config.ts; same precedent as src/components/OrderSheet/order-sheet.ts).
- * To make sure the script's structural contract can't drift unnoticed, we
+ * vitest.config.ts). To make sure the script's structural contract can't drift unnoticed, we
  * pin its key shapes at the source level: idempotency guard, delegated click
  * handler, JSON parse with try/catch + array validation, keyboard switch,
  * and lazy overlay construction (overlay is built on first trigger click,

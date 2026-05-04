@@ -33,4 +33,4 @@ Probably B — explicit script signals the feature exists without paying the ins
 
 ## Related
 
-- `docs/todo/init-parity-audit.md` — verified that typecheck passes once deps are installed; the scaffold's generated code is clean.
+- `docs/todo/archive/init-parity-audit.md` — verified that typecheck passes once deps are installed; the scaffold's generated code is clean.

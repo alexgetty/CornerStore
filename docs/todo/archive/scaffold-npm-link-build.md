@@ -36,9 +36,9 @@ Start with (A) — document it. Revisit (B) or (C) only if we hit the limit duri
 
 ## Files touched (if any)
 
-- `docs/todo/init-parity-audit.md` — Definition of done step 5 should say "install via `npm pack` + tarball" not "`npm link`".
+- `docs/todo/archive/init-parity-audit.md` — Definition of done step 5 should say "install via `npm pack` + tarball" not "`npm link`".
 - Possibly `bin/init.mjs:327-330` — add a comment that `npm link corner-store` is not sufficient to verify downstream `astro build`.
 
 ## Related
 
-- `docs/todo/init-parity-audit.md` — DoD steps 1–5 verified 2026-04-24 using tarball install after this issue was hit.
+- `docs/todo/archive/init-parity-audit.md` — DoD steps 1–5 verified 2026-04-24 using tarball install after this issue was hit.

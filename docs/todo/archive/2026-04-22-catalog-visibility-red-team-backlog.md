@@ -16,7 +16,7 @@ Critical / High resolution summary (for cross-reference):
 - H6 — listings hides cart qty on status items → `docs/todo/listings-unavailable-in-cart-indicator.md`.
 - H7 — stale SETUP.md → **deleted the file, cleaned up runtime refs. Docs rewrite deferred until product stabilizes.**
 - H8 — legacy CSV migration → dismissed. No users to migrate.
-- Init parity (not numbered, surfaced during the review) → `docs/todo/init-parity-audit.md`.
+- Init parity (not numbered, surfaced during the review) → `docs/todo/archive/init-parity-audit.md`.
 
 ---
 
