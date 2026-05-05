@@ -511,7 +511,7 @@ function init(root: HTMLElement) {
       // subtotal stays via the table's <tfoot> (which is not in the strip
       // list, so it survives unchanged).
       pdfContent.querySelectorAll(
-        '.cs-cart-actions, .cs-mailto-section, .cs-cart-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-col-remove, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
+        '.cs-cart-actions, .cs-mailto-section, .cs-cart-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
       ).forEach((el) => el.remove());
 
       pdfContent.querySelectorAll('.cs-listing-row[hidden]').forEach((row) => row.remove());

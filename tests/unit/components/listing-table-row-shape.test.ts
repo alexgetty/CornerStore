@@ -150,6 +150,201 @@ describe('ListingThead.astro — single price column, no MOQ column', () => {
   });
 });
 
+describe('ListingRow.astro — qty + remove collapse into a single controls cell', () => {
+  /*
+   * The remove button used to live in its own trailing <td class="cs-col-remove">.
+   * That column reflowed every time a row toggled empty <-> in-cart, causing
+   * visible layout shift across all rows. The fix collapses qty + remove into
+   * one fixed-width controls cell at the end of the row. The remove button
+   * is absolutely positioned inside that cell so toggling its visibility no
+   * longer affects layout.
+   *
+   * Column order is now: image, product, price, total, controls.
+   */
+  it('contains exactly one <td class="cs-col-controls"> cell', () => {
+    const matches = readRow().match(/<td[^>]*class="cs-col-controls"/g) ?? [];
+    expect(matches.length).toBe(1);
+  });
+
+  it('does not contain a <td class="cs-col-qty"> cell', () => {
+    expect(readRow()).not.toMatch(/<td[^>]*class="cs-col-qty"/);
+  });
+
+  it('does not contain a <td class="cs-col-remove"> cell', () => {
+    expect(readRow()).not.toMatch(/<td[^>]*class="cs-col-remove"/);
+  });
+
+  it('does not reference the dropped cs-col-qty / cs-col-remove names anywhere in the row', () => {
+    // Hard-cut: the column class names are gone outright, not aliased.
+    const out = readRow();
+    expect(out).not.toMatch(/cs-col-qty\b/);
+    expect(out).not.toMatch(/cs-col-remove\b/);
+  });
+
+  it('renders the remove button inside the cs-col-controls cell, not as a sibling cell', () => {
+    /*
+     * Pin the structural invariant that powers the no-shift behaviour:
+     * the remove button must live inside the controls cell so its
+     * visibility toggle doesn't affect the column count.
+     */
+    const out = readRow();
+    const controlsCellMatch = out.match(
+      /<td[^>]*class="cs-col-controls"[^>]*>[\s\S]*?<\/td>/,
+    );
+    expect(
+      controlsCellMatch,
+      'expected td.cs-col-controls block in ListingRow.astro',
+    ).not.toBeNull();
+    expect(controlsCellMatch![0]).toMatch(/class="cs-remove-btn"/);
+  });
+
+  it('renders CartControl inside the cs-col-controls cell', () => {
+    const out = readRow();
+    const controlsCellMatch = out.match(
+      /<td[^>]*class="cs-col-controls"[^>]*>[\s\S]*?<\/td>/,
+    );
+    expect(controlsCellMatch).not.toBeNull();
+    expect(controlsCellMatch![0]).toMatch(/<CartControl\b/);
+  });
+
+  it('keeps the remove button hidden by default (catalog-side default state)', () => {
+    /*
+     * The shared row partial defaults the remove button to `hidden`. The
+     * cart un-hides it via .cs-cart .cs-remove-btn[hidden] in Cart.css.
+     * Catalog rows toggle it visible only when the row is in-cart.
+     */
+    expect(readRow()).toMatch(/<button[^>]*class="cs-remove-btn"[^>]*\bhidden\b/);
+  });
+
+  it('places the cs-col-controls cell after cs-col-total (column order: image, product, price, total, controls)', () => {
+    const out = readRow();
+    const totalIdx = out.indexOf('class="cs-col-total"');
+    const controlsIdx = out.indexOf('class="cs-col-controls"');
+    expect(totalIdx).toBeGreaterThan(0);
+    expect(controlsIdx).toBeGreaterThan(0);
+    expect(controlsIdx).toBeGreaterThan(totalIdx);
+  });
+
+  it('places cs-col-total between cs-col-price and cs-col-controls', () => {
+    /*
+     * Full column order pin: image -> product -> price -> total -> controls.
+     * Pinning each adjacency catches any regression that reshuffles the
+     * row mid-refactor.
+     */
+    const out = readRow();
+    const imageIdx = out.indexOf('class="cs-col-image"');
+    const productIdx = out.indexOf('class="cs-col-product"');
+    const priceIdx = out.search(/class="cs-col-price"/);
+    const totalIdx = out.indexOf('class="cs-col-total"');
+    const controlsIdx = out.indexOf('class="cs-col-controls"');
+    expect(imageIdx).toBeGreaterThan(0);
+    expect(productIdx).toBeGreaterThan(imageIdx);
+    expect(priceIdx).toBeGreaterThan(productIdx);
+    expect(totalIdx).toBeGreaterThan(priceIdx);
+    expect(controlsIdx).toBeGreaterThan(totalIdx);
+  });
+});
+
+describe('ListingThead.astro — qty + remove collapse into a single controls header', () => {
+  it('contains exactly one <th class="cs-col-controls"> cell', () => {
+    const matches = readThead().match(/<th[^>]*class="cs-col-controls"/g) ?? [];
+    expect(matches.length).toBe(1);
+  });
+
+  it('does not contain a <th class="cs-col-qty"> cell', () => {
+    expect(readThead()).not.toMatch(/<th[^>]*class="cs-col-qty"/);
+  });
+
+  it('does not contain a <th class="cs-col-remove"> cell', () => {
+    expect(readThead()).not.toMatch(/<th[^>]*class="cs-col-remove"/);
+  });
+
+  it('does not reference the dropped cs-col-qty / cs-col-remove names anywhere in the thead', () => {
+    const out = readThead();
+    expect(out).not.toMatch(/cs-col-qty\b/);
+    expect(out).not.toMatch(/cs-col-remove\b/);
+  });
+
+  it('does not render a literal "Qty" header label', () => {
+    /*
+     * The Qty/Controls column has no visible label — it wraps an
+     * action affordance, not a comparison axis.
+     */
+    expect(readThead()).not.toMatch(/>\s*Qty\s*</);
+  });
+
+  it('places the cs-col-controls header after cs-col-total (matches row column order)', () => {
+    const out = readThead();
+    const totalIdx = out.indexOf('class="cs-col-total"');
+    const controlsIdx = out.indexOf('class="cs-col-controls"');
+    expect(totalIdx).toBeGreaterThan(0);
+    expect(controlsIdx).toBeGreaterThan(totalIdx);
+  });
+});
+
+describe('ListingTable.css — controls column anchors the absolutely-positioned remove button', () => {
+  it('does not declare a .cs-col-qty rule', () => {
+    expect(readCss()).not.toMatch(/\.cs-col-qty\b/);
+  });
+
+  it('does not declare a .cs-col-remove rule', () => {
+    expect(readCss()).not.toMatch(/\.cs-col-remove\b/);
+  });
+
+  it('does not reference the dropped --cs-listing-col-qty-width token', () => {
+    expect(readCss()).not.toMatch(/--cs-listing-col-qty-width\b/);
+  });
+
+  it('does not reference the dropped --cs-listing-col-remove-width token', () => {
+    expect(readCss()).not.toMatch(/--cs-listing-col-remove-width\b/);
+  });
+
+  it('declares a .cs-col-controls rule that pins width via --cs-listing-col-controls-width', () => {
+    /*
+     * The whole point of the controls column is a fixed width that
+     * doesn't reflow when the remove button toggles visibility. The
+     * width must come from a single token so themes can override.
+     */
+    const css = readCss();
+    const ruleMatch = css.match(/\.cs-col-controls\s*\{[^}]*\}/);
+    expect(
+      ruleMatch,
+      'expected a .cs-col-controls { ... } rule block',
+    ).not.toBeNull();
+    expect(ruleMatch![0]).toMatch(/width:\s*var\(--cs-listing-col-controls-width/);
+  });
+
+  it('positions the .cs-col-controls cell as a positioning context', () => {
+    /*
+     * The remove button is absolutely positioned relative to the controls
+     * cell. That requires the cell to be a positioning ancestor.
+     */
+    const css = readCss();
+    const ruleMatch = css.match(/\.cs-col-controls\s*\{[^}]*\}/);
+    expect(ruleMatch).not.toBeNull();
+    expect(ruleMatch![0]).toMatch(/position:\s*relative/);
+  });
+
+  it('absolutely positions the remove button inside the controls cell with a right offset', () => {
+    /*
+     * The remove button's visibility toggle must not affect the layout of
+     * any other cell. Position: absolute pulls it out of the flow; the
+     * right offset bleeds it past the cell edge so it doesn't crowd the
+     * stepper in cart context (where both coexist).
+     */
+    const css = readCss();
+    const ruleMatch = css.match(
+      /\.cs-col-controls\s+\.cs-remove-btn\s*\{[^}]*\}/,
+    );
+    expect(
+      ruleMatch,
+      'expected a .cs-col-controls .cs-remove-btn { ... } rule block',
+    ).not.toBeNull();
+    expect(ruleMatch![0]).toMatch(/position:\s*absolute/);
+    expect(ruleMatch![0]).toMatch(/right:\s*/);
+  });
+});
+
 describe('ListingTable.css — selectors follow the column collapse', () => {
   it('does not declare a .cs-col-moq rule', () => {
     expect(readCss()).not.toMatch(/\.cs-col-moq\b/);

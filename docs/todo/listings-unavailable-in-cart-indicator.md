@@ -30,10 +30,10 @@ Non-destructive signal that directs the user to /cart, where H5's "Remove unavai
 
 ### 1. `src/components/Listings/ListingTable.astro` — status cell
 
-The qty cell now always mounts `<CartControl>`; status rows get a disabled button from CartControl itself. Add a sibling `.cs-listing-cart-indicator` inside `.cs-col-qty` so the "N in cart" signal has a slot:
+The controls cell now always mounts `<CartControl>`; status rows get a disabled button from CartControl itself. Add a sibling `.cs-listing-cart-indicator` inside `.cs-col-controls` so the "N in cart" signal has a slot:
 
 ```astro
-<td class="cs-col-qty">
+<td class="cs-col-controls">
   <CartControl sku={listing.sku} name={listing.name} moq={listing.moq} status={listing.status} />
   {listing.status && <span class="cs-listing-cart-indicator" hidden></span>}
 </td>

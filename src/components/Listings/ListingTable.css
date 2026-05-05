@@ -54,9 +54,16 @@
   }
 
   .cs-col-image { width: var(--cs-listing-col-image-width, auto); }
-  .cs-col-qty { width: var(--cs-listing-col-qty-width, auto); }
   .cs-col-total { width: var(--cs-listing-col-total-width, auto); }
-  .cs-col-remove { width: var(--cs-listing-col-remove-width, auto); }
+
+  /* Controls column hosts both the qty stepper / Add-to-Cart button and the
+     remove button. Width is fixed via the token so toggling cart state on a
+     row never reflows the table. position: relative establishes the
+     positioning ancestor for the absolutely-positioned remove button below. */
+  .cs-col-controls {
+    width: var(--cs-listing-col-controls-width, auto);
+    position: relative;
+  }
 
   /* --- Image thumbnail & placeholder --- */
 
@@ -146,5 +153,15 @@
 
   .cs-remove-btn:hover {
     color: var(--cs-error-color, currentColor);
+  }
+
+  /* Absolute so toggling [hidden] on the remove button has zero effect on
+     the controls cell's flow. Bleeds past the cell's right padding so it
+     doesn't crowd the stepper in cart context (where both coexist). */
+  .cs-col-controls .cs-remove-btn {
+    position: absolute;
+    top: 50%;
+    right: var(--cs-listing-col-controls-remove-right, 0);
+    transform: translateY(-50%);
   }
 }

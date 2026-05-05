@@ -56,14 +56,6 @@ const effectivePrice = hasWholesale ? formatPrice(wholesaleRaw, currency) : list
   ) : (
     <td class="cs-col-price" role="cell">{listing.price}</td>
   )}
-  <td class="cs-col-qty" role="cell">
-    <CartControl
-      sku={listing.sku}
-      name={listing.name}
-      moq={listing.moq}
-      status={listing.status}
-    />
-  </td>
   <td class="cs-col-total" role="cell">
     {listing.status ? (
       <span class="cs-line-total">&mdash;</span>
@@ -71,7 +63,16 @@ const effectivePrice = hasWholesale ? formatPrice(wholesaleRaw, currency) : list
       <span class="cs-line-total">$0.00</span>
     )}
   </td>
-  <td class="cs-col-remove" role="cell">
+  <td class="cs-col-controls" role="cell">
+    <CartControl
+      sku={listing.sku}
+      name={listing.name}
+      moq={listing.moq}
+      status={listing.status}
+    />
+    {/* Absolutely positioned inside the controls cell so toggling
+        visibility (catalog: row empty <-> in-cart) doesn't reflow the
+        column width. Bleeds past the cell's right edge by design. */}
     <button type="button" class="cs-remove-btn" aria-label={`Remove ${listing.name}`} hidden>&times;</button>
   </td>
 </tr>

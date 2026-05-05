@@ -72,17 +72,18 @@ describe('Cart.astro — subtotal renders in <tfoot> inside the cart table', () 
     expect(tfootMatch![0]).toMatch(/<th[^>]*\bscope="row"/);
   });
 
-  it('subtotal label colspan is 4 (covers leading cols, leaves total + remove)', () => {
+  it('subtotal label colspan is 3 (image + product + price)', () => {
     const out = readCart();
     const tfootMatch = out.match(/<tfoot>[\s\S]*?<\/tfoot>/);
     expect(tfootMatch).not.toBeNull();
-    // The cart uses the unified row from ListingRow.astro. After the MOQ
-    // and dual-price column collapse, the table is 6 columns in both
-    // variants: Image, Product, Price, Qty, Total, Remove. The subtotal
-    // label spans the first 4 (Image, Product, Price, Qty), leaving Total
-    // and Remove as their own cells. The colspan is therefore a literal
-    // 4 — no longer conditional on hasWholesale.
-    expect(tfootMatch![0]).toMatch(/colspan=\{\s*4\s*\}/);
+    // The cart uses the unified row from ListingRow.astro. After the
+    // qty/remove column collapse into a single trailing controls column,
+    // the table is 5 columns in both variants: Image, Product, Price,
+    // Total, Controls. The subtotal label spans the first 3 (Image,
+    // Product, Price), leaving Total and Controls as their own cells.
+    // The colspan is therefore a literal 3 — no longer conditional on
+    // hasWholesale.
+    expect(tfootMatch![0]).toMatch(/colspan=\{\s*3\s*\}/);
     // Pin the absence of the old conditional so a future regression that
     // re-splits the price column into MSRP + Wholesale doesn't silently
     // resurrect a stale colspan formula.
@@ -100,15 +101,26 @@ describe('Cart.astro — subtotal renders in <tfoot> inside the cart table', () 
     );
   });
 
-  it('includes a trailing remove-column cell so the row spans the full table width', () => {
+  it('includes a trailing controls-column cell so the row spans the full table width', () => {
     const out = readCart();
     const tfootMatch = out.match(/<tfoot>[\s\S]*?<\/tfoot>/);
     expect(tfootMatch).not.toBeNull();
     // Without this cell the row would either be short by one column or the
-    // total cell would silently span into the remove slot. Pin it explicitly.
+    // total cell would silently span into the controls slot. Pin it
+    // explicitly.
     expect(tfootMatch![0]).toMatch(
-      /<td[^>]*\bclass="[^"]*\bcs-col-remove\b[^"]*"[^>]*>\s*<\/td>/,
+      /<td[^>]*\bclass="[^"]*\bcs-col-controls\b[^"]*"[^>]*>\s*<\/td>/,
     );
+  });
+
+  it('does not reference the dropped cs-col-remove column class anywhere', () => {
+    /*
+     * Hard cut on the old column. cs-col-remove was a dedicated trailing
+     * column whose visibility-toggling caused layout shift. The remove
+     * button now lives absolutely-positioned inside cs-col-controls.
+     * Backwards compatibility is explicitly not a value here.
+     */
+    expect(readCart()).not.toMatch(/cs-col-remove/);
   });
 
   it('keeps the .cs-totals-row hook on the <tr> element (not on a <div>)', () => {

@@ -14,8 +14,7 @@ const { hasWholesale, productLabel = null } = Astro.props;
       {productLabel ? productLabel : <span class="cs-sr-only">Product</span>}
     </th>
     <th class="cs-col-price" scope="col" role="columnheader">{hasWholesale ? 'Wholesale' : 'Unit Price'}</th>
-    <th class="cs-col-qty" scope="col" role="columnheader">Qty</th>
     <th class="cs-col-total" scope="col" role="columnheader">Line Total</th>
-    <th class="cs-col-remove" scope="col" role="columnheader"></th>
+    <th class="cs-col-controls" scope="col" role="columnheader"></th>
   </tr>
 </thead>

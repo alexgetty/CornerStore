@@ -183,9 +183,9 @@
   --cs-listing-desc-margin-top: 0.25rem;
   --cs-listing-thumb-size: 48px;
   --cs-listing-col-image-width: 60px;
-  --cs-listing-col-qty-width: 140px;
   --cs-listing-col-total-width: 100px;
-  --cs-listing-col-remove-width: 40px;
+  --cs-listing-col-controls-width: 140px;
+  --cs-listing-col-controls-remove-right: -1.5rem;
 
   /* -------------------------------------------------------
    * Listings — empty state + view toggle + view icons
