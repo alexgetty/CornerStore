@@ -148,8 +148,6 @@
   --cs-checkout-fallback-gap: 1rem;
   --cs-submit-btn-padding: 0.75rem 2rem;
   --cs-submit-btn-font-size: var(--cs-text-4);
-  --cs-remove-btn-font-size: var(--cs-text-5);
-  --cs-remove-btn-padding: 0.25rem;
 
   /* -------------------------------------------------------
    * Cart Control — Add to Cart + qty stepper
@@ -182,10 +180,14 @@
   --cs-listing-cell-padding: 0.5rem 0.75rem;
   --cs-listing-desc-margin-top: 0.25rem;
   --cs-listing-thumb-size: 48px;
+  --cs-listing-thumb-size-mobile: 40px;
   --cs-listing-col-image-width: 60px;
+  --cs-listing-col-price-width: 100px;
   --cs-listing-col-total-width: 100px;
   --cs-listing-col-controls-width: 140px;
-  --cs-listing-col-controls-remove-right: -1.5rem;
+  --cs-listing-row-mobile-row-gap: 0.5rem;
+  --cs-listing-row-mobile-col-gap: 0.75rem;
+  --cs-listing-row-mobile-padding: 0.5rem 0;
 
   /* -------------------------------------------------------
    * Listings — empty state + view toggle + view icons

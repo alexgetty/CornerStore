@@ -313,6 +313,11 @@
        `order` property. The reveal can't be the adjacent-sibling selector
        (drawer no longer follows the toggle); it's parent-relative via
        :has() on the shared .cs-header-actions container. */
+    /* Release the row-height contract: when the drawer becomes a fixed
+       full-screen panel, `top` + `bottom` determine its height. Leaving the
+       contract's `height: 2.75rem` in place would over-constrain the fixed
+       box, the browser would honor `height` and ignore `bottom`, and the
+       drawer would render as a 2.75rem strip with an internal scrollbar. */
     .cs-header-actions:has(.cs-nav-toggle[aria-expanded="true"]) .cs-nav-drawer {
       display: block;
       position: fixed;
@@ -320,6 +325,7 @@
       left: 0;
       right: 0;
       bottom: 0;
+      height: auto;
       z-index: 30;
       background-color: var(--cs-nav-drawer-surface, transparent);
       padding-top: var(--cs-nav-drawer-padding, 1rem);

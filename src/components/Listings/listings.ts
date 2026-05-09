@@ -172,8 +172,7 @@ function initToggle(root: HTMLElement) {
 function updateTableRow(row: HTMLElement) {
   const input = row.querySelector('.cs-cart-control-input') as HTMLInputElement | null;
   const lineTotalEl = row.querySelector('.cs-line-total') as HTMLElement | null;
-  const removeBtn = row.querySelector('.cs-remove-btn') as HTMLButtonElement | null;
-  if (!input || !lineTotalEl || !removeBtn) return;
+  if (!input || !lineTotalEl) return;
 
   const rawPrice = Number(row.dataset.rawPrice);
   const moq = row.dataset.moq ? Number(row.dataset.moq) : null;
@@ -181,8 +180,18 @@ function updateTableRow(row: HTMLElement) {
   const currency = row.closest<HTMLElement>('.cs-listing-table')?.dataset.currency ?? 'usd';
 
   lineTotalEl.textContent = formatPrice(calculateLineTotal(rawPrice, qty), currency);
-  removeBtn.hidden = qty === 0;
   input.classList.toggle('cs-invalid', !validateQuantity(qty, moq));
+
+  const downBtn = row.querySelector<HTMLButtonElement>('.cs-cart-control-down');
+  if (downBtn) {
+    const name = row.querySelector<HTMLElement>('.cs-cart-control')?.dataset.name ?? '';
+    const atRemove = nextQuantity('down', qty, moq) === 0;
+    downBtn.textContent = atRemove ? '×' : '-';
+    downBtn.setAttribute(
+      'aria-label',
+      atRemove ? `Remove ${name} from cart` : `Decrease quantity of ${name}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -196,19 +205,6 @@ function wireCartControls(root: HTMLElement) {
   root.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-
-    // Table-row remove button: set qty to 0.
-    const removeBtn = target.closest<HTMLElement>('.cs-remove-btn');
-    if (removeBtn) {
-      const row = removeBtn.closest<HTMLElement>('.cs-listing-row');
-      if (row) {
-        const control = row.querySelector<HTMLElement>('.cs-cart-control');
-        if (control) {
-          handleAction(control, 'input', 0);
-          return;
-        }
-      }
-    }
 
     const actionEl = target.closest<HTMLElement>(
       '.cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up',

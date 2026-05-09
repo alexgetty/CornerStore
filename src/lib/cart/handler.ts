@@ -76,12 +76,12 @@ export function createCheckoutHandler(options: CheckoutHandlerConfig) {
     }
 
     try {
+      // Idempotency key derives from a client-supplied per-attempt nonce.
+      // The cart UI generates a fresh attemptId on each submit so two different
+      // buyers with identical carts get distinct keys; a genuine retry of the
+      // same attempt reuses the nonce and replays the same Stripe response.
       const idempotencyKey = createHash('sha256')
-        .update(JSON.stringify({
-          items: parsed.items.slice().sort((a, b) => a.sku.localeCompare(b.sku)),
-          origin,
-          bucket: Math.floor(Date.now() / 60_000),
-        }))
+        .update(parsed.attemptId)
         .digest('hex');
 
       const session = await getStripe().checkout.sessions.create(

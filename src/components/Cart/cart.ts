@@ -12,11 +12,20 @@ import {
   type CartControlAction,
 } from '../CartControl/cart-control-actions.js';
 import { resolveCartMutation } from './cart-row-actions.js';
+import { generateAttemptId } from './attempt-id.js';
 
 const root = document.querySelector<HTMLElement>('.cs-cart');
 if (root) init(root);
 
 function init(root: HTMLElement) {
+  // Eagerly load html2pdf.js so the PDF backup works even if the buyer goes
+  // offline between page load and clicking Download PDF. Triggering the
+  // dynamic import at init time means the chunk is fetched while the page
+  // is loading (when we know connectivity exists, since the page itself
+  // loaded), and is in the browser cache by the time the click handler
+  // awaits this promise.
+  const html2pdfPromise = import('html2pdf.js').then((m) => m.default);
+
   const currency = root.dataset.currency ?? 'usd';
   const minCartSizeRaw = root.dataset.minCartSizeRaw ? Number(root.dataset.minCartSizeRaw) : null;
   const contact = root.dataset.contact ?? '';
@@ -460,15 +469,26 @@ function init(root: HTMLElement) {
     checkoutError.hidden = true;
     checkoutFallback.hidden = true;
 
-    const items = getVisibleItems()
-      .filter((i) => i.quantity > 0)
-      .map((i) => ({ sku: i.sku, quantity: i.quantity }));
-
+    // Everything that can throw on the way to Stripe lives inside this try.
+    // The catch un-hides checkoutFallback (Retry + Download PDF), so any
+    // failure mode — randomUUID unavailable, localStorage corrupted, network
+    // down, Stripe error — surfaces the PDF backup path for the buyer.
     try {
+      const items = getVisibleItems()
+        .filter((i) => i.quantity > 0)
+        .map((i) => ({ sku: i.sku, quantity: i.quantity }));
+
+      // Per-attempt nonce. The BYO server derives the Stripe idempotency
+      // key from it so two buyers with identical carts get distinct
+      // sessions. Every invocation (initial submit AND retry) generates a
+      // fresh id; we rely on Stripe-SDK-internal retries for HTTP-level
+      // idempotency, not on retry-button reuse.
+      const attemptId = generateAttemptId(globalThis.crypto);
+
       const response = await fetch(checkoutUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, attemptId }),
       });
 
       if (!response.ok) {
@@ -483,8 +503,10 @@ function init(root: HTMLElement) {
       }
       throw new Error('No checkout URL returned');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Checkout failed';
-      checkoutError.textContent = `Checkout unavailable: ${message}`;
+      console.error('[Cart] Checkout failed:', err);
+      checkoutError.textContent = contact
+        ? `We're having issues with Stripe checkout. Please try again, or download your order form PDF and email it to ${contact}.`
+        : `We're having issues with Stripe checkout. Please try again, or download your order form PDF.`;
       checkoutError.hidden = false;
       checkoutFallback.hidden = false;
 
@@ -498,7 +520,7 @@ function init(root: HTMLElement) {
     submitBtn.textContent = 'Generating PDF...';
 
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
+      const html2pdf = await html2pdfPromise;
 
       const pdfContent = contentEl.cloneNode(true) as HTMLElement;
 
@@ -550,6 +572,10 @@ function init(root: HTMLElement) {
       submitBtn.disabled = false;
     } catch (err) {
       console.error('[Cart] PDF generation failed:', err);
+      checkoutError.textContent = contact
+        ? `We couldn't generate the PDF. Please refresh and try again, or contact ${contact}.`
+        : `We couldn't generate the PDF. Please refresh and try again.`;
+      checkoutError.hidden = false;
       submitBtn.textContent = checkoutEnabled ? 'Checkout' : 'Submit Order';
       submitBtn.disabled = false;
     }

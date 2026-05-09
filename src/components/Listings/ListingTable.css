@@ -6,6 +6,13 @@
     width: 100%;
     border-collapse: collapse;
     margin-bottom: var(--cs-listing-table-margin, 0);
+    /* Lock column widths to the first row's declarations so toggling cart
+       state on any cell (Add to Cart <-> qty stepper, $0.00 <-> real total)
+       cannot reflow neighbouring columns. Every <th>/<td> column class
+       below pins an explicit width via a --cs-listing-col-*-width token;
+       only .cs-col-product is intentionally unfixed and absorbs leftover
+       space. */
+    table-layout: fixed;
   }
 
   .cs-listing-table th,
@@ -40,6 +47,7 @@
   }
 
   .cs-col-price {
+    width: var(--cs-listing-col-price-width, auto);
     font-variant-numeric: tabular-nums;
   }
 
@@ -54,15 +62,22 @@
   }
 
   .cs-col-image { width: var(--cs-listing-col-image-width, auto); }
-  .cs-col-total { width: var(--cs-listing-col-total-width, auto); }
 
-  /* Controls column hosts both the qty stepper / Add-to-Cart button and the
-     remove button. Width is fixed via the token so toggling cart state on a
-     row never reflows the table. position: relative establishes the
-     positioning ancestor for the absolutely-positioned remove button below. */
+  .cs-col-total {
+    width: var(--cs-listing-col-total-width, auto);
+    /* The line-total cell is the one cell whose content actively changes
+       during cart interactions ($0.00 -> $12.50 -> $1,250.00 as quantity
+       steps up). Tabular digits keep the glyph-run width constant across
+       value changes so the column never visually nudges its neighbours,
+       even when the surrounding table-layout algorithm recomputes. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Controls column hosts the qty stepper / Add-to-Cart button. Width is
+     fixed via the token so toggling cart state on a row never reflows the
+     table. */
   .cs-col-controls {
     width: var(--cs-listing-col-controls-width, auto);
-    position: relative;
   }
 
   /* --- Image thumbnail & placeholder --- */
@@ -139,29 +154,82 @@
     font-size: var(--cs-text-3, inherit);
   }
 
-  /* --- Remove button --- */
 
-  .cs-remove-btn {
-    background: none;
-    border: none;
-    font-size: var(--cs-remove-btn-font-size, inherit);
-    cursor: pointer;
-    color: var(--cs-muted-text-color, inherit);
-    padding: var(--cs-remove-btn-padding, 0);
-    transition: color var(--cs-transition-fast, 0s);
-  }
+  /* --- Mobile body-row layout (<=560px) ---
+     Body rows collapse from a horizontal table row into a 2-row CSS grid:
+     row 1 hosts [image] [name] [unit price], row 2 hosts the full-width
+     stepper / Add-to-Cart control (catalog context). In the cart context,
+     Cart.css overrides the controls to span 2 of 3 columns and re-shows
+     the line-total cell at row-2 col-3. The cart's <tfoot> subtotal row
+     uses a different class (.cs-totals-row) so this block's .cs-listing-row
+     scope cannot reach it. The thumbnail token override (40px) is in-rule
+     to avoid introducing a mobile-specific token consumers would have to
+     learn for a single breakpoint. Row padding and border-bottom move from
+     individual cells to the row card itself; cells get a reset so the card
+     owns the vertical rhythm. */
+  @media (max-width: 560px) {
+    /* Column headers stay in the accessibility tree (screen readers can still
+       announce them) but take no visual space. display: none would remove them
+       from the a11y tree entirely, which loses column semantics for AT users.
+       The STRUCTURAL_ALLOWLIST in css-contract.test.ts exempts 1px / -1px
+       used here for this pattern. */
+    .cs-listing-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      padding: 0;
+      margin: -1px;
+    }
 
-  .cs-remove-btn:hover {
-    color: var(--cs-error-color, currentColor);
-  }
+    .cs-listing-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas:
+        "image name price"
+        "control control control";
+      row-gap: var(--cs-listing-row-mobile-row-gap, 0);
+      column-gap: var(--cs-listing-row-mobile-col-gap, 0);
+      align-items: center;
+      padding: var(--cs-listing-row-mobile-padding, 0);
+      border-bottom-width: var(--cs-border-width, 0);
+      border-bottom-style: solid;
+      border-bottom-color: var(--cs-border-color, currentColor);
+      --cs-listing-thumb-size: var(--cs-listing-thumb-size-mobile, 40px);
+    }
 
-  /* Absolute so toggling [hidden] on the remove button has zero effect on
-     the controls cell's flow. Bleeds past the cell's right padding so it
-     doesn't crowd the stepper in cart context (where both coexist). */
-  .cs-col-controls .cs-remove-btn {
-    position: absolute;
-    top: 50%;
-    right: var(--cs-listing-col-controls-remove-right, 0);
-    transform: translateY(-50%);
+    .cs-listing-row td {
+      padding: 0;
+      border: none;
+    }
+
+    .cs-listing-row .cs-col-image { grid-area: image; }
+    .cs-listing-row .cs-col-product { grid-area: name; }
+    .cs-listing-row .cs-col-price { grid-area: price; }
+    .cs-listing-row .cs-col-controls {
+      grid-area: control;
+      width: 100%;
+    }
+
+    .cs-listing-row .cs-col-total { display: none; }
+    .cs-listing-row .cs-listing-sku { display: none; }
+    .cs-listing-row .cs-listing-moq { display: none; }
+    .cs-listing-row .cs-listing-desc { display: none; }
+    .cs-listing-row .cs-remove-btn { display: none; }
+
+    /* Controls-cell contents fill the full-width grid cell. The desktop
+       ListingTable.css rules fix the input at --cs-cart-stepper-cell-input-width
+       with flex: 0 0 auto; override both so the input absorbs the remaining
+       space between the two fixed-size buttons. Button tap targets keep their
+       size (--cs-cart-stepper-cell-size) — no override needed. */
+    .cs-listing-row .cs-cart-control-qty { width: 100%; }
+    .cs-listing-row .cs-cart-control-add { width: 100%; }
+    .cs-listing-row .cs-cart-control-input {
+      flex: 1 1 auto;
+      width: auto;
+    }
   }
 }

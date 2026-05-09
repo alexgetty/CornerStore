@@ -11,15 +11,6 @@
     text-underline-offset: var(--cs-text-underline-offset, auto);
   }
 
-  /* Cart rows surface the remove button. Catalog rows render the same shared
-     <ListingRow /> markup with the remove button initially `hidden`; the
-     catalog-side JS toggles it on/off per row qty. In the cart, every visible
-     row is in the cart, so the remove button is always live — un-hide it
-     here scoped to .cs-cart so the markup itself stays unified. */
-  .cs-cart .cs-remove-btn[hidden] {
-    display: inline-block;
-  }
-
   /* Subtotal lives in the table's <tfoot>. The label cell is a
      <th scope="row"> so screen readers announce "Subtotal" as the row header
      for the value, and table-navigation mode treats the row as the table's
@@ -94,17 +85,66 @@
     cursor: not-allowed;
   }
 
-  /* Mobile: stretch both buttons to full-width tap targets. The actual
-     stacking comes from wrap-reverse + flex: 1 1 100% on each child, not
-     from flex-direction. */
-  @media (max-width: 480px) {
-    .cs-cart-actions-secondary,
-    .cs-cart-actions > .cs-submit-btn {
-      flex: 1 1 100%;
+  @media (max-width: 560px) {
+    /* Cart listing rows: re-show line total beside the controls. The catalog
+       mobile rule hides .cs-col-total and spans controls full-width. Here we
+       reverse both: total appears at row-2 col-3, controls occupy cols 1-2.
+       The remove button is re-shown; Cart.css already un-hides it at desktop
+       via .cs-cart .cs-remove-btn[hidden] (higher specificity than the catalog
+       display: none rule), but an explicit mobile rule makes the intent clear. */
+    .cs-cart .cs-listing-row .cs-col-total {
+      display: block;
+      grid-row: 2;
+      grid-column: 3;
+      text-align: right;
+    }
+
+    .cs-cart .cs-listing-row .cs-col-controls {
+      grid-column: 1 / 3;
+      width: 100%;
+    }
+
+    /* Totals row: the desktop tfoot relies on table layout (label + value on
+       one row). On mobile with td → grid-item, that breaks. Convert the row
+       to a flex container so label and value stay on one line. */
+    .cs-totals-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--cs-listing-row-mobile-padding, 0);
+      border-bottom-width: var(--cs-border-width, 0);
+      border-bottom-style: solid;
+      border-bottom-color: var(--cs-border-color, currentColor);
+    }
+
+    .cs-totals-row th,
+    .cs-totals-row td {
+      display: block;
+      padding: 0;
+      border: none;
+    }
+
+    /* The desktop totals row has a third cell (.cs-col-controls) to align
+       with the body-row controls column. In the flex row it is a spacer with
+       no purpose; hide it so the value sits flush right. */
+    .cs-totals-row .cs-col-controls {
+      display: none;
+    }
+
+    /* Stack cart actions vertically with Checkout on top. column-reverse
+       puts the last DOM child (submit button) at the visual top. */
+    .cs-cart-actions {
+      flex-direction: column-reverse;
+      align-items: stretch;
     }
 
     .cs-cart-actions-secondary {
+      flex: 1 1 100%;
       justify-content: stretch;
+    }
+
+    .cs-cart-actions > .cs-submit-btn {
+      flex: 1 1 100%;
     }
 
     .cs-cart-actions-secondary .cs-clear-cart,

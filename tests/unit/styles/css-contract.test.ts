@@ -303,6 +303,26 @@ describe('CSS contract: no hardcoded aesthetic values in package', () => {
       value: '0.01ms',
       reason: 'a11y reduced-motion invariant',
     },
+    {
+      // Visually-hidden / sr-only clip pattern used to keep table column
+      // headers in the accessibility tree at mobile without taking any
+      // visible space. Used in ListingTable.css inside the mobile media
+      // query. defaults.css is exempt from this check; these entries cover
+      // the same pattern when it appears in other package CSS files.
+      property: 'width',
+      value: '1px',
+      reason: 'visually-hidden / sr-only clip pattern — a11y structural invariant',
+    },
+    {
+      property: 'height',
+      value: '1px',
+      reason: 'visually-hidden / sr-only clip pattern — a11y structural invariant',
+    },
+    {
+      property: 'margin',
+      value: '-1px',
+      reason: 'visually-hidden / sr-only clip pattern — a11y structural invariant',
+    },
   ];
 
   // Tokens that resolve to structural neutrals when the theme is absent.

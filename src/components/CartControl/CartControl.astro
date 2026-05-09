@@ -19,6 +19,7 @@ const showStepper = !isUnavailable && quantity > 0;
   class="cs-cart-control"
   data-sku={sku}
   data-moq={moq ?? ''}
+  data-name={name}
 >
   {isUnavailable ? (
     <button

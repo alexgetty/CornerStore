@@ -385,7 +385,6 @@ describe('bin/scaffold.mjs', () => {
 
   describe('buildStatusPage', () => {
     it('throws on unknown kind', () => {
-      // @ts-expect-error — invalid kind, exercising the runtime guard
       expect(() => buildStatusPage('teapot', 'Test Store')).toThrow();
     });
 

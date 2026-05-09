@@ -34,11 +34,12 @@ function makeProduct(overrides: Partial<CatalogProduct> = {}): CatalogProduct {
 
 describe('parseCheckoutRequest', () => {
   it('parses valid request body', () => {
-    const body = { items: [{ sku: 'ABC-001', quantity: 2 }] };
+    const body = { items: [{ sku: 'ABC-001', quantity: 2 }], attemptId: 'attempt-abc-123' };
     const result = parseCheckoutRequest(body);
     expect(result).toEqual({
       ok: true,
       items: [{ sku: 'ABC-001', quantity: 2 }],
+      attemptId: 'attempt-abc-123',
     });
   });
 
@@ -131,10 +132,54 @@ describe('parseCheckoutRequest', () => {
   });
 
   it('accepts quantity equal to MAX_QUANTITY', () => {
-    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 10_000 }] });
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 10_000 }], attemptId: 'a1' });
     expect(result).toEqual({
       ok: true,
       items: [{ sku: 'A', quantity: 10_000 }],
+      attemptId: 'a1',
+    });
+  });
+
+  it('rejects missing attemptId', () => {
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 1 }] });
+    expect(result).toEqual({
+      ok: false,
+      error: 'attemptId is required',
+    });
+  });
+
+  it('rejects non-string attemptId', () => {
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 1 }], attemptId: 123 });
+    expect(result).toEqual({
+      ok: false,
+      error: 'attemptId is required',
+    });
+  });
+
+  it('rejects empty attemptId', () => {
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 1 }], attemptId: '' });
+    expect(result).toEqual({
+      ok: false,
+      error: 'attemptId is required',
+    });
+  });
+
+  it('rejects attemptId longer than 128 characters', () => {
+    const longId = 'x'.repeat(129);
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 1 }], attemptId: longId });
+    expect(result).toEqual({
+      ok: false,
+      error: 'attemptId exceeds maximum length',
+    });
+  });
+
+  it('accepts attemptId at the 128-character boundary', () => {
+    const id = 'x'.repeat(128);
+    const result = parseCheckoutRequest({ items: [{ sku: 'A', quantity: 1 }], attemptId: id });
+    expect(result).toEqual({
+      ok: true,
+      items: [{ sku: 'A', quantity: 1 }],
+      attemptId: id,
     });
   });
 
@@ -361,7 +406,7 @@ describe('createCheckoutHandler', () => {
   it('returns checkout URL on success', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123', wholesaleMargin: 0.5 });
     const response = await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 2 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 2 }], attemptId: 'a1' },
       'https://mystore.com',
     );
 
@@ -379,10 +424,23 @@ describe('createCheckoutHandler', () => {
     expect(body).toEqual({ error: 'Invalid request body' });
   });
 
+  it('returns 400 when attemptId is missing from the request body', async () => {
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    const response = await handler(
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      'https://mystore.com',
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'attemptId is required' });
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
   it('returns 400 for unknown SKU', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     const response = await handler(
-      { items: [{ sku: 'NOPE', quantity: 1 }] },
+      { items: [{ sku: 'NOPE', quantity: 1 }], attemptId: 'a1' },
       'https://mystore.com',
     );
 
@@ -394,7 +452,7 @@ describe('createCheckoutHandler', () => {
   it('applies wholesale margin to unit amount', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123', wholesaleMargin: 0.5 });
     await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' },
       'https://mystore.com',
     );
 
@@ -407,7 +465,7 @@ describe('createCheckoutHandler', () => {
   it('sets success and cancel URLs from origin', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' },
       'https://example.com',
     );
 
@@ -421,7 +479,7 @@ describe('createCheckoutHandler', () => {
 
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     const response = await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' },
       'https://mystore.com',
     );
 
@@ -437,7 +495,7 @@ describe('createCheckoutHandler', () => {
 
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     const response = await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' },
       'https://mystore.com',
     );
 
@@ -455,7 +513,7 @@ describe('createCheckoutHandler', () => {
 
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     const response = await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' },
       'https://mystore.com',
     );
 
@@ -466,49 +524,62 @@ describe('createCheckoutHandler', () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it('passes a stable idempotency key to Stripe within the same time bucket', async () => {
-    const fixedNow = 1_700_000_000_000;
-    vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
-    try {
-      const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
-      await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
-      await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
+  it('uses the same idempotency key when the same attemptId is replayed (genuine retry)', async () => {
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'attempt-A' }, 'https://mystore.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'attempt-A' }, 'https://mystore.com');
 
-      expect(mockCreate).toHaveBeenCalledTimes(2);
-      const firstOpts = mockCreate.mock.calls[0][1];
-      const secondOpts = mockCreate.mock.calls[1][1];
-      expect(firstOpts).toBeDefined();
-      expect(firstOpts.idempotencyKey).toBeTruthy();
-      expect(secondOpts.idempotencyKey).toBe(firstOpts.idempotencyKey);
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    const firstKey = mockCreate.mock.calls[0][1].idempotencyKey;
+    const secondKey = mockCreate.mock.calls[1][1].idempotencyKey;
+    expect(firstKey).toBeTruthy();
+    expect(secondKey).toBe(firstKey);
+  });
+
+  it('uses different idempotency keys for two buyers with identical carts (different attemptIds)', async () => {
+    // Regression test for the collision bug where the idempotency key was
+    // derived from items + origin + a 60-second time bucket, so two real
+    // buyers ordering the same items in the same minute shared a session.
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'buyer-1' }, 'https://mystore.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'buyer-2' }, 'https://mystore.com');
+
+    const firstKey = mockCreate.mock.calls[0][1].idempotencyKey;
+    const secondKey = mockCreate.mock.calls[1][1].idempotencyKey;
+    expect(firstKey).toBeTruthy();
+    expect(secondKey).not.toBe(firstKey);
+  });
+
+  it('idempotency key does not depend on wall-clock time', async () => {
+    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+    try {
+      await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'attempt-A' }, 'https://mystore.com');
+      dateSpy.mockReturnValue(1_700_000_300_000); // 5 minutes later
+      await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'attempt-A' }, 'https://mystore.com');
+
+      const firstKey = mockCreate.mock.calls[0][1].idempotencyKey;
+      const secondKey = mockCreate.mock.calls[1][1].idempotencyKey;
+      expect(secondKey).toBe(firstKey);
     } finally {
-      vi.restoreAllMocks();
+      dateSpy.mockRestore();
     }
   });
 
-  it('changes idempotency key when items change', async () => {
+  it('idempotency key does not depend on origin', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
-    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
-    await handler({ items: [{ sku: 'WIDGET-001', quantity: 2 }] }, 'https://mystore.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'attempt-A' }, 'https://store-a.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'attempt-A' }, 'https://store-b.com');
 
     const firstKey = mockCreate.mock.calls[0][1].idempotencyKey;
     const secondKey = mockCreate.mock.calls[1][1].idempotencyKey;
-    expect(secondKey).not.toBe(firstKey);
-  });
-
-  it('changes idempotency key when origin changes', async () => {
-    const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
-    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://store-a.com');
-    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://store-b.com');
-
-    const firstKey = mockCreate.mock.calls[0][1].idempotencyKey;
-    const secondKey = mockCreate.mock.calls[1][1].idempotencyKey;
-    expect(secondKey).not.toBe(firstKey);
+    expect(secondKey).toBe(firstKey);
   });
 
   it('reads the catalog from disk on every request (no caching)', async () => {
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
-    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
-    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }] }, 'https://mystore.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' }, 'https://mystore.com');
+    await handler({ items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a2' }, 'https://mystore.com');
 
     expect(mockLoadCatalog).toHaveBeenCalledTimes(2);
   });
@@ -518,7 +589,7 @@ describe('createCheckoutHandler', () => {
 
     // First request: SKU is available, checkout succeeds.
     const first = await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' },
       'https://mystore.com',
     );
     expect(first.status).toBe(200);
@@ -530,7 +601,7 @@ describe('createCheckoutHandler', () => {
 
     // Second request to the SAME handler instance must reflect the change.
     const second = await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a2' },
       'https://mystore.com',
     );
     expect(second.status).toBe(400);
@@ -544,7 +615,7 @@ describe('createCheckoutHandler', () => {
 
     const handler = createCheckoutHandler({ stripeKey: 'sk_test_123' });
     const response = await handler(
-      { items: [{ sku: 'WIDGET-001', quantity: 1 }] },
+      { items: [{ sku: 'WIDGET-001', quantity: 1 }], attemptId: 'a1' },
       'https://mystore.com',
     );
 

@@ -7,8 +7,10 @@ export interface CheckoutItem {
   quantity: number;
 }
 
+export const MAX_ATTEMPT_ID_LENGTH = 128;
+
 type ParseResult =
-  | { ok: true; items: CheckoutItem[] }
+  | { ok: true; items: CheckoutItem[]; attemptId: string }
   | { ok: false; error: string };
 
 export function parseCheckoutRequest(body: unknown): ParseResult {
@@ -39,7 +41,14 @@ export function parseCheckoutRequest(body: unknown): ParseResult {
     items.push({ sku: rec.sku, quantity: rec.quantity });
   }
 
-  return { ok: true, items };
+  if (typeof obj.attemptId !== 'string' || obj.attemptId.length === 0) {
+    return { ok: false, error: 'attemptId is required' };
+  }
+  if (obj.attemptId.length > MAX_ATTEMPT_ID_LENGTH) {
+    return { ok: false, error: 'attemptId exceeds maximum length' };
+  }
+
+  return { ok: true, items, attemptId: obj.attemptId };
 }
 
 interface StripeLineItem {

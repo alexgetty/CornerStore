@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type Stripe from 'stripe';
 
 vi.mock('stripe', () => {
   const MockStripe = vi.fn();

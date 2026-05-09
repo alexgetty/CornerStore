@@ -207,11 +207,11 @@ describe('ListingRow.astro — qty + remove collapse into a single controls cell
     expect(controlsCellMatch![0]).toMatch(/<CartControl\b/);
   });
 
-  it('keeps the remove button hidden by default (catalog-side default state)', () => {
+  it('keeps the remove button hidden', () => {
     /*
-     * The shared row partial defaults the remove button to `hidden`. The
-     * cart un-hides it via .cs-cart .cs-remove-btn[hidden] in Cart.css.
-     * Catalog rows toggle it visible only when the row is in-cart.
+     * The remove button is never shown — users remove items by decrementing
+     * to 0. The hidden attribute pins this in markup so no CSS override can
+     * accidentally reveal it.
      */
     expect(readRow()).toMatch(/<button[^>]*class="cs-remove-btn"[^>]*\bhidden\b/);
   });
@@ -314,34 +314,13 @@ describe('ListingTable.css — controls column anchors the absolutely-positioned
     expect(ruleMatch![0]).toMatch(/width:\s*var\(--cs-listing-col-controls-width/);
   });
 
-  it('positions the .cs-col-controls cell as a positioning context', () => {
+  it('does not have a .cs-col-controls .cs-remove-btn positioning rule', () => {
     /*
-     * The remove button is absolutely positioned relative to the controls
-     * cell. That requires the cell to be a positioning ancestor.
+     * The remove button is hidden (HTML hidden attribute + no CSS override).
+     * Users remove items by decrementing to 0. No positioning rule is needed.
      */
     const css = readCss();
-    const ruleMatch = css.match(/\.cs-col-controls\s*\{[^}]*\}/);
-    expect(ruleMatch).not.toBeNull();
-    expect(ruleMatch![0]).toMatch(/position:\s*relative/);
-  });
-
-  it('absolutely positions the remove button inside the controls cell with a right offset', () => {
-    /*
-     * The remove button's visibility toggle must not affect the layout of
-     * any other cell. Position: absolute pulls it out of the flow; the
-     * right offset bleeds it past the cell edge so it doesn't crowd the
-     * stepper in cart context (where both coexist).
-     */
-    const css = readCss();
-    const ruleMatch = css.match(
-      /\.cs-col-controls\s+\.cs-remove-btn\s*\{[^}]*\}/,
-    );
-    expect(
-      ruleMatch,
-      'expected a .cs-col-controls .cs-remove-btn { ... } rule block',
-    ).not.toBeNull();
-    expect(ruleMatch![0]).toMatch(/position:\s*absolute/);
-    expect(ruleMatch![0]).toMatch(/right:\s*/);
+    expect(css).not.toMatch(/\.cs-col-controls\s+\.cs-remove-btn/);
   });
 });
 
