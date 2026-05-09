@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseCheckoutStyle, buildConfigFile, buildCartPage, buildEnvFile, deriveAnswersFromExistingConfig, buildIndexPage, buildSlugPage, buildCategorySlugPage, buildPackageJson, buildStatusPage } from '../../../bin/scaffold.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const stubsDir = join(__dirname, '../../../bin/stubs');
 
 describe('bin/scaffold.mjs', () => {
   describe('parseCheckoutStyle', () => {
@@ -440,6 +446,70 @@ import { StatusPage } from 'corner-store/components';
       expect(buildStatusPage('404', 'Acme Co.')).toContain('title="Page Not Found - Acme Co."');
       expect(buildStatusPage('success', 'Acme Co.')).toContain('title="Order Confirmed - Acme Co."');
       expect(buildStatusPage('cancel', 'Acme Co.')).toContain('title="Checkout Cancelled - Acme Co."');
+    });
+  });
+
+  describe('CORNERSTORE.md stub', () => {
+    let content = '';
+    try {
+      content = readFileSync(join(stubsDir, 'CORNERSTORE.md'), 'utf-8');
+    } catch {
+      // file doesn't exist yet — tests below will fail with a clear message
+    }
+
+    it('exists in bin/stubs/', () => {
+      expect(content).not.toBe('');
+    });
+
+    it('documents the Hero component with image prop', () => {
+      expect(content).toMatch(/<Hero\b/);
+      expect(content).toMatch(/image=/);
+      expect(content).toMatch(/imageAlt/);
+    });
+
+    it('documents all Listings props', () => {
+      for (const prop of ['limit', 'mode', 'toggle', 'categories', 'featured', 'sort', 'order']) {
+        expect(content).toContain(prop);
+      }
+    });
+
+    it('documents the Listing component with product lookup', () => {
+      expect(content).toMatch(/<Listing\b/);
+      expect(content).toMatch(/product=/);
+    });
+
+    it('documents the Link component with page and category props', () => {
+      expect(content).toMatch(/<Link\b/);
+      expect(content).toMatch(/page=/);
+      expect(content).toMatch(/category=/);
+    });
+
+    it('documents cornerstore.config.js with nav dropdown and wholesaleMargin', () => {
+      expect(content).toMatch(/dropdown/);
+      expect(content).toMatch(/wholesaleMargin/);
+    });
+
+    it('documents all cornerstore.config.js keys', () => {
+      for (const key of ['name', 'home', 'nav', 'footerNav', 'contact', 'logo', 'listings', 'minCartSize', 'shippingFlat', 'shippingFreeThreshold', 'checkout', 'checkoutUrl']) {
+        expect(content).toContain(key);
+      }
+    });
+
+    it('documents MDX page frontmatter fields', () => {
+      expect(content).toMatch(/title/);
+      expect(content).toMatch(/description/);
+      expect(content).toMatch(/hasExplicitTitle/);
+    });
+
+    it('documents category page overrides in pages/category/', () => {
+      expect(content).toMatch(/pages\/category\//);
+      expect(content).toMatch(/\.mdx/);
+    });
+
+    it('documents product description overrides in products/', () => {
+      expect(content).toMatch(/products\//);
+      expect(content).toMatch(/sku:/);
+      expect(content).toMatch(/image_alts/);
     });
   });
 

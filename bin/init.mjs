@@ -247,6 +247,10 @@ await safeWrite(join(dir, 'pages', 'privacy-policy.mdx'), privacyStub);
 const tosStub = await readFile(join(stubsDir, 'terms-of-service.mdx'), 'utf-8');
 await safeWrite(join(dir, 'pages', 'terms-of-service.mdx'), tosStub);
 
+// CORNERSTORE.md — quick reference for components and config; ignored by Astro build
+const referenceDoc = await readFile(join(stubsDir, 'CORNERSTORE.md'), 'utf-8');
+await safeWrite(join(dir, 'CORNERSTORE.md'), referenceDoc);
+
 
 // src/pages/index.astro
 await safeWrite(join(dir, 'src', 'pages', 'index.astro'), buildIndexPage());

@@ -85,25 +85,37 @@
   /* --- Table icon (3 horizontal lines) --- */
 
   .cs-icon-table {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--cs-view-icon-table-gap, 0);
+    position: relative;
     width: var(--cs-view-icon-size, auto);
     height: var(--cs-view-icon-size, auto);
   }
 
+  /* ::before = bullet squares (left edge), ::after = lines (remainder).
+     Both use box-shadow to replicate each row at the same Y positions. */
   .cs-icon-table::before,
   .cs-icon-table::after {
     content: '';
-    height: var(--cs-view-icon-line-thickness, auto);
+    position: absolute;
+    top: 0;
+    height: var(--cs-view-icon-line-thickness, 2px);
     background: currentColor;
     border-radius: var(--cs-radius-tiny, 0);
   }
 
-  /* Third line via box-shadow on the after pseudo. The offset is negated
-     here to push the shadow line up; the token holds the positive offset. */
+  .cs-icon-table::before {
+    left: 0;
+    width: var(--cs-view-icon-line-thickness, 2px);
+    box-shadow:
+      0 calc((var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) / 2) 0 0 currentColor,
+      0 calc(var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) 0 0 currentColor;
+  }
+
+  /* Line starts after bullet + equal-sized gap (2× line-thickness total indent) */
   .cs-icon-table::after {
-    box-shadow: 0 calc(-1 * var(--cs-view-icon-shadow-offset, 0)) 0 0 currentColor;
+    left: calc(var(--cs-view-icon-line-thickness, 2px) * 2);
+    right: 0;
+    box-shadow:
+      0 calc((var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) / 2) 0 0 currentColor,
+      0 calc(var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) 0 0 currentColor;
   }
 }

@@ -35,5 +35,6 @@ Deferred: `docs/todo/archive/deferred/`
 1. Test-Driven Development: Strict TDD, no exceptions. No implementation without a failing test. Red -> Green -> Refactor.
 2. Init Parity: New CSV column, env var, or runtime requirement? After your changes are complete and pass all tests, run `cornerstore init` into a fresh empty directory. Install deps. Run the build. Exercise the feature end-to-end in the scaffolded project. If you can't, init is out of sync and the feature is not done.
 3. Package vs Project: The package handles core UI like default token defintions, core responsive layouts, and accessibility. Instance themes should have full control over aesthetics, easily change layouts, etc.
+4. Reference Doc Parity: `bin/stubs/CORNERSTORE.md` is the consumer-facing quick reference. Any change to a component's props, a config key, or MDX frontmatter fields MUST be reflected in that file before the work is considered done. If you add, remove, or rename anything documented there, update it in the same PR/commit.
 
 
