@@ -510,7 +510,7 @@ function init(root: HTMLElement) {
       checkoutError.hidden = false;
       checkoutFallback.hidden = false;
 
-      submitBtn.textContent = checkoutEnabled ? 'Checkout' : 'Submit Order';
+      submitBtn.textContent = checkoutEnabled ? 'Checkout' : 'Download Order Form';
       submitBtn.disabled = false;
     }
   }
@@ -568,7 +568,7 @@ function init(root: HTMLElement) {
       mailtoLink.textContent = `Email your order to ${contact}`;
       mailtoSection.hidden = false;
 
-      submitBtn.textContent = checkoutEnabled ? 'Checkout' : 'Submit Order';
+      submitBtn.textContent = checkoutEnabled ? 'Checkout' : 'Download Order Form';
       submitBtn.disabled = false;
     } catch (err) {
       console.error('[Cart] PDF generation failed:', err);
@@ -576,7 +576,7 @@ function init(root: HTMLElement) {
         ? `We couldn't generate the PDF. Please refresh and try again, or contact ${contact}.`
         : `We couldn't generate the PDF. Please refresh and try again.`;
       checkoutError.hidden = false;
-      submitBtn.textContent = checkoutEnabled ? 'Checkout' : 'Submit Order';
+      submitBtn.textContent = checkoutEnabled ? 'Checkout' : 'Download Order Form';
       submitBtn.disabled = false;
     }
   }

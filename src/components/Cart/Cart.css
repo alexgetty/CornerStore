@@ -155,6 +155,12 @@
     }
   }
 
+  .cs-pdf-notice {
+    margin-bottom: var(--cs-cart-block-margin, 0);
+    font-size: var(--cs-text-3, inherit);
+    color: var(--cs-body-text-color, inherit);
+  }
+
   .cs-mailto-section {
     padding: var(--cs-mailto-section-padding, 0);
     background: var(--cs-surface-color, transparent);

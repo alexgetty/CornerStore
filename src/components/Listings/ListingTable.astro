@@ -36,7 +36,7 @@ const hasCategories = groups.length > 1 || (groups.length === 1 && groups[0]!.ca
     <table class="cs-listing-table" role="table">
       <ListingThead
         hasWholesale={hasWholesale}
-        productLabel={hasCategories && group.category ? `${group.category}s` : null}
+        productLabel={hasCategories && group.category ? group.category : null}
       />
       <tbody role="rowgroup">
         {group.items.map((listing) => (

@@ -92,6 +92,10 @@ for (const listing of listings) {
     <div class="cs-cart-errors" hidden></div>
     <div class="cs-unavailable-notice" hidden></div>
 
+    {!checkoutEnabled && (
+      <p class="cs-pdf-notice">Clicking will download a PDF order form — you'll need to email it to us to complete your order.</p>
+    )}
+
     <div class="cs-cart-actions">
       <div class="cs-cart-actions-secondary">
         <button type="button" class="cs-clear-cart">Clear all</button>
@@ -102,7 +106,7 @@ for (const listing of listings) {
         </span>
       </div>
       <button type="button" class="cs-submit-btn" disabled>
-        {checkoutEnabled ? 'Checkout' : 'Submit Order'}
+        {checkoutEnabled ? 'Checkout' : 'Download Order Form'}
       </button>
     </div>
 
@@ -113,8 +117,9 @@ for (const listing of listings) {
     </div>
 
     <div class="cs-mailto-section" hidden>
-      <p>Your order has been downloaded.</p>
-      <a class="cs-mailto-link" href="#">Email your order</a>
+      <p>Your order form has downloaded, but <strong>we haven't received it yet</strong> — email it to us to complete your order. We're a simple static site with no checkout backend, so this is how orders reach us.</p>
+      <a class="cs-mailto-link" href="#">Email your order form</a>
+      <p>Your cart is unchanged. Use <em>Clear all</em> once you've sent the email, or update your cart and re-download if you need to make changes first.</p>
     </div>
   </div>
 </div>
