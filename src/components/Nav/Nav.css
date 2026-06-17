@@ -260,7 +260,7 @@
 
     .cs-nav-dropdown-menu {
       position: absolute;
-      top: 100%;
+      top: calc(100% + var(--cs-nav-dropdown-gap, 0.375rem));
       left: 50%;
       right: auto;
       transform: translateX(-50%);
@@ -273,6 +273,15 @@
       border-radius: var(--cs-border-radius, 0);
       min-width: var(--cs-nav-dropdown-menu-min-width, auto);
       z-index: 10;
+    }
+
+    .cs-nav-has-children::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      height: var(--cs-nav-dropdown-gap, 0.375rem);
     }
 
     .cs-nav-has-children:hover .cs-nav-dropdown-menu,
