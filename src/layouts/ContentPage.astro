@@ -11,7 +11,7 @@ interface Props {
   description?: string;
 }
 
-const { title, hasExplicitTitle = true, description } = Astro.props;
+const { title, hasExplicitTitle = true, description: descriptionProp } = Astro.props;
 const config = await loadConfig();
 const pages = await loadPages(config);
 const categories = await getCategories();
@@ -20,6 +20,17 @@ const { nav, footerNav } = getNav(config, pages, {
   catalogCategories: categories,
   customCategoryPages: categoryPages,
 });
+
+const segments = Astro.url.pathname.split('/').filter(Boolean);
+let derivedDescription: string | undefined;
+if (segments.length === 0) {
+  derivedDescription = pages.get(config.home)?.description;
+} else if (segments[0] === 'category' && segments[1]) {
+  derivedDescription = categoryPages.get(segments[1])?.description;
+} else if (segments.length === 1) {
+  derivedDescription = pages.get(segments[0])?.description;
+}
+const description = descriptionProp ?? derivedDescription;
 
 const listings = await getListings();
 const priceMap: Record<string, number> = {};
@@ -36,6 +47,7 @@ for (const listing of listings) {
   <Nav slot="header" storeName={config.name} logo={config.logo} nav={nav} currentPath={Astro.url.pathname} priceMap={priceMap} disabledSkus={disabledSkus} currency={DEFAULT_CURRENCY} />
   <main id="main-content">
     <h1 class:list={[{ 'cs-sr-only': !hasExplicitTitle }]}>{title}</h1>
+    {description && <p class="cs-page-description">{description}</p>}
     <slot />
   </main>
   {(footerNav.length > 0 || config.contact) && (

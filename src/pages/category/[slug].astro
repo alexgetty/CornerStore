@@ -43,7 +43,7 @@ if (isMdx) {
 ---
 
 {isMdx && Content && page ? (
-  <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
+  <ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle} description={page.description}>
     <Content components={{ Listings, Listing }} />
   </ContentPage>
 ) : (

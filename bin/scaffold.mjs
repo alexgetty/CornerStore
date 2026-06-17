@@ -128,7 +128,7 @@ if (homeModule) {
 ---
 
 {Content ? (
-  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? false}>
+  <ContentPage title={homePage?.title ?? config.name} hasExplicitTitle={homePage?.hasExplicitTitle ?? true} description={homePage?.description}>
     <Content components={{ Hero, Link, Listings, Listing }} />
   </ContentPage>
 ) : (
@@ -169,7 +169,7 @@ if (loader) {
 }
 ---
 
-<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle}>
+<ContentPage title={page.title} hasExplicitTitle={page.hasExplicitTitle} description={page.description}>
   {Content ? (
     <Content components={{ Hero, Link, Listings, Listing }} />
   ) : (
