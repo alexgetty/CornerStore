@@ -48,6 +48,6 @@ if (isMdx) {
   </ContentPage>
 ) : (
   <ContentPage title={categoryName ?? slug}>
-    <Listings categories={categoryName ? [categoryName] : []} />
+    <Listings toggle categories={categoryName ? [categoryName] : []} />
   </ContentPage>
 )}
