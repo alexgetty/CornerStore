@@ -13,6 +13,8 @@ import {
 } from '../CartControl/cart-control-actions.js';
 import { resolveCartMutation } from './cart-row-actions.js';
 import { generateAttemptId } from './attempt-id.js';
+import { buildPdfHtml } from './pdf-builder.js';
+import type { PdfItem } from './pdf-builder.js';
 
 const root = document.querySelector<HTMLElement>('.cs-cart');
 if (root) init(root);
@@ -522,31 +524,36 @@ function init(root: HTMLElement) {
     try {
       const html2pdf = await html2pdfPromise;
 
-      const pdfContent = contentEl.cloneNode(true) as HTMLElement;
+      const date = new Date().toISOString().slice(0, 10);
 
-      // Strip interactive controls + dynamic status messaging from the
-      // printable order. .cs-cart-actions removes both Clear all and
-      // Checkout/Submit (nested children). .cs-cart-summary drops the
-      // shipping-progress line. .cs-cart-errors drops the "$Y minimum,
-      // $X to go" line (and any MOQ errors) because by the time the order
-      // is printed/emailed the gap is no longer relevant; the static
-      // subtotal stays via the table's <tfoot> (which is not in the strip
-      // list, so it survives unchanged).
-      pdfContent.querySelectorAll(
-        '.cs-cart-actions, .cs-mailto-section, .cs-cart-errors, .cs-unavailable-notice, .cs-cart-unavailable-banner, .cs-remove-btn, .cs-cart-control-add, .cs-cart-control-down, .cs-cart-control-up, .cs-checkout-error, .cs-checkout-fallback, .cs-cart-summary',
-      ).forEach((el) => el.remove());
-
-      pdfContent.querySelectorAll('.cs-listing-row[hidden]').forEach((row) => row.remove());
-
-      pdfContent.querySelectorAll('.cs-cart-control-input').forEach((input) => {
-        const val = (input as HTMLInputElement).value;
-        const span = document.createElement('span');
-        span.textContent = val;
-        span.style.textAlign = 'right';
-        input.replaceWith(span);
+      const pdfItems: PdfItem[] = [];
+      root.querySelectorAll<HTMLElement>('.cs-listing-row').forEach((row) => {
+        if (row.hidden || row.dataset.status) return;
+        const sku = row.dataset.sku ?? '';
+        const name = row.dataset.name ?? '';
+        const rawPrice = Number(row.dataset.rawPrice);
+        const input = row.querySelector<HTMLInputElement>('.cs-cart-control-input');
+        const quantity = input ? parseInt(input.value) || 0 : 0;
+        const lineTotalEl = row.querySelector('.cs-line-total');
+        const lineTotal = lineTotalEl?.textContent ?? formatPrice(calculateLineTotal(rawPrice, quantity), currency);
+        pdfItems.push({
+          sku,
+          name,
+          unitPrice: formatPrice(rawPrice, currency),
+          quantity,
+          lineTotal,
+        });
       });
 
-      const date = new Date().toISOString().slice(0, 10);
+      const pdfEl = document.createElement('div');
+      pdfEl.innerHTML = buildPdfHtml({
+        storeName,
+        contact,
+        date,
+        subtotal: subtotalEl.textContent ?? '',
+        items: pdfItems,
+      });
+
       const slug = storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const filename = `order-${slug}-${date}.pdf`;
 
@@ -557,7 +564,7 @@ function init(root: HTMLElement) {
           html2canvas: { scale: 2 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         })
-        .from(pdfContent)
+        .from(pdfEl)
         .save();
 
       const subject = encodeURIComponent(`Order - ${storeName}`);

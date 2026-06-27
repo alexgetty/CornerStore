@@ -26,6 +26,7 @@ const effectivePrice = hasWholesale ? formatPrice(wholesaleRaw, currency) : list
   data-moq={listing.moq ?? ''}
   data-status={listing.status ?? ''}
   data-name={listing.name}
+  data-category={listing.category ?? ''}
 >
   <td class="cs-col-image" role="cell">
     {thumb ? (

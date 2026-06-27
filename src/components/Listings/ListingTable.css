@@ -119,14 +119,14 @@
   }
 
   .cs-listing-sku {
-    display: block;
+    display: inline;
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
     font-family: monospace;
   }
 
   .cs-listing-moq {
-    display: block;
+    display: inline;
     font-size: var(--cs-text-3, inherit);
     color: var(--cs-muted-text-color, inherit);
   }
@@ -206,17 +206,15 @@
       border: none;
     }
 
-    .cs-listing-row .cs-col-image { grid-area: image; }
-    .cs-listing-row .cs-col-product { grid-area: name; }
-    .cs-listing-row .cs-col-price { grid-area: price; }
+    .cs-listing-row .cs-col-image { grid-area: image; width: auto; }
+    .cs-listing-row .cs-col-product { grid-area: name; min-width: 0; }
+    .cs-listing-row .cs-col-price { grid-area: price; width: auto; }
     .cs-listing-row .cs-col-controls {
       grid-area: control;
       width: 100%;
     }
 
-    .cs-listing-row .cs-col-total { display: none; }
-    .cs-listing-row .cs-listing-sku { display: none; }
-    .cs-listing-row .cs-listing-moq { display: none; }
+    .cs-listing-row .cs-col-total { display: none; width: auto; }
     .cs-listing-row .cs-listing-desc { display: none; }
     .cs-listing-row .cs-remove-btn { display: none; }
 

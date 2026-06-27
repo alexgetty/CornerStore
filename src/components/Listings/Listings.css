@@ -106,8 +106,8 @@
     left: 0;
     width: var(--cs-view-icon-line-thickness, 2px);
     box-shadow:
-      0 calc((var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) / 2) 0 0 currentColor,
-      0 calc(var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) 0 0 currentColor;
+      0 calc((var(--cs-view-icon-size, 24px) - var(--cs-view-icon-line-thickness, 2px)) / 2) 0 0 currentColor,
+      0 calc(var(--cs-view-icon-size, 24px) - var(--cs-view-icon-line-thickness, 2px)) 0 0 currentColor;
   }
 
   /* Line starts after bullet + equal-sized gap (2× line-thickness total indent) */
@@ -115,7 +115,7 @@
     left: calc(var(--cs-view-icon-line-thickness, 2px) * 2);
     right: 0;
     box-shadow:
-      0 calc((var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) / 2) 0 0 currentColor,
-      0 calc(var(--cs-view-icon-size) - var(--cs-view-icon-line-thickness)) 0 0 currentColor;
+      0 calc((var(--cs-view-icon-size, 24px) - var(--cs-view-icon-line-thickness, 2px)) / 2) 0 0 currentColor,
+      0 calc(var(--cs-view-icon-size, 24px) - var(--cs-view-icon-line-thickness, 2px)) 0 0 currentColor;
   }
 }
